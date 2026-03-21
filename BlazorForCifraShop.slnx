@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BlazorForCifraShop.Client/BlazorForCifraShop.Client.csproj" />
+  <Project Path="BlazorForCifraShop/BlazorForCifraShop.csproj" />
+</Solution>
