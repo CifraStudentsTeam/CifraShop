@@ -1,5 +1,9 @@
 using BlazorForCifraShop.Client.Pages;
 using BlazorForCifraShop.Components;
+using ConsoleApp3.Servise;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddDbContext<AplicationContext>(options =>
+    options.UseSqlite("Data source=CifraChop.db"));
 
 var app = builder.Build();
 

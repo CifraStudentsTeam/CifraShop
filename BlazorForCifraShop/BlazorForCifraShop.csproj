@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlazorForCifraShop.Client\BlazorForCifraShop.Client.csproj" />
+    <ProjectReference Include="..\ConsoleApp3\ConsoleApp3.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.4" />
   </ItemGroup>
 

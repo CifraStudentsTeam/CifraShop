@@ -20,8 +20,10 @@ namespace ConsoleApp3.Models
         public StatusOrder Status { get; set; }
         [Column("Sum")]
         public uint Sum { get; set; }
-        //[Column("DateOfPurchase")]
-        //public DateTime DateOfPurchase { get; set; }
+        
+        [Column("DateOfPurchase")]
+        public DateTime DateOfPurchase { get; set; } = DateTime.Now;
+
         [Column ("CustomerLogin")]
         public string CustomerLogin{ get; set; }
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();

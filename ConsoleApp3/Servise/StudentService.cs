@@ -10,7 +10,7 @@ namespace ConsoleApp3.Servise
 {
     public class StudentService : IStudentService
     {
-        private readonly AplicationContext _context = new AplicationContext();
+        private readonly AplicationContext _context;
 
         public StudentService(AplicationContext context)
         {
@@ -43,14 +43,19 @@ namespace ConsoleApp3.Servise
             return student;
         }
 
-        public async Task<Student> StudentAuthentication(string loginName, string password)
-        {
-            var user = await _context.Students.SingleOrDefaultAsync(x => x.LoginName == loginName && x.Password == password);
-            return user;
-        }
+        public async Task<Student> StudentAuthentication(string loginName, string password) =>
+            await _context.Students.SingleOrDefaultAsync(x => x.LoginName == loginName && x.Password == password);
+
         public async Task DeleteStudent(Student student)
         {
             _context.Students.Remove(student);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateStudentBalance(Student student, uint newBalance)
+        {
+            student.Balance = newBalance;
+            _context.Students.Update(student);
             await _context.SaveChangesAsync();
         }
     }

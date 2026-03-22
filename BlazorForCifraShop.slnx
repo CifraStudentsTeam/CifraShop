@@ -1,4 +1,8 @@
 <Solution>
+  <Project Path="BlazorApp1/BlazorApp1.csproj" />
   <Project Path="BlazorForCifraShop.Client/BlazorForCifraShop.Client.csproj" />
   <Project Path="BlazorForCifraShop/BlazorForCifraShop.csproj" />
+  <Project Path="CifraShop/CifraShop.Client/CifraShop.Client.csproj" Id="a60ef50d-d19d-4c41-8d43-7b0dd5e638b8" />
+  <Project Path="CifraShop/CifraShop/CifraShop.csproj" Id="30f1ef37-c7fd-43ba-87d9-3129a0b7c0f0" />
+  <Project Path="ConsoleApp3/ConsoleApp3.csproj" />
 </Solution>

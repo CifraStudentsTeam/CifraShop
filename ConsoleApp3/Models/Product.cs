@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace ConsoleApp3.Models
 {
+
     public class Product : INotifyPropertyChanged
     {
         private string _name;
@@ -104,6 +105,10 @@ namespace ConsoleApp3.Models
                 }
             }
         }
+
+        // для UI
+        [NotMapped]
+        public bool IsSelected { get; set; }
 
         // Навигационное свойство для связи с OrderItem
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();

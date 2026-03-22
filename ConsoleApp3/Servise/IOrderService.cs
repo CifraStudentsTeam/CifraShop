@@ -17,5 +17,12 @@ namespace ConsoleApp3.Servise
         public Task<List<Order>> GetOrdersByStatus(StatusOrder order);
         public Task<Order> ChangeOrderStatus(Order order, StatusOrder status);
         public Task DeleteOrder(Order order);
+
+
+        // Новые методы для OrderItem
+        Task<List<OrderItem>> GetOrderItemsByOrderId(uint orderId);
+        Task AddOrderItem(OrderItem orderItem);
+        Task RemoveOrderItem(OrderItem orderItem);
+        Task UpdateOrderItem(OrderItem orderItem);
     }
 }

@@ -16,5 +16,7 @@ namespace ConsoleApp3.Servise
         public Task<Student> GetStudentById(int id);
         public Task<List<Student>> GetStudentByDateOfBirth(DateTime dateOfBirth);
         public Task DeleteStudent(Student student);
+
+        public Task UpdateStudentBalance(Student student, uint newBalance);
     }
 }
