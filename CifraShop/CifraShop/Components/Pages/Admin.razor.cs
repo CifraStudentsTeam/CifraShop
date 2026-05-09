@@ -170,7 +170,7 @@ namespace CifraShop.Components.Pages
             }
             catch (Exception ex)
             {
-                // Обработка ошибок
+                Console.WriteLine(ex.Message);
             }
             finally
             {
