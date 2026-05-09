@@ -1,7 +1,6 @@
 using CifraShop.Components.Models;
 using CifraShop.Components.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 
 namespace CifraShop.Components.Pages
 {
@@ -20,143 +19,126 @@ namespace CifraShop.Components.Pages
         // Фильтры и пагинация товаров
         private string _searchProduct = "";
         private string _filterStatusProduct = "";
-        private const ulong _sizePage = 4;
-        private ulong _indexPageProduct = 0;
+        private const int _pageSize = 4;
+        private int _indexPageProduct = 0;
         private bool _selectAllProducts;
 
-        // Выбрать все товары на странице
-        private bool SelectAllProducts
-        {
-            get => _selectAllProducts;
-            set
-            {
-                if (_selectAllProducts == value) return;
-                _selectAllProducts = value;
-                foreach (var product in _productThePage)
-                {
-                    product.IsSelected = _selectAllProducts;
-                }
-            }
-        }
+        // Настройки уведомлений
+        private bool _notificationsEmail;
+        private string _emailForNotifications = "";
+        private bool _notificationsTelegram;
 
         // Отфильтрованные товары
-        private IEnumerable<Product> _filteredProducts =>
-            _allProductsList.Where(p => string.IsNullOrEmpty(_searchProduct) || p.Name.Contains(_searchProduct, StringComparison.OrdinalIgnoreCase) || (p.Description != null && p.Description.Contains(_searchProduct, StringComparison.OrdinalIgnoreCase))).Where(p => _filterStatusProduct switch
-            {
-                "visible" => p.Status == StatusProduct.InStock,
-                "hidden" => p.Status != StatusProduct.InStock,
-                "out" => p.Status == StatusProduct.OutOfStock,
-                _ => true
-            });
+        private IEnumerable<Product> FilteredProducts =>
+            _allProductsList.Where(p => string.IsNullOrEmpty(_searchProduct)
+                || p.Name.Contains(_searchProduct, StringComparison.OrdinalIgnoreCase)
+                || (!string.IsNullOrEmpty(p.Description) && p.Description.Contains(_searchProduct, StringComparison.OrdinalIgnoreCase)))
+                .Where(p => _filterStatusProduct switch
+                {
+                    "visible" => p.Status == StatusProduct.InStock,
+                    "hidden" => p.Status != StatusProduct.InStock,
+                    "out" => p.Status == StatusProduct.OutOfStock,
+                    _ => true
+                });
 
         // Всего страниц товаров
-        private ulong _totalProductsPages => Math.Max(1, (ulong)Math.Ceiling(_filteredProducts.Count() / (double)_sizePage));
+        private int TotalProductsPages => Math.Max(1, (int)Math.Ceiling(FilteredProducts.Count() / (double)_pageSize));
 
         // Товары на странице
-        private IEnumerable<Product> _productThePage => _filteredProducts.Skip((int)(_indexPageProduct * _sizePage)).Take((int)_sizePage);
+        private IEnumerable<Product> ProductsOnPage => FilteredProducts.Skip(_indexPageProduct * _pageSize).Take(_pageSize);
 
         // Фильтры и пагинация заказов
         private string _searchOrder = "";
         private string _filterStatusOrder = "";
         private string _filterPeriodOrder = "";
-        private ulong _indexPageOrder = 0;
+        private int _indexPageOrder = 0;
 
         // Отфильтрованные заказы
-        private IEnumerable<Order> _filteredOrders =>
-            _allOrdersList.Where(o => string.IsNullOrEmpty(_searchOrder) ||
-                            o.Id.ToString().Contains(_searchOrder) ||
-                            (o.CustomerLogin != null && o.CustomerLogin.Contains(_searchOrder, StringComparison.OrdinalIgnoreCase))).Where(o => string.IsNullOrEmpty(_filterStatusOrder) || o.Status.ToString() == _filterStatusOrder)
-            .Where(o => _filterPeriodOrder switch
-            {
-                "today" => o.DateOfPurchase.Date == DateTime.Today,
-                "week" => o.DateOfPurchase >= DateTime.Today.AddDays(-7),
-                "month" => o.DateOfPurchase >= DateTime.Today.AddMonths(-1),
-                _ => true
-            });
+        private IEnumerable<Order> FilteredOrders =>
+            _allOrdersList.Where(o => string.IsNullOrEmpty(_searchOrder)
+                || o.Id.ToString().Contains(_searchOrder)
+                || (!string.IsNullOrEmpty(o.CustomerLogin) && o.CustomerLogin.Contains(_searchOrder, StringComparison.OrdinalIgnoreCase)))
+                .Where(o => string.IsNullOrEmpty(_filterStatusOrder) || o.Status.ToString() == _filterStatusOrder)
+                .Where(o => _filterPeriodOrder switch
+                {
+                    "today" => o.DateOfPurchase.Date == DateTime.Today,
+                    "week" => o.DateOfPurchase >= DateTime.Today.AddDays(-7),
+                    "month" => o.DateOfPurchase >= DateTime.Today.AddMonths(-1),
+                    _ => true
+                });
 
         // Всего страниц заказов
-        private ulong _totalPagesOrders => Math.Max(1, (ulong)Math.Ceiling(_filteredOrders.Count() / (double)_sizePage));
+        private int TotalOrdersPages => Math.Max(1, (int)Math.Ceiling(FilteredOrders.Count() / (double)_pageSize));
 
         // Заказы на странице
-        private IEnumerable<Order> _orderThePage => _filteredOrders.Skip((int)(_indexPageOrder * _sizePage)).Take((int)_sizePage);
+        private IEnumerable<Order> OrdersOnPage => FilteredOrders.Skip(_indexPageOrder * _pageSize).Take(_pageSize);
 
         // Фильтры и пагинация пользователей
         private string _searchUsers = "";
         private string _filterBalansUsers = "";
-        private ulong _indexPageUsers = 0;
+        private int _indexPageUsers = 0;
 
         // Отфильтрованные пользователи
-        private IEnumerable<Student> _filteredUsers => _allUsersList.Where(u => string.IsNullOrEmpty(_searchUsers) || u.LoginName.Contains(_searchUsers, StringComparison.OrdinalIgnoreCase)).Where(u => _filterBalansUsers == "positive" ? u.Balance > 0 : true);
+        private IEnumerable<Student> FilteredUsers =>
+            _allUsersList.Where(u => string.IsNullOrEmpty(_searchUsers)
+                || u.LoginName.Contains(_searchUsers, StringComparison.OrdinalIgnoreCase))
+                .Where(u => _filterBalansUsers == "positive" ? u.Balance > 0 : true);
 
         // Всего страниц пользователей
-        private ulong _totalPagesUsers => Math.Max(1, (ulong)Math.Ceiling(_filteredUsers.Count() / (double)_sizePage));
+        private int TotalUsersPages => Math.Max(1, (int)Math.Ceiling(FilteredUsers.Count() / (double)_pageSize));
 
         // Пользователи на странице
-        private IEnumerable<Student> _usersThePage => _filteredUsers.Skip((int)(_indexPageUsers * _sizePage)).Take((int)_sizePage);
+        private IEnumerable<Student> UsersOnPage => FilteredUsers.Skip(_indexPageUsers * _pageSize).Take(_pageSize);
 
         // МЕТРИКИ
-        private ulong _allProduts => (ulong)_allProductsList.Count;
-        private ulong _allUsers => (ulong)_allUsersList.Count;
+        private int AllProductsCount => _allProductsList.Count;
+        private int AllUsersCount => _allUsersList.Count;
 
         // Периоды для метрики "Заказы"
-        private record Period(string value, string textInRussian);
-        private Period[] _periods = new[]
-        {
-            new Period("today", "сегодня"),
-            new Period("yesterday", "вчера"),
-            new Period("week", "неделя"),
-            new Period("month", "месяц"),
-            new Period("year", "год")
-        };
+        private readonly (string value, string textInRussian)[] _periods =
+        [
+            ("today", "сегодня"),
+            ("yesterday", "вчера"),
+            ("week", "неделя"),
+            ("month", "месяц"),
+            ("year", "год")
+        ];
 
         // Выбранный период заказов
         private string _selectedPeriodOrders = "today";
 
         // Количество заказов
-        private ulong _quantityOrders => _selectedPeriodOrders switch
+        private int OrdersCount => _selectedPeriodOrders switch
         {
-            "today" => (ulong)_allOrdersList.Count(q => q.DateOfPurchase.Date == DateTime.Today),
-            "yesterday" => (ulong)_allOrdersList.Count(q => q.DateOfPurchase.Date == DateTime.Today.AddDays(-1)),
-            "week" => (ulong)_allOrdersList.Count(q => q.DateOfPurchase >= DateTime.Today.AddDays(-7)),
-            "month" => (ulong)_allOrdersList.Count(q => q.DateOfPurchase >= DateTime.Today.AddMonths(-1)),
-            "year" => (ulong)_allOrdersList.Count(q => q.DateOfPurchase >= DateTime.Today.AddYears(-1)),
+            "today" => _allOrdersList.Count(q => q.DateOfPurchase.Date == DateTime.Today),
+            "yesterday" => _allOrdersList.Count(q => q.DateOfPurchase.Date == DateTime.Today.AddDays(-1)),
+            "week" => _allOrdersList.Count(q => q.DateOfPurchase >= DateTime.Today.AddDays(-7)),
+            "month" => _allOrdersList.Count(q => q.DateOfPurchase >= DateTime.Today.AddMonths(-1)),
+            "year" => _allOrdersList.Count(q => q.DateOfPurchase >= DateTime.Today.AddYears(-1)),
             _ => 0
         };
-
-        // Настройки уведомлений
-        private bool _notificationsEmail = true;
-        private bool _notificationsTelegram = false;
-        private string _emailForNotifications = "admin@shop.com";
 
         // Переменные для модальных окон
         private int _editableProductId = 0;
         private Product _formProduct = new();
         private int _editableOrderId = 0;
         private OrderForm _formOrder = new();
-        private string _userSezrchForAccrual = "";
+        private string _userSearchForAccrual = "";
         private Student? _selectedUserForAccrual;
         private uint _sumAccrual = 0;
         private string _commentAccrual = "";
 
-        // Вспомогательный класс для формы заказа
-        public class OrderForm
-        {
-            public string CustomerLogin { get; set; }
-            public List<PositionOrder> Positions { get; set; } = new();
-        }
-
-        public class PositionOrder
-        {
-            public uint ProductId { get; set; }
-            public uint Quantity { get; set; }
-        }
+        // Состояние модальных окон
+        private bool _showProductModal;
+        private bool _showOrderModal;
+        private bool _showFundsModal;
 
         protected override async Task OnInitializedAsync()
         {
-            await DownloadData();
+            await LoadData();
         }
 
-        private async Task DownloadData()
+        private async Task LoadData()
         {
             _loadingProducts = true;
             _loadingOrders = true;
@@ -170,7 +152,7 @@ namespace CifraShop.Components.Pages
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"Error loading data: {ex.Message}");
             }
             finally
             {
@@ -181,46 +163,44 @@ namespace CifraShop.Components.Pages
             }
         }
 
-        // ПАГИНАЦИЯ
-        private void GoToTheProductPage(ulong newIndex)
+        // ПАГИНАЦИЯ - с сбросом чекбоксов
+        private void GoToProductPage(int newIndex)
         {
-            if (newIndex >= 0 && newIndex < _totalProductsPages)
+            if (newIndex >= 0 && newIndex < TotalProductsPages)
+            {
                 _indexPageProduct = newIndex;
-            _selectAllProducts = false;
-            foreach (var p in _productThePage) p.IsSelected = false;
+                ResetProductSelection();
+            }
         }
 
-        private void GoToTheOrderPage(ulong newIndex)
+        private void GoToOrderPage(int newIndex)
         {
-            if (newIndex >= 0 && newIndex < _totalPagesOrders)
+            if (newIndex >= 0 && newIndex < TotalOrdersPages)
                 _indexPageOrder = newIndex;
         }
 
-        private void GoToTheUserPage(ulong newIndex)
+        private void GoToUserPage(int newIndex)
         {
-            if (newIndex >= 0 && newIndex < _totalPagesUsers)
+            if (newIndex >= 0 && newIndex < TotalUsersPages)
                 _indexPageUsers = newIndex;
         }
 
-        private void ChangePeriodOrder(ChangeEventArgs e)
+        private void ResetProductSelection()
         {
-            _selectedPeriodOrders = e.Value?.ToString();
-            StateHasChanged();
+            _selectAllProducts = false;
+            foreach (var product in _allProductsList)
+                product.IsSelected = false;
         }
 
-        // УПРАВЛЕНИЕ МОДАЛКАМИ (JS)
-        private async Task ShowModal(string modalId)
+        private void SelectAllProductsChanged(bool value)
         {
-            await JS.InvokeVoidAsync("bootstrap.Modal.getOrCreateInstance", modalId, "show");
+            _selectAllProducts = value;
+            foreach (var product in _allProductsList)
+                product.IsSelected = value;
         }
 
-        private async Task HideModal(string modalId)
-        {
-            await JS.InvokeVoidAsync("bootstrap.Modal.getInstance", modalId, "hide");
-        }
-
-        // ТОВАРЫ
-        private async Task OpenProductModal(int id)
+        // УПРАВЛЕНИЕ МОДАЛКАМИ - без JS
+        private void OpenProductModal(int id)
         {
             _editableProductId = id;
             if (id == 0)
@@ -241,16 +221,18 @@ namespace CifraShop.Components.Pages
                     {
                         Id = original.Id,
                         Name = original.Name,
-                        Description = original.Description,
+                        Description = original.Description ?? "",
                         Price = original.Price,
                         Quantity = original.Quantity,
                         Status = original.Status,
-                        ThePathToTheImage = original.ThePathToTheImage
+                        ThePathToTheImage = original.ThePathToTheImage ?? ""
                     };
                 }
             }
-            await ShowModal("productModal");
+            _showProductModal = true;
         }
+
+        private void CloseProductModal() => _showProductModal = false;
 
         private async Task SaveProduct()
         {
@@ -259,8 +241,8 @@ namespace CifraShop.Components.Pages
                 if (_editableProductId == 0)
                 {
                     var newProduct = await ProductService.CreateProduct(
-                        _formProduct.Name,
-                        _formProduct.Description,
+                        _formProduct.Name ?? "",
+                        _formProduct.Description ?? "",
                         _formProduct.Price,
                         _formProduct.Quantity,
                         _formProduct.Status);
@@ -271,10 +253,14 @@ namespace CifraShop.Components.Pages
                     var existing = _allProductsList.FirstOrDefault(p => p.Id == _editableProductId);
                     if (existing != null)
                     {
-                        await ProductService.ChangeProductName(existing, _formProduct.Name);
-                        await ProductService.ChangeProductPrice(existing, _formProduct.Price);
-                        await ProductService.ChangeProductQuntity(existing, _formProduct.Quantity);
-                        await ProductService.ChangeProductStatus(existing, _formProduct.Status);
+                        if (existing.Name != _formProduct.Name)
+                            await ProductService.ChangeProductName(existing, _formProduct.Name ?? "");
+                        if (existing.Price != _formProduct.Price)
+                            await ProductService.ChangeProductPrice(existing, _formProduct.Price);
+                        if (existing.Quantity != _formProduct.Quantity)
+                            await ProductService.ChangeProductQuntity(existing, _formProduct.Quantity);
+                        if (existing.Status != _formProduct.Status)
+                            await ProductService.ChangeProductStatus(existing, _formProduct.Status);
 
                         existing.Name = _formProduct.Name;
                         existing.Price = _formProduct.Price;
@@ -283,12 +269,12 @@ namespace CifraShop.Components.Pages
                         existing.Description = _formProduct.Description;
                     }
                 }
+                CloseProductModal();
                 StateHasChanged();
-                await HideModal("productModal");
             }
             catch (Exception ex)
             {
-                // Обработка ошибок
+                Console.WriteLine($"Error saving product: {ex.Message}");
             }
         }
 
@@ -302,6 +288,7 @@ namespace CifraShop.Components.Pages
             var newStatus = visible ? StatusProduct.InStock : StatusProduct.OutOfStock;
             await ProductService.ChangeProductStatus(product, newStatus);
             product.Status = newStatus;
+            StateHasChanged();
         }
 
         private async Task DeleteProduct(int id)
@@ -311,8 +298,7 @@ namespace CifraShop.Components.Pages
             {
                 await ProductService.DeleteProduct(product);
                 _allProductsList.Remove(product);
-                if (_productThePage.Count() == 0 && _indexPageProduct > 0)
-                    _indexPageProduct--;
+                AdjustProductPageIfEmpty();
                 StateHasChanged();
             }
         }
@@ -325,9 +311,14 @@ namespace CifraShop.Components.Pages
                 await ProductService.DeleteProduct(product);
                 _allProductsList.Remove(product);
             }
-            if (_productThePage.Count() == 0 && _indexPageProduct > 0)
-                _indexPageProduct--;
+            AdjustProductPageIfEmpty();
             StateHasChanged();
+        }
+
+        private void AdjustProductPageIfEmpty()
+        {
+            if (ProductsOnPage.Count() == 0 && _indexPageProduct > 0)
+                _indexPageProduct--;
         }
 
         private async Task HideSelectedProducts()
@@ -351,14 +342,14 @@ namespace CifraShop.Components.Pages
         }
 
         // ЗАКАЗЫ
-        private async Task OpenCreateOrderModal()
+        private void OpenCreateOrderModal()
         {
             _editableOrderId = 0;
             _formOrder = new OrderForm();
-            await ShowModal("orderModal");
+            _showOrderModal = true;
         }
 
-        private async Task OpenEditOrderModal(int id)
+        private void OpenEditOrderModal(int id)
         {
             _editableOrderId = id;
             var existing = _allOrdersList.FirstOrDefault(o => o.Id == id);
@@ -366,7 +357,7 @@ namespace CifraShop.Components.Pages
             {
                 _formOrder = new OrderForm
                 {
-                    CustomerLogin = existing.CustomerLogin,
+                    CustomerLogin = existing.CustomerLogin ?? "",
                     Positions = existing.OrderItems.Select(oi => new PositionOrder
                     {
                         ProductId = oi.ProductId,
@@ -374,8 +365,10 @@ namespace CifraShop.Components.Pages
                     }).ToList()
                 };
             }
-            await ShowModal("orderModal");
+            _showOrderModal = true;
         }
+
+        private void CloseOrderModal() => _showOrderModal = false;
 
         private void AddOrderItem()
         {
@@ -390,69 +383,78 @@ namespace CifraShop.Components.Pages
 
         private async Task SaveOrder()
         {
-            var student = await StudentService.GetStudentByLoginName(_formOrder.CustomerLogin);
-            if (student == null)
+            try
             {
-                // Показать ошибку
-                return;
-            }
-
-            uint sum = 0;
-            foreach (var positionOrder in _formOrder.Positions)
-            {
-                var product = _allProductsList.FirstOrDefault(p => p.Id == positionOrder.ProductId);
-                if (product != null)
-                    sum += product.Price * positionOrder.Quantity;
-            }
-
-            if (_editableOrderId == 0)
-            {
-                var newOrder = await OrderService.CreateOrder(StatusOrder.AwaitingPayment, sum, _formOrder.CustomerLogin);
-
-                foreach (var positionOrder in _formOrder.Positions)
+                var student = await StudentService.GetStudentByLoginName(_formOrder.CustomerLogin);
+                if (student == null)
                 {
-                    var orderItem = new OrderItem
-                    {
-                        OrderId = newOrder.Id,
-                        ProductId = positionOrder.ProductId,
-                        Quantity = positionOrder.Quantity,
-                        Price = _allProductsList.First(p => p.Id == positionOrder.ProductId).Price
-                    };
-                    await OrderService.AddOrderItem(orderItem);
+                    Console.WriteLine("User not found");
+                    return;
                 }
 
-                var orderWithItems = await OrderService.GetOrderById(newOrder.Id);
-                _allOrdersList.Add(orderWithItems);
-            }
-            else
-            {
-                var order = _allOrdersList.FirstOrDefault(o => o.Id == _editableOrderId);
-                if (order != null)
+                uint sum = 0;
+                foreach (var positionOrder in _formOrder.Positions)
                 {
-                    order.CustomerLogin = _formOrder.CustomerLogin;
-                    order.Sum = sum;
+                    var product = _allProductsList.FirstOrDefault(p => p.Id == positionOrder.ProductId);
+                    if (product != null)
+                        sum += product.Price * positionOrder.Quantity;
+                }
 
-                    foreach (var oldItem in order.OrderItems.ToList())
-                    {
-                        await OrderService.RemoveOrderItem(oldItem);
-                    }
-                    order.OrderItems.Clear();
+                if (_editableOrderId == 0)
+                {
+                    var newOrder = await OrderService.CreateOrder(StatusOrder.AwaitingPayment, sum, _formOrder.CustomerLogin);
+
                     foreach (var positionOrder in _formOrder.Positions)
                     {
                         var orderItem = new OrderItem
                         {
-                            OrderId = order.Id,
+                            OrderId = newOrder.Id,
                             ProductId = positionOrder.ProductId,
                             Quantity = positionOrder.Quantity,
                             Price = _allProductsList.First(p => p.Id == positionOrder.ProductId).Price
                         };
                         await OrderService.AddOrderItem(orderItem);
-                        order.OrderItems.Add(orderItem);
+                    }
+
+                    var orderWithItems = await OrderService.GetOrderById(newOrder.Id);
+                    if (orderWithItems != null)
+                        _allOrdersList.Add(orderWithItems);
+                }
+                else
+                {
+                    var order = _allOrdersList.FirstOrDefault(o => o.Id == _editableOrderId);
+                    if (order != null)
+                    {
+                        order.CustomerLogin = _formOrder.CustomerLogin;
+                        order.Sum = sum;
+
+                        foreach (var oldItem in order.OrderItems.ToList())
+                        {
+                            await OrderService.RemoveOrderItem(oldItem);
+                        }
+                        order.OrderItems.Clear();
+
+                        foreach (var positionOrder in _formOrder.Positions)
+                        {
+                            var orderItem = new OrderItem
+                            {
+                                OrderId = order.Id,
+                                ProductId = positionOrder.ProductId,
+                                Quantity = positionOrder.Quantity,
+                                Price = _allProductsList.First(p => p.Id == positionOrder.ProductId).Price
+                            };
+                            await OrderService.AddOrderItem(orderItem);
+                            order.OrderItems.Add(orderItem);
+                        }
                     }
                 }
+                CloseOrderModal();
+                StateHasChanged();
             }
-            StateHasChanged();
-            await HideModal("orderModal");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving order: {ex.Message}");
+            }
         }
 
         private async Task ChangeStatusOrder(Order order, StatusOrder newStatusOrder)
@@ -479,19 +481,21 @@ namespace CifraShop.Components.Pages
             }
         }
 
-        private async Task OpenFundsModal()
+        private void OpenFundsModal()
         {
-            _userSezrchForAccrual = "";
+            _userSearchForAccrual = "";
             _selectedUserForAccrual = null;
             _sumAccrual = 0;
             _commentAccrual = "";
-            await ShowModal("fundsModal");
+            _showFundsModal = true;
         }
+
+        private void CloseFundsModal() => _showFundsModal = false;
 
         private void SelectedInSearchUser()
         {
             _selectedUserForAccrual = _allUsersList.FirstOrDefault(u =>
-                u.LoginName.Equals(_userSezrchForAccrual, StringComparison.OrdinalIgnoreCase));
+                u.LoginName.Equals(_userSearchForAccrual, StringComparison.OrdinalIgnoreCase));
         }
 
         private async Task AddFunds()
@@ -503,12 +507,25 @@ namespace CifraShop.Components.Pages
                 _selectedUserForAccrual.Balance = newBalance;
 
                 _selectedUserForAccrual = null;
-                _userSezrchForAccrual = "";
+                _userSearchForAccrual = "";
                 _sumAccrual = 0;
                 _commentAccrual = "";
+                CloseFundsModal();
                 StateHasChanged();
-                await HideModal("fundsModal");
             }
+        }
+
+        // Вспомогательные классы для формы заказа
+        public class OrderForm
+        {
+            public string CustomerLogin { get; set; } = "";
+            public List<PositionOrder> Positions { get; set; } = new();
+        }
+
+        public class PositionOrder
+        {
+            public uint ProductId { get; set; }
+            public uint Quantity { get; set; }
         }
     }
 }

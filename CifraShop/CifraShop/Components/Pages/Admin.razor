@@ -4,7 +4,7 @@
 @inject IProductService ProductService
 @inject IOrderService OrderService
 @inject IStudentService StudentService
-@inject IJSRuntime JS
+@rendermode InteractiveServer
 
 <PageTitle>Admin</PageTitle>
 
@@ -33,7 +33,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <div class="small text-secondary">Товаров (типов)</div>
-                        <div class="fs-2 fw-semibold">@_allProduts</div>
+                        <div class="fs-2 fw-semibold">@AllProductsCount</div>
                     </div>
                     <div class="bg-primary bg-opacity-10 rounded-3 p-3">
                         <i class="fas fa-box fs-2 text-primary"></i>
@@ -47,13 +47,13 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <div class="small text-secondary">Заказы</div>
-                        <div class="fs-2 fw-semibold">@_quantityOrders</div>
+                        <div class="fs-2 fw-semibold">@OrdersCount</div>
                         <div class="d-flex align-items-center gap-1 mt-1">
                             <span class="small text-secondary">за</span>
-                            <select class="form-select form-select-sm w-auto" @onchange="ChangePeriodOrder">
+                            <select class="form-select form-select-sm w-auto" @onchange="e => _selectedPeriodOrders = e.Value?.ToString()">
                                 @foreach (var период in _periods)
                                 {
-                                    <option value="@период.value" selected="@(период.value == _selectedPeriodOrders)">
+                                    <option value="@период.value" selected="@(_selectedPeriodOrders == период.value)">
                                         @период.textInRussian
                                     </option>
                                 }
@@ -72,7 +72,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <div class="small text-secondary">Пользователи</div>
-                        <div class="fs-2 fw-semibold">@_allUsers</div>
+                        <div class="fs-2 fw-semibold">@AllUsersCount</div>
                     </div>
                     <div class="bg-primary bg-opacity-10 rounded-3 p-3">
                         <i class="fas fa-users fs-2 text-primary"></i>
@@ -131,7 +131,7 @@
                         <table class="table table-sm align-middle small">
                             <thead class="table-light">
                                 <tr>
-                                    <th><input type="checkbox" class="form-check-input" @bind="SelectAllProducts" /></th>
+                                    <th><input type="checkbox" class="form-check-input" @bind="_selectAllProducts" @bind:event="onchange" /></th>
                                     <th>Фото</th>
                                     <th>Название / Описание</th>
                                     <th>Цена</th>
@@ -141,7 +141,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var product in _productThePage)
+                                @foreach (var product in ProductsOnPage)
                                 {
                                     bool isVisible = product.Status == StatusProduct.InStock;
                                     <tr class="@(isVisible ? "" : "bg-light opacity-50")">
@@ -186,18 +186,18 @@
                     <nav class="d-flex justify-content-end">
                         <ul class="pagination pagination-sm">
                             <li class="page-item @(_indexPageProduct == 0 ? "disabled" : "")">
-                                <a class="page-link" href="#" @onclick="() => GoToTheProductPage(_indexPageProduct - 1)">
+                                <a class="page-link" href="#" @onclick="() => GoToProductPage(_indexPageProduct - 1)">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             </li>
-                            @for (ulong i = 0; i < _totalProductsPages; i++)
+                            @for (int i = 0; i < TotalProductsPages; i++)
                             {
                                 <li class="page-item @(i == _indexPageProduct ? "active" : "")">
-                                    <a class="page-link" href="#" @onclick="() => GoToTheProductPage(i)">@(i + 1)</a>
+                                    <a class="page-link" href="#" @onclick="() => GoToProductPage(i)">@(i + 1)</a>
                                 </li>
                             }
-                            <li class="page-item @(_indexPageProduct == _totalProductsPages - 1 ? "disabled" : "")">
-                                <a class="page-link" href="#" @onclick="() => GoToTheProductPage(_indexPageProduct + 1)">
+                            <li class="page-item @(_indexPageProduct == TotalProductsPages - 1 ? "disabled" : "")">
+                                <a class="page-link" href="#" @onclick="() => GoToProductPage(_indexPageProduct + 1)">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
@@ -259,7 +259,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var order in _orderThePage)
+                                @foreach (var order in OrdersOnPage)
                                 {
                                     var состав = string.Join(", ", order.OrderItems.Select(oi => $"{oi.Quantity}×{_allProductsList.FirstOrDefault(т => т.Id == oi.ProductId)?.Name ?? "?"}"));
                                     <tr>
@@ -289,18 +289,18 @@
                     <nav class="d-flex justify-content-end">
                         <ul class="pagination pagination-sm">
                             <li class="page-item @(_indexPageOrder == 0 ? "disabled" : "")">
-                                <a class="page-link" href="#" @onclick="() => GoToTheOrderPage(_indexPageOrder - 1)">
+                                <a class="page-link" href="#" @onclick="() => GoToOrderPage(_indexPageOrder - 1)">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             </li>
-                            @for (ulong i = 0; i < _totalPagesOrders; i++)
+                            @for (int i = 0; i < TotalOrdersPages; i++)
                             {
                                 <li class="page-item @(i == _indexPageOrder ? "active" : "")">
-                                    <a class="page-link" href="#" @onclick="() => GoToTheOrderPage(i)">@(i + 1)</a>
+                                    <a class="page-link" href="#" @onclick="() => GoToOrderPage(i)">@(i + 1)</a>
                                 </li>
                             }
-                            <li class="page-item @(_indexPageOrder == _totalPagesOrders - 1 ? "disabled" : "")">
-                                <a class="page-link" href="#" @onclick="() => GoToTheOrderPage(_indexPageOrder + 1)">
+                            <li class="page-item @(_indexPageOrder == TotalOrdersPages - 1 ? "disabled" : "")">
+                                <a class="page-link" href="#" @onclick="() => GoToOrderPage(_indexPageOrder + 1)">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
@@ -354,7 +354,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var user in _usersThePage)
+                                @foreach (var user in UsersOnPage)
                                 {
                                     <tr>
                                         <td>
@@ -378,18 +378,18 @@
                     <nav class="d-flex justify-content-end">
                         <ul class="pagination pagination-sm">
                             <li class="page-item @(_indexPageUsers == 0 ? "disabled" : "")">
-                                <a class="page-link" href="#" @onclick="() => GoToTheUserPage(_indexPageUsers - 1)">
+                                <a class="page-link" href="#" @onclick="() => GoToUserPage(_indexPageUsers - 1)">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             </li>
-                            @for (ulong i = 0; i < _totalPagesUsers; i++)
+                            @for (int i = 0; i < TotalUsersPages; i++)
                             {
                                 <li class="page-item @(i == _indexPageUsers ? "active" : "")">
-                                    <a class="page-link" href="#" @onclick="() => GoToTheUserPage(i)">@(i + 1)</a>
+                                    <a class="page-link" href="#" @onclick="() => GoToUserPage(i)">@(i + 1)</a>
                                 </li>
                             }
-                            <li class="page-item @(_indexPageUsers == _totalPagesUsers - 1 ? "disabled" : "")">
-                                <a class="page-link" href="#" @onclick="() => GoToTheUserPage(_indexPageUsers + 1)">
+                            <li class="page-item @(_indexPageUsers == TotalUsersPages - 1 ? "disabled" : "")">
+                                <a class="page-link" href="#" @onclick="() => GoToUserPage(_indexPageUsers + 1)">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
@@ -428,129 +428,139 @@
 
                 </div>
 
-                <!-- ======================== МОДАЛЬНЫЕ ОКНА ======================== -->
+                <!-- ======================== МОДАЛЬНЫЕ ОКНА (Blazor, без JS) ======================== -->
                 <!-- Модалка товара -->
-                <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content rounded-3">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title">@(_editableProductId == 0 ? "Добавить товар" : "Редактировать товар")</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label small">Название</label>
-                                    <input type="text" class="form-control" @bind="_formProduct.Name" />
+                @if (_showProductModal)
+                {
+                    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CloseProductModal">
+                        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+                            <div class="modal-content rounded-3">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title">@(_editableProductId == 0 ? "Добавить товар" : "Редактировать товар")</h5>
+                                    <button type="button" class="btn-close" aria-label="Закрыть" @onclick="CloseProductModal"></button>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label small">Описание</label>
-                                    <input type="text" class="form-control" @bind="_formProduct.Description" />
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label small">Название</label>
+                                        <input type="text" class="form-control" @bind="_formProduct.Name" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small">Описание</label>
+                                        <input type="text" class="form-control" @bind="_formProduct.Description" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small">Цена</label>
+                                        <input type="number" class="form-control" @bind="_formProduct.Price" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small">Количество на складе</label>
+                                        <input type="number" class="form-control" @bind="_formProduct.Quantity" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small">Статус</label>
+                                        <select class="form-select" @bind="_formProduct.Status">
+                                            @foreach (var status in Enum.GetValues(typeof(StatusProduct)).Cast<StatusProduct>())
+                                            {
+                                                <option value="@status">@status</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small">Фото (заглушка)</label>
+                                        <input type="file" class="form-control" disabled />
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label small">Цена</label>
-                                    <input type="number" class="form-control" @bind="_formProduct.Price" />
+                                <div class="modal-footer border-0">
+                                    <button type="button" class="btn btn-secondary" @onclick="CloseProductModal">Отмена</button>
+                                    <button type="button" class="btn btn-primary" @onclick="SaveProduct">Сохранить</button>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label small">Количество на складе</label>
-                                    <input type="number" class="form-control" @bind="_formProduct.Quantity" />
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small">Статус</label>
-                                    <select class="form-select" @bind="_formProduct.Status">
-                                        @foreach (var status in Enum.GetValues(typeof(StatusProduct)).Cast<StatusProduct>())
-                                        {
-                                            <option value="@status">@status</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small">Фото (заглушка)</label>
-                                    <input type="file" class="form-control" disabled />
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                <button type="button" class="btn btn-primary" @onclick="SaveProduct">Сохранить</button>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
 
                 <!-- Модалка заказа -->
-                <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content rounded-3">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title">@(_editableOrderId == 0 ? "Создать заказ" : "Редактировать заказ")</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label small">Логин покупателя</label>
-                                    <input type="text" class="form-control" @bind="_formOrder.CustomerLogin" />
+                @if (_showOrderModal)
+                {
+                    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CloseOrderModal">
+                        <div class="modal-dialog modal-dialog-centered modal-lg" @onclick:stopPropagation="true">
+                            <div class="modal-content rounded-3">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title">@(_editableOrderId == 0 ? "Создать заказ" : "Редактировать заказ")</h5>
+                                    <button type="button" class="btn-close" aria-label="Закрыть" @onclick="CloseOrderModal"></button>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label small">Товары</label>
-                                    @for (int i = 0; i < _formOrder.Positions.Count; i++)
-                                    {
-                                        <div class="d-flex gap-2 mb-2">
-                                            <select class="form-select" @bind="_formOrder.Positions[i].ProductId">
-                                                <option value="0">Выберите товар</option>
-                                                @foreach (var product in _allProductsList)
-                                                {
-                                                    <option value="@product.Id">@product.Name</option>
-                                                }
-                                            </select>
-                                            <input type="number" class="form-control" style="width:100px;" placeholder="Кол-во" @bind="_formOrder.Positions[i].Quantity" />
-                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteOrderItem(i)"><i class="fas fa-times"></i></button>
-                                        </div>
-                                    }
-                                    <button class="btn btn-outline-primary btn-sm" @onclick="AddOrderItem"><i class="fas fa-plus me-1"></i>Добавить позицию</button>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label small">Логин покупателя</label>
+                                        <input type="text" class="form-control" @bind="_formOrder.CustomerLogin" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small">Товары</label>
+                                        @for (int i = 0; i < _formOrder.Positions.Count; i++)
+                                        {
+                                            var index = i;
+                                            <div class="d-flex gap-2 mb-2">
+                                                <select class="form-select" @bind="_formOrder.Positions[index].ProductId">
+                                                    <option value="0">Выберите товар</option>
+                                                    @foreach (var product in _allProductsList)
+                                                    {
+                                                        <option value="@product.Id">@product.Name</option>
+                                                    }
+                                                </select>
+                                                <input type="number" class="form-control" style="width:100px;" placeholder="Кол-во" @bind="_formOrder.Positions[index].Quantity" />
+                                                <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteOrderItem(index)"><i class="fas fa-times"></i></button>
+                                            </div>
+                                        }
+                                        <button class="btn btn-outline-primary btn-sm" @onclick="AddOrderItem"><i class="fas fa-plus me-1"></i>Добавить позицию</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="modal-footer border-0">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                <button type="button" class="btn btn-primary" @onclick="SaveOrder">Сохранить</button>
+                                <div class="modal-footer border-0">
+                                    <button type="button" class="btn btn-secondary" @onclick="CloseOrderModal">Отмена</button>
+                                    <button type="button" class="btn btn-primary" @onclick="SaveOrder">Сохранить</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
 
                 <!-- Модалка начисления средств -->
-                <div class="modal fade" id="fundsModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content rounded-3">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title">Начислить средства</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label small">Поиск пользователя</label>
-                                    <input list="usersDatalist" class="form-control"
-                                           @bind="_userSezrchForAccrual" @bind:event="oninput"
-                                           @onchange="SelectedInSearchUser"
-                                           placeholder="Введите логин" />
-                                    <datalist id="usersDatalist">
-                                        @foreach (var user in _allUsersList)
-                                        {
-                                            <option value="@user.LoginName"></option>
-                                        }
-                                    </datalist>
-                                    <button class="btn btn-outline-secondary btn-sm mt-2" @onclick="SelectedInSearchUser">Выбрать</button>
+                @if (_showFundsModal)
+                {
+                    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CloseFundsModal">
+                        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+                            <div class="modal-content rounded-3">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title">Начислить средства</h5>
+                                    <button type="button" class="btn-close" aria-label="Закрыть" @onclick="CloseFundsModal"></button>
                                 </div>
-                                @if (_selectedUserForAccrual != null)
-                                {
-                                    <div class="alert alert-info py-2 small">Выбран: @_selectedUserForAccrual.LoginName</div>
-                                }
-                                <input type="number" class="form-control mb-3" placeholder="Сумма" @bind="_sumAccrual" />
-                                <input type="text" class="form-control" placeholder="Комментарий" @bind="_commentAccrual" />
-                            </div>
-                            <div class="modal-footer border-0">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                <button type="button" class="btn btn-primary" @onclick="AddFunds">Начислить</button>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label small">Поиск пользователя</label>
+                                        <input list="usersDatalist" class="form-control"
+                                               @bind="_userSearchForAccrual" @bind:event="oninput"
+                                               @onchange="SelectedInSearchUser"
+                                               placeholder="Введите логин" />
+                                        <datalist id="usersDatalist">
+                                            @foreach (var user in _allUsersList)
+                                            {
+                                                <option value="@user.LoginName"></option>
+                                            }
+                                        </datalist>
+                                        <button class="btn btn-outline-secondary btn-sm mt-2" @onclick="SelectedInSearchUser">Выбрать</button>
+                                    </div>
+                                    @if (_selectedUserForAccrual != null)
+                                    {
+                                        <div class="alert alert-info py-2 small">Выбран: @_selectedUserForAccrual.LoginName</div>
+                                    }
+                                    <input type="number" class="form-control mb-3" placeholder="Сумма" @bind="_sumAccrual" />
+                                    <input type="text" class="form-control" placeholder="Комментарий" @bind="_commentAccrual" />
+                                </div>
+                                <div class="modal-footer border-0">
+                                    <button type="button" class="btn btn-secondary" @onclick="CloseFundsModal">Отмена</button>
+                                    <button type="button" class="btn btn-primary" @onclick="AddFunds">Начислить</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
