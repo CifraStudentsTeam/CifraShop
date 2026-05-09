@@ -5,10 +5,11 @@ namespace CifraShop.Components.Services
 {
     public class ProductService : IProductService
     {
-        private readonly ApplicationContext _context = new ApplicationContext();
+        private readonly ApplicationContext _context;
 
         public ProductService(ApplicationContext context)
            => _context = context;
+
         public async Task<List<Product>> UploadingProductData()
             => await _context.Product.ToListAsync();
 

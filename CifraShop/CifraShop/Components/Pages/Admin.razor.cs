@@ -2,6 +2,7 @@ using CifraShop.Components.Models;
 using CifraShop.Components.Services;
 using Microsoft.AspNetCore.Components;
 
+
 namespace CifraShop.Components.Pages
 {
     public partial class Admin
@@ -12,9 +13,9 @@ namespace CifraShop.Components.Pages
         private List<Student> _allUsersList = new();
 
         // Флаги загрузки
-        private bool _loadingProducts = true;
-        private bool _loadingOrders = true;
-        private bool _loadingUsers = true;
+        private bool _loadingProducts;
+        private bool _loadingOrders;
+        private bool _loadingUsers;
 
         // Фильтры и пагинация товаров
         private string _searchProduct = "";
