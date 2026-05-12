@@ -1,9 +1,13 @@
-﻿using System.ComponentModel;
+﻿using CifraShopLiblary.Data.DataForModels;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.CompilerServices;
+using System.Text;
 
-namespace CifraShop.Components.Models
+namespace CifraShopLiblary.Models
 {
     public class Product : INotifyPropertyChanged
     {
@@ -13,13 +17,8 @@ namespace CifraShop.Components.Models
         private uint _quantity;
         private StatusProduct _status;
         private string _thePathToTheImage;
-
-        [Key]
-        [Column("Id")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public uint Id { get; set; }
 
-        [Column("Name")]
         public string Name
         {
             get => _name;
@@ -33,7 +32,6 @@ namespace CifraShop.Components.Models
             }
         }
 
-        [Column("Description")]
         public string Description
         {
             get => _description;
@@ -47,7 +45,6 @@ namespace CifraShop.Components.Models
             }
         }
 
-        [Column("Price")]
         public uint Price
         {
             get => _price;
@@ -61,7 +58,6 @@ namespace CifraShop.Components.Models
             }
         }
 
-        [Column("Quantity")]
         public uint Quantity
         {
             get => _quantity;
@@ -75,7 +71,6 @@ namespace CifraShop.Components.Models
             }
         }
 
-        [Column("Status")]
         public StatusProduct Status
         {
             get => _status;
@@ -89,7 +84,6 @@ namespace CifraShop.Components.Models
             }
         }
 
-        [Column("ThePathToTheImage")]
         public string ThePathToTheImage
         {
             get => _thePathToTheImage;
@@ -103,11 +97,8 @@ namespace CifraShop.Components.Models
             }
         }
 
-        // для UI
-        [NotMapped]
         public bool IsSelected { get; set; }
 
-        // Навигационное свойство для связи с OrderItem
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -116,12 +107,5 @@ namespace CifraShop.Components.Models
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-    }
-
-    public enum StatusProduct
-    {
-        InStock,
-        OutOfStock,
-        OnSaleSoon
     }
 }

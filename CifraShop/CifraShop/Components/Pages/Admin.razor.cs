@@ -1,5 +1,6 @@
-using CifraShop.Components.Models;
-using CifraShop.Components.Services;
+
+using CifraShopLiblary.Data.DataForModels;
+using CifraShopLiblary.Models;
 using Microsoft.AspNetCore.Components;
 
 

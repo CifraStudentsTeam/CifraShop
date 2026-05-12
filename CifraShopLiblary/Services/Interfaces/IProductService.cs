@@ -1,6 +1,10 @@
-﻿using CifraShop.Components.Models;
+﻿using CifraShopLiblary.Data.DataForModels;
+using CifraShopLiblary.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace CifraShop.Components.Services
+namespace CifraShopLiblary.Services.Interfaces
 {
     public interface IProductService
     {

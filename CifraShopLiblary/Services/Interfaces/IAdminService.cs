@@ -1,6 +1,9 @@
-﻿using CifraShop.Components.Models;
+﻿using CifraShopLiblary.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace CifraShop.Components.Services
+namespace CifraShopLiblary.Services.Interfaces
 {
     public interface IAdminService
     {
@@ -10,5 +13,6 @@ namespace CifraShop.Components.Services
         public Task<Admin> GetAdminByEmail(string email);
         public Task<Admin> GetAdminById(int id);
         public Task DeleteAdmin(Admin admin);
+        public Task<Admin> UpdateAdmin(Admin admin);
     }
 }

@@ -1,6 +1,9 @@
-﻿using CifraShop.Components.Models;
+﻿using CifraShopLiblary.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace CifraShop.Components.Services
+namespace CifraShopLiblary.Services.Interfaces
 {
     public interface IStudentService
     {
@@ -11,7 +14,6 @@ namespace CifraShop.Components.Services
         public Task<Student> GetStudentById(int id);
         public Task<List<Student>> GetStudentByDateOfBirth(DateTime dateOfBirth);
         public Task DeleteStudent(Student student);
-
         public Task UpdateStudentBalance(Student student, uint newBalance);
     }
 }

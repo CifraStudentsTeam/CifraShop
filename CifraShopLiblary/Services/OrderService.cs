@@ -1,7 +1,13 @@
-﻿using CifraShop.Components.Models;
+﻿using CifraShopLiblary.Data.DataForModels;
+using CifraShopLiblary.DataBase.Context;
+using CifraShopLiblary.Models;
+using CifraShopLiblary.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace CifraShop.Components.Services
+namespace CifraShopLiblary.Services
 {
     public class OrderService : IOrderService
     {

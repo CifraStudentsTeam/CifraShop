@@ -1,8 +1,11 @@
 using CifraShop.Client.Pages;
 using CifraShop.Components;
-using CifraShop.Components.Services;
+
 using Microsoft.EntityFrameworkCore;
 using CifraShop.Client.Services;
+using CifraShopLiblary.Services.Interfaces;
+using CifraShopLiblary.Services;
+using CifraShopLiblary.DataBase.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 

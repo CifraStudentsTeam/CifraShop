@@ -1,11 +1,16 @@
-﻿using CifraShop.Components.Models;
+﻿using CifraShopLiblary.DataBase.Context;
+using CifraShopLiblary.Models;
+using CifraShopLiblary.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace CifraShop.Components.Services
+namespace CifraShopLiblary.Services
 {
     public class AdminService : IAdminService
     {
-        private readonly ApplicationContext _context = new ApplicationContext();
+        private readonly ApplicationContext _context;
 
         public AdminService(ApplicationContext context)
             => _context = context;
@@ -40,6 +45,11 @@ namespace CifraShop.Components.Services
         {
             _context.Admins.Remove(admin);
             await _context.SaveChangesAsync();
+        }
+
+        public Task<Admin> UpdateAdmin(Admin admin)
+        {
+            throw new NotImplementedException();
         }
     }
 }
