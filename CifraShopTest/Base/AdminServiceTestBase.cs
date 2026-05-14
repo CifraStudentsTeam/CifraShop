@@ -7,19 +7,17 @@ using System.Text;
 
 namespace CifraShopTest.Base
 {
-    public abstract class StudentServiceTestBase : IDisposable
+    public  class AdminServiceTestBase : IDisposable
     {
         protected readonly ApplicationContext _context;
-        protected readonly StudentService _service;
-
-        protected StudentServiceTestBase()
-        {
+        protected readonly AdminService _service;
+        public AdminServiceTestBase(ApplicationContext _context, AdminService _service) {
             var options = new DbContextOptionsBuilder<ApplicationContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
             _context = new ApplicationContext(options);
-            _service = new StudentService(_context);
+            _service = new AdminService(_context);
         }
 
         public void Dispose()

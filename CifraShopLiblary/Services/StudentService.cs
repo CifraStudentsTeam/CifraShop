@@ -23,7 +23,7 @@ namespace CifraShopLiblary.Services
         public async Task<List<Student>> GetStudentByDateOfBirth(DateTime dateOfBirth)
             => await _context.Students.Where(x => x.DateOfBirth == dateOfBirth).ToListAsync();
 
-        public async Task<Student> GetStudentById(int id)
+        public async Task<Student> GetStudentById(uint id)
             => await _context.Students.SingleOrDefaultAsync(x => x.Id == id);
 
         public async Task<Student> GetStudentByLoginName(string loginName)

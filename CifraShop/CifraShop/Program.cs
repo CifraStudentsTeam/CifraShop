@@ -18,8 +18,8 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddDbContext<ApplicationContext>(options =>
-    options.UseSqlite("Data source=CifraChop.db"));
+//builder.Services.AddDbContext<ApplicationContext>(options =>
+//    options.UseSqlite("Data source=CifraChop.db"));
 
 builder.Services.AddScoped<UserState>();
 
