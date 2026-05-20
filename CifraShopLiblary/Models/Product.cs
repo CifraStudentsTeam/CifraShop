@@ -32,7 +32,7 @@ namespace CifraShopLiblary.Models
             }
         }
 
-        public string Description
+        public string  Description
         {
             get => _description;
             set

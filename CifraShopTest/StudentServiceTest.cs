@@ -7,7 +7,7 @@ using System.Text;
 
 namespace CifraShopTest
 {
-    public class StudentServiceTests : StudentServiceTestBase
+    public class StudentServiceTest : StudentServiceTestBase
     {
         [Fact]
         public async Task StudentRegister_ValidData_ReturnStudent()

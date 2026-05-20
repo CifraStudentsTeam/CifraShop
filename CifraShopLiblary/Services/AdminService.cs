@@ -21,7 +21,7 @@ namespace CifraShopLiblary.Services
         public async Task<Admin> GetAdminByEmail(string email)
            => await _context.Admins.SingleOrDefaultAsync(x => x.EMail == email);
 
-        public async Task<Admin> GetAdminById(int id)
+        public async Task<Admin> GetAdminById(uint id)
            => await _context.Admins.SingleOrDefaultAsync(x => x.Id == id);
 
 
@@ -45,11 +45,6 @@ namespace CifraShopLiblary.Services
         {
             _context.Admins.Remove(admin);
             await _context.SaveChangesAsync();
-        }
-
-        public Task<Admin> UpdateAdmin(Admin admin)
-        {
-            throw new NotImplementedException();
         }
     }
 }

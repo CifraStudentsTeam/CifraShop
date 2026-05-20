@@ -79,8 +79,6 @@ namespace CifraShopLiblary.Services
             await _context.SaveChangesAsync();
         }
 
-
-
         public async Task DeleteProduct(Product product)
         {
             _context.Products.Remove(product);

@@ -1,11 +1,11 @@
 using CifraShop.Client.Pages;
-using CifraShop.Components;
-
-using Microsoft.EntityFrameworkCore;
 using CifraShop.Client.Services;
-using CifraShopLiblary.Services.Interfaces;
-using CifraShopLiblary.Services;
+using CifraShop.Components;
 using CifraShopLiblary.DataBase.Context;
+using CifraShopLiblary.Services;
+using CifraShopLiblary.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +22,6 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 //    options.UseSqlite("Data source=CifraChop.db"));
 
 builder.Services.AddScoped<UserState>();
-
 
 var app = builder.Build();
 
