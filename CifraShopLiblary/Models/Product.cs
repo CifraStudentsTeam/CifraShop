@@ -84,7 +84,7 @@ namespace CifraShopLiblary.Models
             }
         }
 
-        public string ThePathToTheImage
+        public string? ThePathToTheImage
         {
             get => _thePathToTheImage;
             set
