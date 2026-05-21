@@ -1,9 +1,9 @@
 using CifraShop.Client.Pages;
 using CifraShop.Client.Services;
 using CifraShop.Components;
-using CifraShopLiblary.DataBase.Context;
-using CifraShopLiblary.Services;
-using CifraShopLiblary.Services.Interfaces;
+using CifraShop.Data.AppDbContext;
+using CIfraShop.Services.Implementations;
+using CIfraShop.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 

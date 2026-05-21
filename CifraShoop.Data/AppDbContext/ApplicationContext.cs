@@ -1,6 +1,7 @@
 ﻿
 using CifraShop.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using CifraShop.Data.Additionally;
 using System;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
