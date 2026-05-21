@@ -1,13 +1,13 @@
-﻿using CifraShopLiblary.Data.DataForModels;
-using CifraShopLiblary.DataBase.Context;
-using CifraShopLiblary.Models;
-using CifraShopLiblary.Services.Interfaces;
+﻿using CifraShop.Domain.Models;
+using CifraShop.Data.AppDbContext;
+using CifraShop.Domain.Enums;
+using CIfraShop.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CifraShopLiblary.Services
+namespace CIfraShop.Services.Implementations
 {
     public class OrderService : IOrderService
     {

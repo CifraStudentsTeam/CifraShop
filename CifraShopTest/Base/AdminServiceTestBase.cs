@@ -1,5 +1,5 @@
-﻿using CifraShopLiblary.DataBase.Context;
-using CifraShopLiblary.Services;
+﻿using CifraShop.Data.AppDbContext;
+using CIfraShop.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

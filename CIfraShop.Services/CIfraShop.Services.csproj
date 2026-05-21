@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CifraShoop.Data\CifraShop.Data.csproj" />
-    <ProjectReference Include="..\CifraShop.Domain\CifraShop.Domain.csproj" />
+	  <ProjectReference Include="..\CifraShoop.Data\CifraShop.Data.csproj" />
+	  <ProjectReference Include="..\CifraShop.Domain\CifraShop.Domain.csproj" />
   </ItemGroup>
 
 </Project>
