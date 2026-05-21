@@ -1,6 +1,7 @@
 
-using CifraShopLiblary.Data.DataForModels;
-using CifraShopLiblary.Models;
+using CifraShop.Domain.Enums;
+using CifraShop.Domain.Models;
+using CIfraShop.Services.Interfaces;
 using Microsoft.AspNetCore.Components;
 
 
