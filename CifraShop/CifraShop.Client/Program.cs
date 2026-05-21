@@ -1,6 +1,5 @@
 using CifraShop.Client;
 using CifraShop.Client.Services;
-using CifraShop.Domain.Models;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
