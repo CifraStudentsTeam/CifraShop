@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CifraShopLiblary.Data.DataForModels
+namespace CifraShop.Domain.Enums
 {
     public enum StatusProduct
     {

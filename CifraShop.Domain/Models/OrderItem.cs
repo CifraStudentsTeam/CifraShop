@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace CifraShopLiblary.Models
+namespace CifraShop.Domain.Models
 {
     public class OrderItem
     {

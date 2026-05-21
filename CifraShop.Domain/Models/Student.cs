@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CifraShopLiblary.Models
+namespace CifraShop.Domain.Models
 {
     public class Student
     {

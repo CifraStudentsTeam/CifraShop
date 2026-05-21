@@ -1,13 +1,13 @@
-﻿using CifraShopLiblary.Models;
+﻿
+using CifraShop.Domain.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Reflection.Emit;
 using System.Text;
 
-namespace CifraShopLiblary.DataBase.Context
+namespace CifraShop.Data.AppDbContext
 {
     public class ApplicationContext : DbContext
     {

@@ -17,10 +17,6 @@
     <PackageReference Include="NSwag.Generation.AspNetCore" Version="14.7.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.5" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\CifraShopLiblary\CifraShopLiblary.csproj" />
-  </ItemGroup>
 	<!-- Обходной путь для ошибки NETSDK1082 -->
 	<Target Name="AllowUsingAspNetCoreInBlazorWasm" AfterTargets="ProcessFrameworkReferences">
 		<ItemGroup>

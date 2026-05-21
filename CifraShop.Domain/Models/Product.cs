@@ -1,4 +1,5 @@
-﻿using CifraShopLiblary.Data.DataForModels;
+﻿
+using CifraShop.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace CifraShopLiblary.Models
+namespace CifraShop.Domain.Models
 {
     public class Product : INotifyPropertyChanged
     {

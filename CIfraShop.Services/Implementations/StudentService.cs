@@ -1,12 +1,13 @@
-﻿using CifraShopLiblary.DataBase.Context;
-using CifraShopLiblary.Models;
-using CifraShopLiblary.Services.Interfaces;
+﻿
+using CifraShop.Data.AppDbContext;
+using CifraShop.Domain.Models;
+using CIfraShop.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CifraShopLiblary.Services
+namespace CIfraShop.Services.Implementations
 {
     public class StudentService : IStudentService
     {
