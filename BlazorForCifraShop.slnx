@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="CifraShoop.Data/CifraShop.Data.csproj" Id="aceb3475-59fd-4f89-8af7-1d3e32c3b6c2" />
+  <Project Path="CifraShop.Contracts/CifraShop.Contracts.csproj" Id="6c3e9ef5-3490-49de-95b9-cd774887dd7e" />
   <Project Path="CifraShop.Domain/CifraShop.Domain.csproj" Id="647c5074-1677-427e-b38e-e3f7b9908140" />
   <Project Path="CIfraShop.Services/CIfraShop.Services.csproj" Id="b17db6ba-dfc2-41f4-bc5b-4570eed11580" />
   <Project Path="CifraShop/CifraShop.Client/CifraShop.Client.csproj" Id="a60ef50d-d19d-4c41-8d43-7b0dd5e638b8" />

@@ -1,11 +1,13 @@
-using CifraShop.Client.Pages;
+﻿using CifraShop.Client.Pages;
 using CifraShop.Client.Services;
 using CifraShop.Components;
+using CifraShop.Data.Additionally;
 using CifraShop.Data.AppDbContext;
 using CIfraShop.Services.Implementations;
 using CIfraShop.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,11 +21,17 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddDbContext<ApplicationContext>(options =>
-    options.UseSqlServer("Data source=CifraChop.db"));
+          options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<UserState>();
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+    dbContext.Database.Migrate(); // создаёт БД и применяет миграции
+    DbSeeder.Seed(dbContext);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
