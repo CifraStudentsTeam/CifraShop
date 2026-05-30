@@ -1,6 +1,7 @@
 ﻿using CifraShop.Client.Pages;
 using CifraShop.Client.Services;
 using CifraShop.Components;
+using CifraShop.Components.Controllers;
 using CifraShop.Data.Additionally;
 using CifraShop.Data.AppDbContext;
 using CIfraShop.Services.Implementations;
@@ -22,8 +23,14 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddDbContext<ApplicationContext>(options =>
           options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddScoped<UserState>();
+// В файле Program.cs
+
+
+// Регистрация контроллеров как сервисов
+builder.Services.AddControllersWithViews()
+       .AddControllersAsServices();
+
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
@@ -48,7 +55,7 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
-
+app.MapControllers();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()

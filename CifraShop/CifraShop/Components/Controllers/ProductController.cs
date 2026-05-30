@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.Components.Controllers
 {
-    [Route("api/[controller")]
+    [Route("api/[controller]")]
     [ApiController]
     public class ProductController : ControllerBase
     {
@@ -20,10 +20,10 @@ namespace CifraShop.Components.Controllers
             return Ok(products);
         }
 
-        [HttpGet("{id:uint}")]
-        public async Task<ActionResult<Product>> GetProductById(uint id)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Product>> GetProductById(int id)
         {
-            var product = await _productService.GetProductsById(id);
+            var product = await _productService.GetProductsById((uint)id);
             if (product == null)
                 return NotFound($"Product with id {id} not found.");
             return Ok(product);
@@ -36,10 +36,10 @@ namespace CifraShop.Components.Controllers
             return Ok(products);
         }
 
-        [HttpGet("price/{price:uint}")]
-        public async Task<ActionResult<List<Product>>> GetProductsByPrice(uint price)
+        [HttpGet("price/{price:int}")]
+        public async Task<ActionResult<List<Product>>> GetProductsByPrice(int price)
         {
-            var products = await _productService.GetProductsByPrice(price);
+            var products = await _productService.GetProductsByPrice((uint)price);
             return Ok(products);
         }
 

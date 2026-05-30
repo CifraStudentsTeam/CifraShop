@@ -8,7 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Components\Tests\**" />
+    <Content Remove="Components\Tests\**" />
+    <EmbeddedResource Remove="Components\Tests\**" />
+    <None Remove="Components\Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CifraShop.Contracts\CifraShop.Contracts.csproj" />
     <ProjectReference Include="..\..\CifraShop.Domain\CifraShop.Domain.csproj" />
+    <ProjectReference Include="..\..\CifraShop.Dto\CifraShop.Dto.csproj" />
     <ProjectReference Include="..\CifraShop.Client\CifraShop.Client.csproj" />
 	  <ProjectReference Include="..\..\CIfraShop.Services\CIfraShop.Services.csproj" />
 	  <ProjectReference Include="..\..\CifraShoop.Data\CifraShop.Data.csproj" />
@@ -30,10 +39,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Components\Tests\" />
   </ItemGroup>
 
 </Project>
