@@ -7,7 +7,7 @@ namespace CifraShop.Dto
 {
     public class CreateOrderRequest
     {
-        public StatusOrder Status { get; set; }
+        public string Status { get; set; }
         public uint Sum { get; set; }
         public string CustomerLogin { get; set; }
     }

@@ -16,7 +16,7 @@ namespace CifraShop.Dto.Mappers
                 Sum = order.Sum,
                 CustomerLogin = order.CustomerLogin,
                 DateOfPurchase = order.DateOfPurchase,
-                OrderItems = order.OrderItems?.Select(i => OrderItemMapper.ToResponce(i)).ToList() ?? new List<OrderItemResponce>()
+                OrderItems = order.OrderItems?.Select(i => OrderItemMapper.ToResponse(i)).ToList() ?? new List<OrderItemResponce>()
             };
         }
     }

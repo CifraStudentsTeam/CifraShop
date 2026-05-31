@@ -7,6 +7,6 @@ namespace CifraShop.Dto
 {
     public class ChangeOrderStatusRequest
     {
-        public StatusOrder NewStatus {  get; set; }
+        public string NewStatus {  get; set; }
     }
 }

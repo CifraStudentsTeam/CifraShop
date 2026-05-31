@@ -7,7 +7,7 @@ namespace CifraShop.Dto.Mappers
 {
     public static class OrderItemMapper
     {
-        public static OrderItemResponce ToResponce(OrderItem orderItem)
+        public static OrderItemResponce ToResponse(OrderItem orderItem)
         {
             return new OrderItemResponce
             {
