@@ -8,6 +8,7 @@ using System.Net.NetworkInformation;
 using System.Reflection.Emit;
 using System.Text;
 using Microsoft.EntityFrameworkCore.Storage;
+using CifraShop.Data.Configuration;
 
 namespace CifraShop.Data.AppDbContext
 {
@@ -49,6 +50,11 @@ namespace CifraShop.Data.AppDbContext
         //}
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            //modelBuilder.ApplyConfiguration(new AdminConfiguration());
+            //modelBuilder.ApplyConfiguration(new OrderConfiguration());
+            //modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
+            //modelBuilder.ApplyConfiguration(new ProductConfiguration());
+            //modelBuilder.ApplyConfiguration(new StudentConfiguration());
             modelBuilder.Entity<Admin>(entity =>
                 entity.Property(a => a.Id).UseIdentityColumn(seed: 0, increment: 1));
 
@@ -62,14 +68,14 @@ namespace CifraShop.Data.AppDbContext
                 entity.Property(o => o.Id).UseIdentityColumn(seed: 0, increment: 1));
 
             modelBuilder.Entity<OrderItem>(entity =>
-                entity.Property(oi => oi.Id).UseIdentityColumn(seed: 0, increment: 1));
+            //    entity.Property(oi => oi.Id).UseIdentityColumn(seed: 0, increment: 1));
 
             // Здесь же можно настроить связи, если они не определены атрибутами
             // Например:
             modelBuilder.Entity<OrderItem>()
                 .HasOne(oi => oi.Order)
                 .WithMany(o => o.OrderItems)
-                .HasForeignKey(oi => oi.OrderId);
+                .HasForeignKey(oi => oi.OrderId));
 
             modelBuilder.Entity<OrderItem>()
                 .HasOne(oi => oi.Product)
