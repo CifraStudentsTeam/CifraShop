@@ -1,4 +1,8 @@
 <Solution>
-  <Project Path="BlazorForCifraShop.Client/BlazorForCifraShop.Client.csproj" />
-  <Project Path="BlazorForCifraShop/BlazorForCifraShop.csproj" />
+  <Project Path="CifraShoop.Data/CifraShop.Data.csproj" Id="aceb3475-59fd-4f89-8af7-1d3e32c3b6c2" />
+  <Project Path="CifraShop.Domain/CifraShop.Domain.csproj" Id="647c5074-1677-427e-b38e-e3f7b9908140" />
+  <Project Path="CifraShop.Dto/CifraShop.Dto.csproj" Id="a3dd19d5-acb6-4ca5-932f-732233ed0c67" />
+  <Project Path="CIfraShop.Services/CIfraShop.Services.csproj" Id="b17db6ba-dfc2-41f4-bc5b-4570eed11580" />
+  <Project Path="CifraShop/CifraShop.Client/CifraShop.Client.csproj" Id="a60ef50d-d19d-4c41-8d43-7b0dd5e638b8" />
+  <Project Path="CifraShop/CifraShop/CifraShop.csproj" Id="30f1ef37-c7fd-43ba-87d9-3129a0b7c0f0" />
 </Solution>

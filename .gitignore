@@ -88,11 +88,8 @@ StyleCopReport.xml
 *.pgc
 *.pgd
 *.rsp
-<<<<<<< HEAD
 # but not Directory.Build.rsp, as it configures directory-level build defaults
 !Directory.Build.rsp
-=======
->>>>>>> b002bf4 (initial commit)
 *.sbr
 *.tlb
 *.tli
@@ -427,13 +424,6 @@ autom4te.cache/
 tarballs/
 test-results/
 
-<<<<<<< HEAD
-=======
-# Mac bundle stuff
-*.dmg
-*.app
-
->>>>>>> b002bf4 (initial commit)
 # content below from: https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
 # General
 .DS_Store
