@@ -1,93 +1,100 @@
 ﻿@page "/profile"
+@rendermode InteractiveWebAssembly
 @using CifraShop.Client.Services
+@using CifraShop.Dto
 @inject UserState UserState
 @inject NavigationManager Navigation
+@inject ApiService Api
 
 @if (!UserState.IsLoggedIn)
 {
-    Navigation.NavigateTo("/login", forceLoad: true);
+    Navigation.NavigateTo("/login");
     return;
 }
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<h2>Личный кабинет</h2>
 
-<style>
-    .profile-container {
-        background: linear-gradient(145deg, #f6f9fc 0%, #e6f0f5 100%);
-        min-height: 100vh;
-        padding: 2rem 0;
-    }
-    .profile-card {
-        background: white;
-        border-radius: 1.5rem;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        padding: 2rem;
-        margin-bottom: 2rem;
-    }
-    .balance-card {
-        background: #1a3b5d;
-        color: white;
-        border-radius: 1rem;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    .btn-topup {
-        background: #ffc107;
-        color: #1a3b5d;
-        border: none;
-        border-radius: 2rem;
-        font-weight: bold;
-        padding: 0.5rem 1rem;
-    }
-    .btn-topup:hover {
-        background: #e0a800;
-    }
-</style>
+<div class="card mb-4">
+    <div class="card-body">
+        <p><strong>Логин:</strong> @UserState.UserName</p>
+        <p><strong>ID студента:</strong> @UserState.StudentId</p>
 
-<div class="profile-container">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="profile-card">
-                    <h2 class="mb-4" style="color:#1a3b5d;">Личный кабинет</h2>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Имя:</strong> @UserState.UserName</p>
-                            <p><strong>Email:</strong> @UserState.Email</p>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="balance-card">
-                                <h5>Баланс Цифракоинов</h5>
-                                <p class="h2">🪙 @UserState.Balance</p>
-                                <button class="btn btn-topup mt-2" @onclick="TopUp">+ Пополнить на 500</button>
-                            </div>
-                        </div>
-                    </div>
-                    <hr />
-                    <div class="mt-3">
-                        <button class="btn btn-outline-danger" @onclick="Logout">Выйти из аккаунта</button>
-                    </div>
-                </div>
+        <h5>Баланс Цифракоинов</h5>
+        <p class="fs-3">🪙 @UserState.Balance</p>
 
-                <!-- Дополнительная информация: как зарабатывать монеты -->
-                <div class="profile-card">
-                    <h5>Как зарабатывать Цифракоины?</h5>
-                    <ul>
-                        <li>Выполняй домашние задания вовремя – +50 монет</li>
-                        <li>Отличные оценки на экзаменах – +200 монет</li>
-                        <li>Помогай другим студентам – +30 монет</li>
-                        <li>Участвуй в хакатонах – до 1000 монет</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        <button class="btn btn-success" @onclick="TopUp" disabled="@isTopUpLoading">
+            @(isTopUpLoading ? "Загрузка..." : "+ Пополнить на 500")
+        </button>
     </div>
 </div>
 
+<h4>Мои заказы</h4>
+@if (orders == null)
+{
+    <p>Загрузка заказов...</p>
+}
+else if (orders.Count == 0)
+{
+    <p>У вас пока нет заказов.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Сумма</th>
+                <th>Дата</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in orders)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>🪙 @order.Sum</td>
+                    <td>@order.DateOfPurchase.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td>@order.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<hr />
+
+<h5>Как зарабатывать Цифракоины?</h5>
+<ul>
+    <li>Выполняй домашние задания вовремя – +50 монет</li>
+    <li>Отличные оценки на экзаменах – +200 монет</li>
+    <li>Помогай другим студентам – +30 монет</li>
+    <li>Участвуй в хакатонах – до 1000 монет</li>
+</ul>
+
+<button class="btn btn-danger mt-3" @onclick="Logout">Выйти из аккаунта</button>
+
 @code {
-    private void TopUp()
+    private List<OrderResponce>? orders;
+    private bool isTopUpLoading = false;
+
+    protected override async Task OnInitializedAsync()
     {
-        UserState.Balance += 500;
+        if (UserState.IsLoggedIn && UserState.UserName != null)
+        {
+            orders = await Api.GetOrdersByLogin(UserState.UserName);
+        }
+    }
+
+    private async Task TopUp()
+    {
+        isTopUpLoading = true;
+        StateHasChanged();
+
+        await UserState.TopUpBalance(500);
+
+        isTopUpLoading = false;
+        StateHasChanged();
     }
 
     private void Logout()

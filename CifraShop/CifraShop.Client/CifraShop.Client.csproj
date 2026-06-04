@@ -23,7 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\CifraShoop.Data\CifraShop.Data.csproj" />
     <ProjectReference Include="..\..\CifraShop.Domain\CifraShop.Domain.csproj" />
+    <ProjectReference Include="..\..\CifraShop.Dto\CifraShop.Dto.csproj" />
   </ItemGroup>
 	<!-- Обходной путь для ошибки NETSDK1082 -->
 	<Target Name="AllowUsingAspNetCoreInBlazorWasm" AfterTargets="ProcessFrameworkReferences">

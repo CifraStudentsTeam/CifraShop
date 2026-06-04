@@ -3,187 +3,111 @@
 @using CifraShop.Client.Services
 @inject UserState UserState
 @inject NavigationManager Navigation
+@inject ApiService Api
 
-<style>
-    .auth-container {
-        min-height: 100vh;
-        background: linear-gradient(145deg, #f0f5fa 0%, #d9e4ed 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-    }
+<h1>Академия «Цифра»</h1>
 
-    .auth-card {
-        max-width: 450px;
-        width: 100%;
-        background: white;
-        border-radius: 2rem;
-        box-shadow: 0 20px 40px rgba(0,20,40,0.2);
-        padding: 2.5rem;
-    }
-
-    .auth-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #1a3b5d;
-        margin-bottom: 1.5rem;
-        text-align: center;
-    }
-
-    .nav-pills .nav-link.active {
-        background-color: #1a3b5d;
-        color: white;
-    }
-
-    .nav-pills .nav-link {
-        color: #1a3b5d;
-        font-weight: 600;
-        border-radius: 2rem;
-        padding: 0.6rem 1.5rem;
-        cursor: pointer;
-    }
-
-    .btn-auth {
-        background: #1a3b5d;
-        border: none;
-        border-radius: 3rem;
-        padding: 0.8rem 1.5rem;
-        font-weight: 600;
-        font-size: 1.2rem;
-        width: 100%;
-        transition: 0.2s;
-    }
-
-        .btn-auth:hover {
-            background: #0f2a44;
-            transform: translateY(-2px);
-        }
-
-    .footer-note {
-        text-align: center;
-        margin-top: 2rem;
-        font-size: 0.9rem;
-        color: #5a6f7d;
-        border-top: 1px dashed #bacddc;
-        padding-top: 1.5rem;
-    }
-</style>
-
-<div class="auth-container">
-    <div class="auth-card">
-        <h1 class="auth-title">Академия «Цифра»</h1>
-        
-        <!-- Табы с простыми методами -->
-
-        @if (CurrentTab == "login")
-        {
-            <div>
-                <div class="mb-3">
-                    <label class="form-label">Логин</label>
-                    <input type="email" class="form-control" @bind="loginEmail" />
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Пароль</label>
-                    <input type="password" class="form-control" @bind="loginPassword" />
-                </div>
-                <button class="btn btn-auth text-white" @onclick="HandleLogin">Войти</button>
-                @if (!string.IsNullOrEmpty(errorMessage))
-                {
-                    <p>@errorMessage</p>
-        
-                }
-                <div class="mt-3 text-center">
-                    <a href="#" class="text-secondary" @onclick:preventDefault>Забыли пароль?</a>
-                </div>
-            </div>
-        }
-@*         else
-        {
-            <div>
-                <div class="mb-3">
-                    <label class="form-label">Имя и фамилия</label>
-                    <input type="text" class="form-control" @bind="registerName" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Электронная почта</label>
-                    <input type="email" class="form-control" @bind="registerEmail" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Пароль</label>
-                    <input type="password" class="form-control" @bind="registerPassword" />
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Подтвердите пароль</label>
-                    <input type="password" class="form-control" @bind="registerConfirmPassword" />
-                </div>
-                <button class="btn btn-auth text-white" @onclick="HandleRegister">Зарегистрироваться</button>
-            </div>
-        } *@
-
-        <div class="footer-note">
-            ✨ Создано студентами Академии «Цифра» — честно, своими руками ✨
-        </div>
-    </div>
+<div class="tabs mb-3">
+    <button class="@GetLoginButtonClass()" @onclick="SetLoginTab">Вход</button>
+    <button class="@GetRegisterButtonClass()" @onclick="SetRegisterTab">Регистрация</button>
 </div>
+
+@if (CurrentTab == "login")
+{
+    <div class="form-group mb-2">
+        <label>Логин</label>
+        <input @bind="loginLogin" class="form-control" placeholder="Введите логин" />
+    </div>
+    <div class="form-group mb-2">
+        <label>Пароль</label>
+        <input @bind="loginPassword" type="password" class="form-control" placeholder="Введите пароль" />
+    </div>
+    <button class="btn btn-primary" @onclick="HandleLogin" disabled="@isLoading">
+        @(isLoading ? "Загрузка..." : "Войти")
+    </button>
+}
+else
+{
+    <div class="form-group mb-2">
+        <label>Логин</label>
+        <input @bind="registerLogin" class="form-control" placeholder="Придумайте логин" />
+    </div>
+    <div class="form-group mb-2">
+        <label>Дата рождения</label>
+        <input @bind="registerDateOfBirth" type="date" class="form-control" />
+    </div>
+    <div class="form-group mb-2">
+        <label>Пароль</label>
+        <input @bind="registerPassword" type="password" class="form-control" placeholder="Придумайте пароль" />
+    </div>
+    <div class="form-group mb-2">
+        <label>Подтвердите пароль</label>
+        <input @bind="registerConfirmPassword" type="password" class="form-control" />
+    </div>
+    <button class="btn btn-success" @onclick="HandleRegister" disabled="@isLoading">
+        @(isLoading ? "Загрузка..." : "Зарегистрироваться")
+    </button>
+}
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-        <div class="toast show align-items-center text-white bg-danger border-0">
-            <div class="d-flex">
-                <div class="toast-body">@errorMessage</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" @onclick="() => errorMessage = null"></button>
-            </div>
-        </div>
-    </div>
+    <div class="alert alert-danger mt-3">@errorMessage</div>
 }
+
+<p class="mt-4 text-muted">✨ Создано студентами Академии «Цифра» — честно, своими руками ✨</p>
 
 @code {
     private string CurrentTab = "login";
-    private string loginEmail = "";
+    private bool isLoading = false;
+
+    private string loginLogin = "";
     private string loginPassword = "";
-    private string registerName = "";
-    private string registerEmail = "";
+
+    private string registerLogin = "";
     private string registerPassword = "";
     private string registerConfirmPassword = "";
-    private string errorMessage;
+    private DateTime registerDateOfBirth = new DateTime(2000, 1, 1);
+
+    private string? errorMessage;
 
     private string GetLoginButtonClass()
-    {
-        return CurrentTab == "login" ? "btn btn-outline-primary active" : "btn btn-outline-secondary";
-    }
+        => CurrentTab == "login" ? "btn btn-outline-primary active" : "btn btn-outline-secondary";
 
     private string GetRegisterButtonClass()
-    {
-        return CurrentTab == "register" ? "btn btn-outline-primary active" : "btn btn-outline-secondary";
-    }
+        => CurrentTab == "register" ? "btn btn-outline-primary active" : "btn btn-outline-secondary";
 
-    private void SetLoginTab()
-    {
-        CurrentTab = "login";
-    }
+    private void SetLoginTab() { CurrentTab = "login"; errorMessage = null; }
+    private void SetRegisterTab() { CurrentTab = "register"; errorMessage = null; }
 
-    private void SetRegisterTab()
+    private async Task HandleLogin()
     {
-        CurrentTab = "register";
-    }
-
-    private void HandleLogin()
-    {
-        if (string.IsNullOrWhiteSpace(loginEmail) || string.IsNullOrWhiteSpace(loginPassword))
+        errorMessage = null;
+        if (string.IsNullOrWhiteSpace(loginLogin) || string.IsNullOrWhiteSpace(loginPassword))
         {
             errorMessage = "Заполните все поля!";
             return;
         }
-        UserState.Login(loginEmail.Split('@')[0], loginEmail);
-        Navigation.NavigateTo("/profile");
+
+        isLoading = true;
+        StateHasChanged();
+
+        var success = await UserState.Login(loginLogin, loginPassword);
+        isLoading = false;
+
+        if (success)
+        {
+            Navigation.NavigateTo("/profile");
+        }
+        else
+        {
+            errorMessage = "Неверный логин или пароль!";
+        }
     }
 
-    private void HandleRegister()
+    private async Task HandleRegister()
     {
-        if (string.IsNullOrWhiteSpace(registerName) ||
-            string.IsNullOrWhiteSpace(registerEmail) ||
+        errorMessage = null;
+        if (string.IsNullOrWhiteSpace(registerLogin) ||
             string.IsNullOrWhiteSpace(registerPassword))
         {
             errorMessage = "Заполните все поля!";
@@ -194,7 +118,20 @@
             errorMessage = "Пароли не совпадают!";
             return;
         }
-        UserState.Login(registerName, registerEmail);
-        Navigation.NavigateTo("/profile");
+
+        isLoading = true;
+        StateHasChanged();
+
+        var success = await UserState.Register(registerLogin, registerPassword, registerDateOfBirth);
+        isLoading = false;
+
+        if (success)
+        {
+            Navigation.NavigateTo("/profile");
+        }
+        else
+        {
+            errorMessage = "Ошибка регистрации. Возможно, логин уже занят.";
+        }
     }
 }

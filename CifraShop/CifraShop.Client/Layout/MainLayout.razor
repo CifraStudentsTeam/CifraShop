@@ -3,34 +3,45 @@
 @inject UserState UserState
 @inject NavigationManager Navigation
 
-<main>
-    <div class="top-row px-4 d-flex justify-content-between align-items-center">
-        <div>
-            <a href="/" class="navbar-brand fw-bold" style="color:#1a3b5d;">Академия Цифра</a>
-            <a href="/" class="btn btn-sm btn-outline-primary ms-3">Магазин</a>
+<div class="page">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+        <a class="navbar-brand" href="/">🎓 Академия Цифра — Магазин</a>
+
+        <div class="navbar-nav ms-auto">
+            @if (UserState.IsLoggedIn)
+            {
+                <span class="navbar-text me-3">
+                    Привет, <strong>@UserState.UserName</strong>! 🪙 @UserState.Balance
+                </span>
+                <a class="nav-link" href="/profile">Профиль</a>
+                <button class="btn btn-outline-light btn-sm ms-2" @onclick="Logout">Выйти</button>
+            }
+            else
+            {
+                <a class="nav-link" href="/login">Войти</a>
+            }
         </div>
-        @if (UserState.IsLoggedIn)
-        {
-            <div>
-                <span>Привет, @UserState.UserName!</span>
-                <a href="/profile" class="ms-2">Профиль</a>
-                <a href="#" class="ms-2" @onclick:preventDefault @onclick="Logout">Выйти</a>
-            </div>
-        }
-        else
-        {
-            <a href="/login" class="btn btn-outline-secondary">Войти</a>
-        }
-    </div>
-    <article class="content px-4">
+    </nav>
+
+    <main class="container mt-4">
         @Body
-    </article>
-</main>
+    </main>
+</div>
 
 @code {
+    protected override void OnInitialized()
+    {
+        UserState.OnChange += StateHasChanged;
+    }
+
     private void Logout()
     {
         UserState.Logout();
         Navigation.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        UserState.OnChange -= StateHasChanged;
     }
 }

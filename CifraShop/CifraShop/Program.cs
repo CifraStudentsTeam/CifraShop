@@ -9,14 +9,17 @@ using CIfraShop.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using System;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+// 2. Регистрируем наш ApiService (ОБЯЗАТЕЛЬНО!)
+builder.Services.AddScoped<ApiService>();
 
+// 3. Регистрируем UserState (зависит от ApiService)
+builder.Services.AddScoped<UserState>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
@@ -31,7 +34,6 @@ builder.Services.AddScoped<UserState>();
 // Регистрация контроллеров как сервисов
 builder.Services.AddControllersWithViews()
        .AddControllersAsServices();
-
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
