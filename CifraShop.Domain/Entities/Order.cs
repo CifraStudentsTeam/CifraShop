@@ -9,7 +9,7 @@ namespace CifraShop.Domain.Entities
     {
         public int Id { get; set; }
         public StatusOrder Status { get; set; }
-        public uint Sum { get; set; }
+        public short Sum { get; set; }
         public DateTime DateOfPurchase { get; set; }
         public string CustomerLogin { get; set; }
         public int CustomerId { get; set; }

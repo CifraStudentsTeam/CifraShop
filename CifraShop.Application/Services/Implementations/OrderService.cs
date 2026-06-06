@@ -9,24 +9,23 @@ namespace CifraShop.Application.Services.Implementations
         private readonly IApiService _apiService;
         private const string _baseUri = "api/orders";
 
+        //конструктор
         public OrderService(IApiService apiService)
             => _apiService = apiService;
 
-        #region Создание заказа
+        //создание заказа
         public async Task<Order> CreateOrderAsync(string studentLogin, List<OrderItem> items)
         {
             var request = new { StudentLogin = studentLogin, Items = items };
             return await _apiService.PostAsync<Order>(_baseUri, request);
         }
-        #endregion
-
-        #region Чтение данных
+    
+        // получение заказов студента
         public async Task<List<Order>> GetOrdersForStudentAsync(string studentLogin)
             => await _apiService.GetAsync<List<Order>>($"{_baseUri}/student/{studentLogin}");
 
         public async Task<Order> GetOrderByIdAsync(int id)
             => await _apiService.GetAsync<Order>($"{_baseUri}/ {id}");
-        #endregion
 
         //обновление статуса заказа
         public async Task UpdateOrderStatusAsync(int orderId, StatusOrder newStatus)
@@ -35,7 +34,7 @@ namespace CifraShop.Application.Services.Implementations
             await _apiService.PutAsync($"{_baseUri}/{orderId}/status", request);
         }
 
-        //от
+        //отмена заказа
         public async Task CancelOrderAsync(int orderId)
             => await _apiService.DeleteAsync($"{_baseUri}/{orderId}");
     }

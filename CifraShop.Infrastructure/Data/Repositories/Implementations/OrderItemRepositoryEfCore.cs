@@ -12,11 +12,12 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
     {
         private readonly ApplicationContext _context;
         
+        //Конструктр 
         public OrderItemRepositoryEfCore(ApplicationContext context)
             => _context = context;
 
-        #region Создание составляющей заказа
-        public async Task<OrderItem> CreateOrderItem(Order order, Product product, uint quantity, uint price)
+        //Создание составляющей заказа
+        public async Task<OrderItem> CreateOrderItem(Order order, Product product, short quantity, short price)
         {
             var orderItem = new OrderItem
             {
@@ -32,36 +33,43 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             await _context.SaveChangesAsync();
             return orderItem;
         }
-        #endregion
 
-        #region Чтение данных 
+        //Получение составляющей заказа по id заказа
         public async Task<List<OrderItem>> GetOrderItemsByOrderId(int orderId) 
             => await _context.OrderItems.Where(oi => oi.OrderId == orderId).ToListAsync();
 
+        //Получение соcтавляющей заказа
         public async Task<OrderItem> GetOrderItemById(int orderItemId)
             => await _context.OrderItems.SingleOrDefaultAsync(oi => oi.Id == orderItemId);
-        #endregion
 
-        #region Добавление составляющей заказа
-        public async Task AddOrderItem(OrderItem orderItem)
+        //Добавление составляющей заказа
+        public async Task AddOrderItem(OrderItem orderItemToAdd)
         {
-            await _context.OrderItems.AddAsync(orderItem);
+            await _context.OrderItems.AddAsync(orderItemToAdd);
             await _context.SaveChangesAsync();
         }
-        #endregion
-
-        #region Удаление или обновление составляющей заказа
-        public async Task RemoveOrderItem(OrderItem orderItem)
+        //Изминение количества состовляющей заказа
+        public async Task ChangeOrderItemQuantity(OrderItem orderToChange, short quantity)
         {
-            _context.OrderItems.Remove(orderItem);
+            orderToChange.Quantity = quantity;
+            _context.OrderItems.Update(orderToChange);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateOrderItem(OrderItem orderItem)
+        //Изминение цены товара
+        public async Task ChangeOrderItemPrice(OrderItem orderToChange, short price)
         {
-            _context.OrderItems.Update(orderItem);
+            orderToChange.Price = price;
+            _context.OrderItems.Update(orderToChange);
             await _context.SaveChangesAsync();
         }
-        #endregion
+
+        //удаление состовляющей заказа
+        public async Task RemoveOrderItem(OrderItem orderItemToRemove)
+        {
+            _context.OrderItems.Remove(orderItemToRemove);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

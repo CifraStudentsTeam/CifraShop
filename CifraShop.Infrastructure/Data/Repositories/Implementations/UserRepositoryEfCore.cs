@@ -13,10 +13,11 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
     {
         private readonly ApplicationContext _context;
 
+        //Конструктор
         public UserRepositoryEfCore(ApplicationContext context)
             => _context = context;
 
-        #region Создание пользователя
+        //Создание студента
         public async Task<User> CreateStudent(string email, string password)
         {
             var student = new User
@@ -32,7 +33,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             return student;
         }
 
-
+        //Создание админов
         public async Task<User> CreateAdmin(string email, string password)
         {
             var admin = new User
@@ -46,44 +47,64 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             await _context.SaveChangesAsync();
             return admin;
         }
-        #endregion
 
-        #region Чтенние данных из бд 
-
+        //Получение всех пользователей
         public async Task<List<User>> GetAllUsers()
             => await _context.Users.ToListAsync();
 
+        //Получение всех админов
         public async Task<List<User>> GetAllAdmins()
             => await _context.Users.Where(x => x.Role == UserRole.Admin).ToListAsync();
 
+        //Получение всех студентов
         public async Task<List<User>> GetAllStudents()
             => await _context.Users.Where(x => x.Role == UserRole.Student).ToListAsync();
 
+        //Получения пользователя по id
         public async Task<User> GetUserById(int id)
             => await _context.Users.SingleOrDefaultAsync(x => x.Id == id);
-
+        
+        //Получения пользователя по почте
         public async Task<User> GetUserByEmail(string email)
             => await _context.Users.SingleOrDefaultAsync(x => x.Email == email);
 
+        //Получения пользователя по почте и паролю
         public async Task<User> GetUserByEmailAndPassword(string email, string password)
             => await _context.Users.SingleOrDefaultAsync(x => x.Email == email && x.Password == password);
 
-        public async Task<List<User>> GetUsersByBalance(uint balance)
+        //Получения студентов по балансу
+        public async Task<List<User>> GetUsersByBalance(short balance)
             => await _context.Users.Where(x => x.Balance == balance).ToListAsync();
-        #endregion
 
-        #region Удалиние или обновление пользователя 
-        public async Task UpdateUser(User user)
+        //Изминение почты пользователя
+        public async Task ChangeUserEmail(User userToChange, string email)
         {
-            _context.Users.Update(user);
+            userToChange.Email = email;
+            _context.Users.Update(userToChange);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteUser(User user)
+        //Изминения пароля
+        public async Task ChangeUserPassword(User userToChange, string password)
         {
-            _context.Users.Remove(user);
+            userToChange.Password = password;
+            _context.Users.Update(userToChange);
             await _context.SaveChangesAsync();
         }
-        #endregion
+
+        //Изминения баланса
+        public async Task ChangeUserBalance(User userToChange, short balance)
+        {
+            userToChange.Balance = balance;
+            _context.Users.Update(userToChange);
+            await _context.SaveChangesAsync();
+        }
+
+        //Удаление пользователя
+        public async Task DeleteUser(User userToDelete)
+        {
+            _context.Users.Remove(userToDelete);
+            await _context.SaveChangesAsync();
+        }
     }
 }

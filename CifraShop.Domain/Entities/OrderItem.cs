@@ -11,7 +11,7 @@ namespace CifraShop.Domain.Entities
         public Order OrderInOrder { get; set; }
         public int ProductId { get; set; }
         public Product ProductInOrder { get; set; }
-        public uint Quantity { get; set; }
-        public uint Price { get; set; }
+        public short Quantity { get; set; }
+        public short Price { get; set; }
     }
 }
