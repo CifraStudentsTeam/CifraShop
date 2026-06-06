@@ -9,9 +9,9 @@ namespace CifraShop.Application.Services.Interfaces
     public interface IOrderService
     {
         Task<List<Order>> GetOrdersForStudentAsync(string studentLogin);
-        Task<Order> GetOrderByIdAsync(uint id);
+        Task<Order> GetOrderByIdAsync(int id);
         Task<Order> CreateOrderAsync(string studentLogin, List<OrderItem> items);
-        Task UpdateOrderStatusAsync(uint orderId, StatusOrder newStatus);
-        Task CancelOrderAsync(uint orderId);
+        Task UpdateOrderStatusAsync(int orderId, StatusOrder newStatus);
+        Task CancelOrderAsync(int orderId);
     }
 }

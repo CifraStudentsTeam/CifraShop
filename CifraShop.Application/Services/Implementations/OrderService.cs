@@ -21,25 +21,22 @@ namespace CifraShop.Application.Services.Implementations
         #endregion
 
         #region Чтение данных
-        public Task<List<Order>> GetOrdersForStudentAsync(string studentLogin)
-        {
-            throw new NotImplementedException();
-        }
+        public async Task<List<Order>> GetOrdersForStudentAsync(string studentLogin)
+            => await _apiService.GetAsync<List<Order>>($"{_baseUri}/student/{studentLogin}");
 
-        public Task<Order> GetOrderByIdAsync(uint id)
-        {
-            throw new NotImplementedException();
-        }
+        public async Task<Order> GetOrderByIdAsync(int id)
+            => await _apiService.GetAsync<Order>($"{_baseUri}/ {id}");
         #endregion
 
-        public Task UpdateOrderStatusAsync(uint orderId, StatusOrder newStatus)
+        //обновление статуса заказа
+        public async Task UpdateOrderStatusAsync(int orderId, StatusOrder newStatus)
         {
-            throw new NotImplementedException();
+            var request = new {OrderId  = orderId, Status = newStatus};
+            await _apiService.PutAsync($"{_baseUri}/{orderId}/status", request);
         }
 
-        public Task CancelOrderAsync(uint orderId)
-        {
-            throw new NotImplementedException();
-        }
+        //от
+        public async Task CancelOrderAsync(int orderId)
+            => await _apiService.DeleteAsync($"{_baseUri}/{orderId}");
     }
 }
