@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CifraShop.Domain\CifraShop.Domain.csproj" />
+    <ProjectReference Include="..\CifraShop.Infrastructure\CifraShop.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

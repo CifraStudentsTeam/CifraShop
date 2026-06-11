@@ -8,7 +8,7 @@ using System.Text;
 namespace CifraShop.Infrastructure.Data
 {
     public class ApplicationContext : DbContext
-    {
+    {  
         public DbSet<User> Users => Set<User>();
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();

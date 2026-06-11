@@ -6,6 +6,7 @@ namespace CifraShop.Domain.Enums
 {
     public enum StatusOrder
     {
+        Pending,
         AwaitingPayment,
         PaidFor,
         ManufacturedBy,
