@@ -10,64 +10,55 @@ namespace CifraShop.Application.Services.Implementations
 {
     public class OrderService : IOrderService
     {
-        private readonly IOrderRepository _orderRepository;
-        private readonly IOrderItemRepository _orderItemRepository;
-        private readonly IProductRepository _productRepository;
-        private readonly IUserRepository _userRepository;
+        private readonly IOrderRepository _repository;
 
-        //Конструктор
-        public OrderService(IOrderRepository orderRepository, IOrderItemRepository orderItemRepository, IProductRepository productRepository, IUserRepository userRepository)
-        {
-            _orderRepository = orderRepository;
-            _orderItemRepository = orderItemRepository;
-            _productRepository = productRepository;
-            _userRepository = userRepository;
-        }
-        public async Task<Order> CreateCardAsync(string customerLogin)
-            => await _orderRepository.CreateOrder(StatusOrder.Pending, 0, customerLogin);
+        //Констуктор
+        public OrderService(IOrderRepository repository)
+            => _repository = repository;
 
-        public async Task<Order?> GetOrderById(int id)
-            => await _orderRepository.GetOrderById(id);
-
+        //Получение всех заказов
         public async Task<List<Order>> GetAllOrder()
-            => await _orderRepository.UploadingOrderData();
+            => await _repository.UploadingOrderData();
 
-        public async Task<List<Order>> GetOrdersByLogin(string login)
-            => await _orderRepository.GetOrdersByLogin(login);
+        //Получение заказа по id
+        public async Task<Order> GetOrderById(int id)
+            => await _repository.GetOrderById(id);
 
-        public async Task<List<Order>> GetOrderByStatus(StatusOrder status)
-            => await _orderRepository.GetOrdersByStatus(status);
+        //Получние заказов по логину
+        public async Task<List<Order>> GetOrdersByCustomerLogin(string customerLogin)
+            => await _repository.GetOrdersByLogin(customerLogin);
 
+        //Получение заказа по статусу
+        public async Task<List<Order>> GetOrdersByStatus(StatusOrder status)
+            => await _repository.GetOrdersByStatus(status);
+
+        //Получение заказа по сумме        
         public async Task<List<Order>> GetOrdersBySum(short sum)
-            => await _orderRepository.GetOrdersBySum(sum);
-    
-        public Task ChangeCustomerLogin(Order order, string newLogin)
+            => await _repository.GetOrdersBySum(sum);
+
+        //Создание заказа
+        public async Task CreateOrder(short sum, User customer, List<OrderItem> orderItems)
         {
-            throw new NotImplementedException();
+            var Order = new Order
+            {
+                Status = StatusOrder.Pending,
+                Sum = sum,
+                DateOfPurchase = DateTime.Now,
+                CustomerLogin = customer.Email,
+                CustomerId = customer.Id,
+                Customer = customer,
+                OrderItems = orderItems
+            };
+            
+            await _repository.AddOrder(Order);
         }
 
-        public Task ChangeOrderStatus(Order order, StatusOrder newStatus)
-        {
-            throw new NotImplementedException();
-        }
+        //Обновление заказа
+        public Task UpdateOrder(Order orderToUpdate)
+            => _repository.UpdateOrder(orderToUpdate);
 
-
-        public Task DeleteOrder(Order order)
-        {
-            throw new NotImplementedException();
-        }
-
-
-
-
-        public Task<Order> RemoveOrderItem(int orderItemId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Order> AddProductToOrder(int orderId, int productId, short quantity)
-        {
-            throw new NotImplementedException();
-        }
+        //Удаление заказа
+        public async Task DeleteOrder(Order ordeToDelete)
+            => await _repository.DeleteOrder(ordeToDelete);
     }
 }

@@ -16,21 +16,6 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public OrderRepositoryEfCore(ApplicationContext context)
             => _context = context;
 
-        // Созддание заказа
-        public async Task<Order> CreateOrder(StatusOrder status, short sum, string login)
-
-        {
-            var order = new Order
-            {
-                Status = status,
-                Sum = sum,
-                CustomerLogin = login,
-                DateOfPurchase = DateTime.Now
-            };
-            await _context.Orders.AddAsync(order);
-            await _context.SaveChangesAsync();
-            return order;
-        }
 
         // Создание всех заказов
         public async Task<List<Order>> UploadingOrderData()
@@ -51,36 +36,26 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         //Получение заказов по сумме
         public async Task<List<Order>> GetOrdersBySum(short sum)
             => await _context.Orders.Include(o => o.OrderItems).Where(x => x.Sum == sum).ToListAsync();
-
-        //Изминение статуса заказа
-        public async Task ChangeOrderStatus(Order orderToChange, StatusOrder status)
+        
+        // Добавление заказа
+        public async Task AddOrder(Order orderToAdd)
         {
-            orderToChange.Status = status;
-            _context.Orders.Update(orderToChange);
+            await _context.Orders.AddAsync(orderToAdd);
             await _context.SaveChangesAsync();
-            
         }
         
+        //Обновление заказа
+        public async Task UpdateOrder(Order orderToUpdate)
+        {
+            _context.Orders.Update(orderToUpdate);
+            await _context.SaveChangesAsync();
+        }
+
+
         //Удаление заказа
         public async Task DeleteOrder(Order order)
         {
             _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
-        }
-
-        // изминение суммы заказа
-        public async Task ChangeOrderSum(Order orderToChange, short sum)
-        {
-            orderToChange.Sum = sum;
-            _context.Orders.Update(orderToChange);
-            await _context.SaveChangesAsync();
-        }
-
-        //изминение логина заказчика
-        public async Task ChangeCustomerLogin(Order orderToChange, string login)
-        {
-            orderToChange.CustomerLogin = login;
-            _context.Orders.Update(orderToChange);
             await _context.SaveChangesAsync();
         }
     }

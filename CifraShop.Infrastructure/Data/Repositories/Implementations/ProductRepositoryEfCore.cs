@@ -16,22 +16,6 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public ProductRepositoryEfCore(ApplicationContext context)
            => _context = context;
 
-        //Создание продукта
-        public async Task<Product> CreateProduct(string name, string description, uint price, uint quntity, StatusProduct statusProduct)
-        {
-            var product = new Product
-            {
-                Name = name,
-                Description = description,
-                Price = price,
-                Quantity = quntity,
-                Status = statusProduct
-            };
-
-            await _context.Products.AddAsync(product);
-            await _context.SaveChangesAsync();
-            return product;
-        }
 
         //Получение всех продуктов
         public async Task<List<Product>> UploadingProductData()
@@ -57,43 +41,27 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<Product> GetProductsById(int id)
             => await _context.Products.SingleOrDefaultAsync(x => x.Id == id);
 
-        //Изминение имени продукта
-        public async Task ChangeProductName(Product product, string name)
-        {
-            product.Name = name;
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync();
-        }
-
-        //Изминение цены продукта
-        public async Task ChangeProductPrice(Product product, uint price)
-        {
-            product.Price = price;
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync();
-        }
-
-        //Изминение количества продукта
-        public async Task ChangeProductQuntity(Product product, uint quntity)
-        {
-            product.Quantity = quntity;
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync();
-        }
-
-        //Изминение статуса продукта
-        public async Task ChangeProductStatus(Product product, StatusProduct statusProduct)
-        {
-            product.Status = statusProduct;
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync();
-        }
         
-        //Удаление продукта
-        public async Task DeleteProduct(Product product)
+        //Добавление продукта
+        public async Task AddPoduct(Product productToAdd)
         {
-            _context.Products.Remove(product);
+            await _context.Products.AddAsync(productToAdd);
             await _context.SaveChangesAsync();
         }
+
+        //Обновление продукта
+        public async Task UpdateProduct(Product productToUpdate)
+        {
+            _context.Products.Update(productToUpdate);
+            await _context.SaveChangesAsync();
+        }
+
+        //Удаление продукта
+        public async Task DeleteProduct(Product productToDelete)
+        {
+            _context.Products.Remove(productToDelete);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

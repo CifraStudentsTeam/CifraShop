@@ -16,24 +16,6 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public OrderItemRepositoryEfCore(ApplicationContext context)
             => _context = context;
 
-        //Создание составляющей заказа
-        public async Task<OrderItem> CreateOrderItem(Order order, Product product, short quantity, short price)
-        {
-            var orderItem = new OrderItem
-            {
-                OrderId = order.Id,
-                OrderInOrder = order,
-                ProductId = product.Id,
-                ProductInOrder = product,
-                Quantity = quantity,
-                Price = price
-            };
-
-            await _context.AddAsync(orderItem);
-            await _context.SaveChangesAsync();
-            return orderItem;
-        }
-
         //Получение составляющей заказа по id заказа
         public async Task<List<OrderItem>> GetOrderItemsByOrderId(int orderId) 
             => await _context.OrderItems.Where(oi => oi.OrderId == orderId).ToListAsync();
@@ -48,24 +30,16 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             await _context.OrderItems.AddAsync(orderItemToAdd);
             await _context.SaveChangesAsync();
         }
-        //Изминение количества состовляющей заказа
-        public async Task ChangeOrderItemQuantity(OrderItem orderToChange, short quantity)
+
+        //Обновление составляющей заказа 
+        public async Task UpdateOrderItem(OrderItem orderItemToUpdate)
         {
-            orderToChange.Quantity = quantity;
-            _context.OrderItems.Update(orderToChange);
+            _context.OrderItems.Update(orderItemToUpdate);
             await _context.SaveChangesAsync();
         }
 
-        //Изминение цены товара
-        public async Task ChangeOrderItemPrice(OrderItem orderToChange, short price)
-        {
-            orderToChange.Price = price;
-            _context.OrderItems.Update(orderToChange);
-            await _context.SaveChangesAsync();
-        }
-
-        //удаление состовляющей заказа
-        public async Task RemoveOrderItem(OrderItem orderItemToRemove)
+        //Удаление состовляющей заказа
+        public async Task DeleteOrderItem(OrderItem orderItemToRemove)
         {
             _context.OrderItems.Remove(orderItemToRemove);
             await _context.SaveChangesAsync();

@@ -4,18 +4,18 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
+namespace CifraShop.Application.Services.Interfaces
 {
-    public interface IProductRepository
+    public interface IProductService
     {
-        public Task<List<Product>> UploadingProductData();
+        public Task<List<Product>> GetAllProducts();
         public Task<Product> GetProductsById(int id);
         public Task<List<Product>> GetProductsByName(string name);
         public Task<List<Product>> GetProductsByPrice(uint price);
         public Task<List<Product>> GetProductsByQuntity(uint quntity);
         public Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct);
-        public Task AddPoduct(Product productToAdd);
+        public Task CreateProductData(string name, string description, short price, short quantity);
         public Task UpdateProduct(Product productToUpdate);
-        public Task DeleteProduct(Product productToDelete); 
+        public Task DeleteProduct(Product productToDelete);
     }
 }
