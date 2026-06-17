@@ -1,42 +1,65 @@
 ﻿using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
+using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace CifraShop.Application.Services.Implementations
 {
     public class OrderService : IOrderService
     {
-        private readonly IApiService _apiService;
-        private const string _baseUri = "api/orders";
+        private readonly IOrderRepository _repository;
 
-        public OrderService(IApiService apiService)
-            => _apiService = apiService;
+        //Констуктор
+        public OrderService(IOrderRepository repository)
+            => _repository = repository;
 
-        #region Создание заказа
-        public async Task<Order> CreateOrderAsync(string studentLogin, List<OrderItem> items)
+        //Получение всех заказов
+        public async Task<List<Order>> GetAllOrder()
+            => await _repository.UploadingOrderData();
+
+        //Получение заказа по id
+        public async Task<Order> GetOrderById(int id)
+            => await _repository.GetOrderById(id);
+
+        //Получние заказов по логину
+        public async Task<List<Order>> GetOrdersByCustomerLogin(string customerLogin)
+            => await _repository.GetOrdersByLogin(customerLogin);
+
+        //Получение заказа по статусу
+        public async Task<List<Order>> GetOrdersByStatus(StatusOrder status)
+            => await _repository.GetOrdersByStatus(status);
+
+        //Получение заказа по сумме        
+        public async Task<List<Order>> GetOrdersBySum(short sum)
+            => await _repository.GetOrdersBySum(sum);
+
+        //Создание заказа
+        public async Task<Order> CreateOrder(short sum, User customer, List<OrderItem> orderItems)
         {
-            var request = new { StudentLogin = studentLogin, Items = items };
-            return await _apiService.PostAsync<Order>(_baseUri, request);
-        }
-        #endregion
-
-        #region Чтение данных
-        public async Task<List<Order>> GetOrdersForStudentAsync(string studentLogin)
-            => await _apiService.GetAsync<List<Order>>($"{_baseUri}/student/{studentLogin}");
-
-        public async Task<Order> GetOrderByIdAsync(int id)
-            => await _apiService.GetAsync<Order>($"{_baseUri}/ {id}");
-        #endregion
-
-        //обновление статуса заказа
-        public async Task UpdateOrderStatusAsync(int orderId, StatusOrder newStatus)
-        {
-            var request = new {OrderId  = orderId, Status = newStatus};
-            await _apiService.PutAsync($"{_baseUri}/{orderId}/status", request);
+            var order = new Order
+            {
+                Status = StatusOrder.Pending,
+                Sum = sum,
+                DateOfPurchase = DateTime.Now,
+                CustomerLogin = customer.Email,
+                CustomerId = customer.Id,
+                Customer = customer,
+                OrderItems = orderItems
+            };
+            
+            await _repository.AddOrder(order);
+            return order;
         }
 
-        //от
-        public async Task CancelOrderAsync(int orderId)
-            => await _apiService.DeleteAsync($"{_baseUri}/{orderId}");
+        //Обновление заказа
+        public Task UpdateOrder(Order orderToUpdate)
+            => _repository.UpdateOrder(orderToUpdate);
+
+        //Удаление заказа
+        public async Task DeleteOrder(Order ordeToDelete)
+            => await _repository.DeleteOrder(ordeToDelete);
     }
 }

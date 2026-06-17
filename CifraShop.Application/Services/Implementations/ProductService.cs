@@ -1,39 +1,67 @@
 ﻿using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
+using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace CifraShop.Application.Services.Implementations
 {
     public class ProductService : IProductService
     {
-        private readonly IApiService _apiService;
-        private const string _baseUri = "api/products";
+        private readonly IProductRepository _repository;
 
-        public ProductService(IApiService apiService)
-            => _apiService = apiService;
+        //Конструктор
+        public ProductService(IProductRepository repository)
+            => _repository = repository;
 
-        #region Создание продукта
-        public async Task<Product> CreateProductAsync(Product product)
-            => await _apiService.PostAsync<Product>(_baseUri, product);
-        #endregion
+        //Получение всех заказов
+        public Task<List<Product>> GetAllProducts()
+            => _repository.UploadingProductData();
 
-        #region Получение данных
-        public async Task<List<Product>> GetAllProductsAsync()
-            => await _apiService.GetAsync<List<Product>>(_baseUri);
+        //Получение продукта по id
+        public Task<Product> GetProductsById(int id)
+            => _repository.GetProductsById(id);
+        
+        //Получение продуктов по имени
+        public Task<List<Product>> GetProductsByName(string name)
+            => _repository.GetProductsByName(name);
 
-        public async Task<Product> GetProductByIdAsync(int id)
-            => await _apiService.GetAsync<Product>($"{_baseUri}/{id}");
+        //Получение продукта по цене
+        public Task<List<Product>> GetProductsByPrice(short price)
+            => _repository.GetProductsByPrice(price);
 
-        public Task<List<Product>> GetProductsByStatusAsync(StatusProduct status)
-            => _apiService.GetAsync<List<Product>>($"{_baseUri}/status/{status}");
-        #endregion
+        //Получение продуктов по количеству
+        public Task<List<Product>> GetProductsByQuntity(short quntity)
+            => _repository.GetProductsByQuntity(quntity);
 
-        #region Обновление или удаление продукта
-        public async Task UpdateProductAsync(Product product)
-            => await _apiService.PutAsync($"{_baseUri}/{product.Id}", product);
+        //Получение продукта по статусу 
+        public Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct)
+            => _repository.GetProductsByStatus(statusProduct);
 
-        public async Task DeleteProductAsync(int id)
-            => await _apiService.DeleteAsync($"{_baseUri}/ {id}");
-        #endregion
-    }
+        //Создание продукта
+        public async Task<Product> CreateProductData(string name, string description, short price, short quantity)
+        {
+            var product = new Product
+            {
+                Name = name,
+                Description = description,
+                Price = price,
+                Quantity = quantity,
+                Status = StatusProduct.OnSaleSoon
+            };
+
+            await _repository.AddPoduct(product);
+            return product; 
+        }
+
+        //Обовление продукта
+        public Task UpdateProduct(Product productToUpdate)
+            => _repository.UpdateProduct(productToUpdate);
+
+        //Удаление продукта
+        public Task DeleteProduct(Product productToDelete)
+            => _repository.DeleteProduct(productToDelete);
+    }   
 }

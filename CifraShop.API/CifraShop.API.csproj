@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -20,7 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
+    <ProjectReference Include="..\CifraShop.Application\CifraShop.Application.csproj" />
+    <ProjectReference Include="..\CifraShop.Contracts\CifraShop.Contracts.csproj" />
+    <ProjectReference Include="..\CifraShop.Infrastructure\CifraShop.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Middleware\" />
   </ItemGroup>
 

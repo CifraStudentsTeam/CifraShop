@@ -8,11 +8,7 @@
 
   <ItemGroup>
     <Folder Include="Requests\Auth\" />
-    <Folder Include="Requests\Products\" />
-    <Folder Include="Requests\Orders\" />
     <Folder Include="Responses\Auth\" />
-    <Folder Include="Responses\Products\" />
-    <Folder Include="Responses\Orders\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +18,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.8" />
     <PackageReference Include="Solutaris.InfoWARE.ProtectedBrowserStorage" Version="1.0.2" />
     <PackageReference Include="System.Net.Http.Json" Version="10.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CifraShop.Domain\CifraShop.Domain.csproj" />
   </ItemGroup>
 
 </Project>

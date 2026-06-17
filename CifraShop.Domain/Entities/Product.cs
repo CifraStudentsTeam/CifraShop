@@ -11,8 +11,8 @@ namespace CifraShop.Domain.Entities
     {
         private string _name;
         private string _description;
-        private uint _price;
-        private uint _quantity;
+        private short _price;
+        private short _quantity;
         private StatusProduct _status;
         private string _thePathToTheImage;
         public int Id { get; set; }
@@ -43,7 +43,7 @@ namespace CifraShop.Domain.Entities
             }
         }
 
-        public uint Price
+        public short Price
         {
             get => _price;
             set
@@ -56,7 +56,7 @@ namespace CifraShop.Domain.Entities
             }
         }
 
-        public uint Quantity
+        public short Quantity
         {
             get => _quantity;
             set

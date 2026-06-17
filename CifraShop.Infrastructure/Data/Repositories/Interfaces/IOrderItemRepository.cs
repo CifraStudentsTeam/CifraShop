@@ -10,9 +10,8 @@ namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
     {
         public Task<List<OrderItem>> GetOrderItemsByOrderId(int orderId);
         public Task<OrderItem> GetOrderItemById(int orderItemId);
-        public Task<OrderItem> CreateOrderItem(Order order, Product product, uint quantity, uint price);
         public Task AddOrderItem(OrderItem orderItemToAdd);
-        public Task RemoveOrderItem(OrderItem orderItemToUpdate);
         public Task UpdateOrderItem(OrderItem orderItemToUpdate);
+        public Task DeleteOrderItem(OrderItem orderItemToDelete);
     }
 }
