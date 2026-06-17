@@ -11,7 +11,7 @@ builder.Services.AddCors(options =>
         policy =>
         {
             // Укажите точный URL, на котором работает ваш клиент (порт 5001)
-            policy.WithOrigins("https://localhost:5001")
+            policy.WithOrigins("https://localhost:5001", "http://localhost:5001")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
