@@ -515,21 +515,21 @@
     private IEnumerable<ProductDto> FilteredProducts =>
         Products
             .Where(p => string.IsNullOrEmpty(_productSearch) ||
-                p.Name.Contains(_productSearch, StringComparison.OrdinalIgnoreCase) ||
-                p.Description.Contains(_productSearch, StringComparison.OrdinalIgnoreCase))
+                (p.Name ?? "").Contains(_productSearch, StringComparison.OrdinalIgnoreCase) ||
+                (p.Description ?? "").Contains(_productSearch, StringComparison.OrdinalIgnoreCase))
             .Where(p => string.IsNullOrEmpty(_productFilter) || p.Status.ToString() == _productFilter);
 
     private IEnumerable<OrderDto> FilteredOrders =>
         Orders
             .Where(o => string.IsNullOrEmpty(_orderSearch) ||
                 o.Id.ToString().Contains(_orderSearch) ||
-                o.CustomerLogin.Contains(_orderSearch, StringComparison.OrdinalIgnoreCase))
+                (o.CustomerLogin ?? "").Contains(_orderSearch, StringComparison.OrdinalIgnoreCase))
             .Where(o => string.IsNullOrEmpty(_orderStatusFilter) || o.Status.ToString() == _orderStatusFilter);
 
     private IEnumerable<UserDto> FilteredUsers =>
         Users
             .Where(u => string.IsNullOrEmpty(_userSearch) ||
-                u.Email.Contains(_userSearch, StringComparison.OrdinalIgnoreCase))
+                (u.Email ?? "").Contains(_userSearch, StringComparison.OrdinalIgnoreCase))
             .Where(u => string.IsNullOrEmpty(_userRoleFilter) || u.Role.ToString() == _userRoleFilter);
 
     // ========== ПАГИНАЦИЯ ==========
