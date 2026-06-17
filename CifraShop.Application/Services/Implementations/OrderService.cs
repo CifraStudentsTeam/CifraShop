@@ -37,9 +37,9 @@ namespace CifraShop.Application.Services.Implementations
             => await _repository.GetOrdersBySum(sum);
 
         //Создание заказа
-        public async Task CreateOrder(short sum, User customer, List<OrderItem> orderItems)
+        public async Task<Order> CreateOrder(short sum, User customer, List<OrderItem> orderItems)
         {
-            var Order = new Order
+            var order = new Order
             {
                 Status = StatusOrder.Pending,
                 Sum = sum,
@@ -50,7 +50,8 @@ namespace CifraShop.Application.Services.Implementations
                 OrderItems = orderItems
             };
             
-            await _repository.AddOrder(Order);
+            await _repository.AddOrder(order);
+            return order;
         }
 
         //Обновление заказа

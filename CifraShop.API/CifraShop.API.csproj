@@ -20,13 +20,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Middleware\" />
+    <ProjectReference Include="..\CifraShop.Application\CifraShop.Application.csproj" />
+    <ProjectReference Include="..\CifraShop.Contracts\CifraShop.Contracts.csproj" />
+    <ProjectReference Include="..\CifraShop.Infrastructure\CifraShop.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CifraShop.Application\CifraShop.Application.csproj" />
-    <ProjectReference Include="..\CifraShop.Infrastructure\CifraShop.Infrastructure.csproj" />
+    <Folder Include="Middleware\" />
   </ItemGroup>
 
 </Project>

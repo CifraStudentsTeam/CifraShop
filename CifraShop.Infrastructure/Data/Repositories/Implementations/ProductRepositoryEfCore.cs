@@ -26,11 +26,11 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             => await _context.Products.Where(x => x.Name == name).ToListAsync();
         
         //Получение продуктов по цене
-        public async Task<List<Product>> GetProductsByPrice(uint price)
+        public async Task<List<Product>> GetProductsByPrice(short price)
             => await _context.Products.Where(x => x.Price == price).ToListAsync();
 
         //Получение продуктов по количеству
-        public async Task<List<Product>> GetProductsByQuntity(uint quntity)
+        public async Task<List<Product>> GetProductsByQuntity(short quntity)
             => await _context.Products.Where(x => x.Quantity == quntity).ToListAsync();
         
         //Получение продуктов по статусу
@@ -62,6 +62,5 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             _context.Products.Remove(productToDelete);
             await _context.SaveChangesAsync();
         }
-
     }
 }

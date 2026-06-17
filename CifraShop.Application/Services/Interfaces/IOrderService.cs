@@ -14,7 +14,7 @@ namespace CifraShop.Application.Services.Interfaces
         public Task<List<Order>> GetOrdersByStatus(StatusOrder status);
         public Task<List<Order>> GetOrdersBySum(short sum);
         public Task<List<Order>> GetOrdersByCustomerLogin(string customerLogin);
-        public Task CreateOrder(short sum, User customer, List<OrderItem> orderItems);
+        public Task<Order> CreateOrder(short sum, User customer, List<OrderItem> orderItems);
         public Task UpdateOrder(Order orderToUpdate);
         public Task DeleteOrder(Order orderToDelete);
     }

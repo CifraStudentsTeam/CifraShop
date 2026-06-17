@@ -11,8 +11,8 @@ namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
         public Task<List<Product>> UploadingProductData();
         public Task<Product> GetProductsById(int id);
         public Task<List<Product>> GetProductsByName(string name);
-        public Task<List<Product>> GetProductsByPrice(uint price);
-        public Task<List<Product>> GetProductsByQuntity(uint quntity);
+        public Task<List<Product>> GetProductsByPrice(short price);
+        public Task<List<Product>> GetProductsByQuntity(short quntity);
         public Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct);
         public Task AddPoduct(Product productToAdd);
         public Task UpdateProduct(Product productToUpdate);

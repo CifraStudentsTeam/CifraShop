@@ -38,7 +38,7 @@ namespace CifraShop.Application.Services.Implementations
             => _repository.GetUserByEmail(email);
 
         //Создание админа
-        public async Task CreateAdmin(string email, string password)
+        public async Task<User> CreateAdmin(string email, string password)
         {
             var admin = new User
             {
@@ -48,11 +48,12 @@ namespace CifraShop.Application.Services.Implementations
             };
 
             await _repository.AddUser(admin);
+            return admin;
         }
         
 
         //Создание студента
-        public async Task CreateStudent(string email, string password)
+        public async Task<User> CreateStudent(string email, string password)
         {
             var student = new User
             {
@@ -63,6 +64,7 @@ namespace CifraShop.Application.Services.Implementations
             };
 
             await _repository.AddUser(student);
+            return student;
         }
 
         //Обновление пользователя

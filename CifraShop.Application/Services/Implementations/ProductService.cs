@@ -29,11 +29,11 @@ namespace CifraShop.Application.Services.Implementations
             => _repository.GetProductsByName(name);
 
         //Получение продукта по цене
-        public Task<List<Product>> GetProductsByPrice(uint price)
+        public Task<List<Product>> GetProductsByPrice(short price)
             => _repository.GetProductsByPrice(price);
 
         //Получение продуктов по количеству
-        public Task<List<Product>> GetProductsByQuntity(uint quntity)
+        public Task<List<Product>> GetProductsByQuntity(short quntity)
             => _repository.GetProductsByQuntity(quntity);
 
         //Получение продукта по статусу 
@@ -41,9 +41,9 @@ namespace CifraShop.Application.Services.Implementations
             => _repository.GetProductsByStatus(statusProduct);
 
         //Создание продукта
-        public async Task CreateProductData(string name, string description, short price, short quantity)
+        public async Task<Product> CreateProductData(string name, string description, short price, short quantity)
         {
-            var Product = new Product
+            var product = new Product
             {
                 Name = name,
                 Description = description,
@@ -52,7 +52,8 @@ namespace CifraShop.Application.Services.Implementations
                 Status = StatusProduct.OnSaleSoon
             };
 
-            await _repository.AddPoduct(Product);
+            await _repository.AddPoduct(product);
+            return product; 
         }
 
         //Обовление продукта

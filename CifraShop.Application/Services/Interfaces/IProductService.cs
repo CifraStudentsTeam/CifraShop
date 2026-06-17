@@ -11,10 +11,10 @@ namespace CifraShop.Application.Services.Interfaces
         public Task<List<Product>> GetAllProducts();
         public Task<Product> GetProductsById(int id);
         public Task<List<Product>> GetProductsByName(string name);
-        public Task<List<Product>> GetProductsByPrice(uint price);
-        public Task<List<Product>> GetProductsByQuntity(uint quntity);
+        public Task<List<Product>> GetProductsByPrice(short price);
+        public Task<List<Product>> GetProductsByQuntity(short quntity);
         public Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct);
-        public Task CreateProductData(string name, string description, short price, short quantity);
+        public Task<Product> CreateProductData(string name, string description, short price, short quantity);
         public Task UpdateProduct(Product productToUpdate);
         public Task DeleteProduct(Product productToDelete);
     }
