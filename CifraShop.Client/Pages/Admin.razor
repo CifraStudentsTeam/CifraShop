@@ -81,16 +81,16 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:36px;">
+                                        <th style="width:2.25rem">
                                             <input type="checkbox" class="form-check-input"
                                                    checked="@IsAllSelected"
                                                    @onchange="ToggleSelectAll" />
                                         </th>
                                         <th style="cursor:pointer" @onclick='() => ToggleProductSort("name")'>Товар @_productSort.Icon("name")</th>
-                                        <th style="width:70px;cursor:pointer" @onclick='() => ToggleProductSort("price")'>Цена @_productSort.Icon("price")</th>
-                                        <th style="width:80px;cursor:pointer" @onclick='() => ToggleProductSort("quantity")'>Склад @_productSort.Icon("quantity")</th>
-                                        <th style="width:100px;cursor:pointer" @onclick='() => ToggleProductSort("status")'>Статус @_productSort.Icon("status")</th>
-                                        <th style="width:70px;"></th>
+                                        <th style="width:4rem;cursor:pointer" @onclick='() => ToggleProductSort("price")'>Цена @_productSort.Icon("price")</th>
+                                        <th style="width:5rem;cursor:pointer" @onclick='() => ToggleProductSort("quantity")'>Склад @_productSort.Icon("quantity")</th>
+                                        <th style="width:6rem;cursor:pointer" @onclick='() => ToggleProductSort("status")'>Статус @_productSort.Icon("status")</th>
+                                        <th style="width:4rem;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -99,16 +99,16 @@
                                         <tr class="@(p.Status != 0 ? "opacity-50" : "")">
                                             <td><input type="checkbox" class="form-check-input" @bind="p.IsSelected" /></td>
                                             <td>
-                                                <div class="fw-semibold text-truncate" style="max-width:200px;">@p.Name</div>
+                                                <div class="fw-semibold text-truncate" style="max-width:12rem;">@p.Name</div>
                                                 @if (!string.IsNullOrEmpty(p.Description))
                                                 {
-                                                    <small class="text-secondary text-truncate d-block" style="max-width:200px;">@p.Description</small>
+                                                    <small class="text-secondary text-truncate d-block" style="max-width:12rem;">@p.Description</small>
                                                 }
                                             </td>
                                             <td>@p.Price ₽</td>
                                             <td>
                                                 <input type="number" class="form-control form-control-sm"
-                                                       style="width:60px;" value="@p.Quantity"
+                                                       style="width:3.75rem;" value="@p.Quantity"
                                                        @onchange="(ChangeEventArgs e) => OnQuantityChanged(p, e)" />
                                             </td>
                                             <td>
@@ -190,7 +190,7 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:36px;">
+                                        <th style="width:2.25rem">
                                             <input type="checkbox" class="form-check-input"
                                                    checked="@IsAllOrdersSelected"
                                                    @onchange="ToggleOrderSelectAll" />
@@ -214,8 +214,8 @@
                                                 <input type="checkbox" class="form-check-input" @bind="o.IsSelected" />
                                             </td>
                                             <td class="fw-semibold">#@o.Id</td>
-                                            <td class="text-truncate" style="max-width:120px;">@o.CustomerLogin</td>
-                                            <td><small class="text-truncate d-block" style="max-width:150px;">@items</small></td>
+                                            <td class="text-truncate" style="max-width:7.5rem;">@o.CustomerLogin</td>
+                                            <td><small class="text-truncate d-block" style="max-width:9rem;">@items</small></td>
                                             <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
                                             <td>@o.Sum ₽</td>
                                             <td @onclick:stopPropagation="true">
@@ -305,14 +305,14 @@
                                         <th style="cursor:pointer" @onclick='() => ToggleUserSort("email")'>Email @_userSort.Icon("email")</th>
                                         <th style="cursor:pointer" @onclick='() => ToggleUserSort("balance")'>Баланс @_userSort.Icon("balance")</th>
                                         <th style="cursor:pointer" @onclick='() => ToggleUserSort("role")'>Роль @_userSort.Icon("role")</th>
-                                        <th style="width:50px;"></th>
+                                        <th style="width:3rem;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var u in PagedUsers)
                                     {
                                         <tr>
-                                            <td class="text-truncate" style="max-width:250px;">@u.Email</td>
+                                            <td class="text-truncate" style="max-width:15rem;">@u.Email</td>
                                             <td>@(u.Balance?.ToString() ?? "—")</td>
                                             <td>
                                                 <span class="badge @(u.Role == 1 ? "bg-warning text-dark" : "bg-info")">
@@ -356,12 +356,12 @@
                     </div>
                     @if (_showHistory)
                     {
-                        <div class="card-body pt-0" style="max-height:250px;overflow-y:auto;">
+                        <div class="card-body pt-0" style="max-height:15rem;overflow-y:auto;">
                             @foreach (var a in _actionHistory)
                             {
                                 <div class="d-flex align-items-start gap-2 py-1 border-bottom">
-                                    <small class="text-secondary" style="min-width:60px;">@a.CreatedAt.ToString("HH:mm:ss")</small>
-                                    <span class="badge @(ActionBadge(a.ActionType))" style="min-width:70px;text-align:center;">@a.ActionType</span>
+                                    <small class="text-secondary" style="min-width:3.75rem;">@a.CreatedAt.ToString("HH:mm:ss")</small>
+                                    <span class="badge @(ActionBadge(a.ActionType))" style="min-width:4rem;text-align:center;">@a.ActionType</span>
                                     <small>@a.Details</small>
                                 </div>
                             }
