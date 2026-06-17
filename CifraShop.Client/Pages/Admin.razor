@@ -112,7 +112,12 @@
                                                        @onchange="(ChangeEventArgs e) => OnQuantityChanged(p, e)" />
                                             </td>
                                             <td>
-                                                <span class="badge @(ProductStatusBadge(p.Status))">@ProductStatusText(p.Status)</span>
+                                                <span class="badge @(ProductStatusBadge(p.Status))"
+                                                      style="cursor:pointer"
+                                                      @onclick="() => ToggleProductStatus(p)"
+                                                      title="Нажмите для смены статуса">
+                                                    @ProductStatusText(p.Status)
+                                                </span>
                                             </td>
                                             <td class="text-nowrap">
                                                 <button class="btn btn-sm btn-outline-primary me-1" title="Редактировать"
@@ -156,6 +161,22 @@
                         <option value="4">Выполнен</option>
                     </SearchBar>
 
+                    @if (Orders.Any(o => o.IsSelected))
+                    {
+                        <div class="d-flex gap-2 mb-2 p-2 bg-light rounded">
+                            <span class="small text-secondary me-auto align-self-center">Выбрано: @Orders.Count(o => o.IsSelected)</span>
+                            <select class="form-select form-select-sm" style="width:auto;"
+                                    @onchange="e => MassChangeOrderStatus(int.Parse(e.Value!.ToString()!))">
+                                <option value="">Сменить статус на...</option>
+                                <option value="0">Ожидание</option>
+                                <option value="1">Ожидает оплаты</option>
+                                <option value="2">Оплачен</option>
+                                <option value="3">В производстве</option>
+                                <option value="4">Выполнен</option>
+                            </select>
+                        </div>
+                    }
+
                     @if (_loadingOrders)
                     {
                         <Spinner />
@@ -170,6 +191,11 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
+                                        <th style="width:36px;">
+                                            <input type="checkbox" class="form-check-input"
+                                                   checked="@IsAllOrdersSelected"
+                                                   @onchange="ToggleOrderSelectAll" />
+                                        </th>
                                         <th style="cursor:pointer" @onclick='() => ToggleOrderSort("id")'>№ @_orderSort.Icon("id")</th>
                                         <th style="cursor:pointer" @onclick='() => ToggleOrderSort("customer")'>Покупатель @_orderSort.Icon("customer")</th>
                                         <th>Состав</th>
@@ -182,13 +208,16 @@
                                     @foreach (var o in PagedOrders)
                                     {
                                         var items = string.Join(", ", o.Items.Select(i => $"{i.Quantity}\u00d7{i.ProductName}"));
-                                        <tr>
+                                        <tr style="cursor:pointer" @onclick="() => ToggleOrderExpand(o.Id)" class="@(_expandedOrderId == o.Id ? "table-active" : "")">
+                                            <td @onclick:stopPropagation="true">
+                                                <input type="checkbox" class="form-check-input" @bind="o.IsSelected" />
+                                            </td>
                                             <td class="fw-semibold">#@o.Id</td>
                                             <td class="text-truncate" style="max-width:120px;">@o.CustomerLogin</td>
                                             <td><small class="text-truncate d-block" style="max-width:150px;">@items</small></td>
                                             <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
                                             <td>@o.Sum ₽</td>
-                                            <td>
+                                            <td @onclick:stopPropagation="true">
                                                 <select class="form-select form-select-sm py-0"
                                                         value="@o.Status"
                                                         @onchange="e => ChangeOrderStatus(o, int.Parse(e.Value!.ToString()!))">
@@ -200,6 +229,34 @@
                                                 </select>
                                             </td>
                                         </tr>
+                                        @if (_expandedOrderId == o.Id)
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="bg-light">
+                                                    <div class="py-2 px-3 small">
+                                                        <div class="fw-semibold mb-1">Состав заказа:</div>
+                                                        @if (o.Items.Any())
+                                                        {
+                                                            @foreach (var item in o.Items)
+                                                            {
+                                                                <div class="d-flex justify-content-between">
+                                                                    <span>@item.ProductName (@item.Quantity шт. × @item.Price ₽)</span>
+                                                                    <span class="fw-semibold">@item.Total ₽</span>
+                                                                </div>
+                                                            }
+                                                            <div class="border-top mt-1 pt-1 fw-bold d-flex justify-content-between">
+                                                                <span>Итого:</span>
+                                                                <span>@o.Items.Sum(i => i.Total) ₽</span>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-secondary">Нет позиций</span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
                                     }
                                 </tbody>
                             </table>
@@ -215,7 +272,7 @@
     </div>
 
     <!-- ==================== ПОЛЬЗОВАТЕЛИ ==================== -->
-    <div class="row g-3">
+    <div class="row g-3 mb-3">
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 pt-3 px-3">
@@ -281,6 +338,37 @@
             </div>
         </div>
     </div>
+
+    <!-- ==================== ИСТОРИЯ ДЕЙСТВИЙ ==================== -->
+    @if (_actionHistory.Any())
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center"
+                         style="cursor:pointer" @onclick="() => _showHistory = !_showHistory">
+                        <h6 class="fw-semibold mb-0">
+                            <i class="bi bi-clock-history me-1"></i>История действий (@_actionHistory.Count)
+                        </h6>
+                        <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary"></i>
+                    </div>
+                    @if (_showHistory)
+                    {
+                        <div class="card-body pt-0" style="max-height:250px;overflow-y:auto;">
+                            @foreach (var a in _actionHistory.AsEnumerable().Reverse())
+                            {
+                                <div class="d-flex align-items-start gap-2 py-1 border-bottom">
+                                    <small class="text-secondary" style="min-width:60px;">@a.Time.ToString("HH:mm:ss")</small>
+                                    <span class="badge @ActionBadge(a.Type) me-1" style="min-width:50px;text-align:center;">@a.Type</span>
+                                    <small>@a.Details</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
 
     <!-- ==================== МОДАЛКА ТОВАРА ==================== -->
     @if (_showProductModal)
@@ -398,6 +486,10 @@
     private void ToggleOrderSort(string col) { _orderSort.Toggle(col); OrderPage = 0; }
     private void ToggleUserSort(string col) { _userSort.Toggle(col); UserPage = 0; }
 
+    // ==================== РАСКРЫТИЕ ЗАКАЗА ====================
+    private int? _expandedOrderId;
+    private void ToggleOrderExpand(int id) => _expandedOrderId = _expandedOrderId == id ? null : id;
+
     // ==================== ФИЛЬТРЫ ====================
     private IEnumerable<ProductDto> FilteredProducts =>
         Products
@@ -444,8 +536,21 @@
     private int TotalOrderPages => Math.Max(1, (int)Math.Ceiling(FilteredOrders.Count() / (double)PageSize));
     private int TotalUserPages => Math.Max(1, (int)Math.Ceiling(FilteredUsers.Count() / (double)PageSize));
 
-    // ==================== ЧЕКБОКС ====================
+    // ==================== ЧЕКБОКСЫ ====================
     private bool IsAllSelected => PagedProducts.Any() && PagedProducts.All(p => p.IsSelected);
+    private bool IsAllOrdersSelected => PagedOrders.Any() && PagedOrders.All(o => o.IsSelected);
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var val = (bool)e.Value!;
+        foreach (var p in PagedProducts) p.IsSelected = val;
+    }
+
+    private void ToggleOrderSelectAll(ChangeEventArgs e)
+    {
+        var val = (bool)e.Value!;
+        foreach (var o in PagedOrders) o.IsSelected = val;
+    }
 
     // ==================== МОДАЛКА ТОВАРА ====================
     private bool _showProductModal;
@@ -459,6 +564,24 @@
     private bool _showConfirmModal;
     private string _confirmMessage = "";
     private Func<Task>? _onConfirmAction;
+
+    // ==================== ИСТОРИЯ ====================
+    private bool _showHistory;
+    private readonly List<AdminAction> _actionHistory = new();
+
+    private void LogAction(string type, string details)
+    {
+        _actionHistory.Add(new AdminAction(DateTime.Now, type, details));
+        if (_actionHistory.Count > 50) _actionHistory.RemoveAt(0);
+    }
+
+    private static string ActionBadge(string type) => type switch
+    {
+        "Создание" => "bg-success",
+        "Удаление" => "bg-danger",
+        "Изменение" => "bg-primary",
+        _ => "bg-secondary"
+    };
 
     // ==================== ЖИЗНЕННЫЙ ЦИКЛ ====================
     protected override async Task OnInitializedAsync()
@@ -524,43 +647,6 @@
         _onConfirmAction = null;
     }
 
-    // ==================== МАССОВЫЕ ДЕЙСТВИЯ ====================
-    private void ToggleSelectAll(ChangeEventArgs e)
-    {
-        var val = (bool)e.Value!;
-        foreach (var p in PagedProducts) p.IsSelected = val;
-    }
-
-    private void DeleteSelectedProducts()
-    {
-        var selected = Products.Where(p => p.IsSelected).ToList();
-        ShowConfirm($"Удалить {selected.Count} товар(ов)?", async () =>
-        {
-            foreach (var p in selected)
-            {
-                var r = await Http.DeleteAsync($"api/Product/delete-product?id={p.Id}");
-                if (r.IsSuccessStatusCode) Products.Remove(p);
-            }
-            ShowNotification($"Удалено: {selected.Count} товар(ов)");
-            StateHasChanged();
-        });
-    }
-
-    private async Task ShowSelectedProducts() => await SetSelectedStatus(0);
-    private async Task HideSelectedProducts() => await SetSelectedStatus(1);
-
-    private async Task SetSelectedStatus(int status)
-    {
-        var selected = Products.Where(p => p.IsSelected).ToList();
-        foreach (var p in selected)
-        {
-            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={p.Id}", new { Status = status });
-            if (r.IsSuccessStatusCode) p.Status = status;
-        }
-        ShowNotification($"Обновлено: {selected.Count} товар(ов)");
-        StateHasChanged();
-    }
-
     // ==================== ТОВАРЫ ====================
     private void OpenProductModal(ProductDto? product = null)
     {
@@ -587,6 +673,7 @@
                 {
                     var c = await r.Content.ReadFromJsonAsync<ProductDto>();
                     if (c != null) Products.Add(c);
+                    LogAction("Создание", $"Товар «{_formName}»");
                     ShowNotification("Товар создан");
                 }
                 else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
@@ -598,6 +685,7 @@
                 {
                     (_editingProduct.Name, _editingProduct.Description, _editingProduct.Price, _editingProduct.Quantity)
                         = (_formName, _formDescription, _formPrice, _formQuantity);
+                    LogAction("Изменение", $"Товар #{_editingProduct.Id} «{_formName}»");
                     ShowNotification("Товар обновлён");
                 }
                 else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
@@ -615,8 +703,21 @@
             if (r.IsSuccessStatusCode)
             {
                 product.Quantity = q;
+                LogAction("Изменение", $"«{product.Name}»: склад = {q}");
                 ShowNotification($"«{product.Name}»: количество = {q}");
             }
+        }
+    }
+
+    private async Task ToggleProductStatus(ProductDto product)
+    {
+        var newStatus = product.Status == 0 ? 1 : 0;
+        var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = newStatus });
+        if (r.IsSuccessStatusCode)
+        {
+            product.Status = newStatus;
+            LogAction("Изменение", $"«{product.Name}»: {ProductStatusText(newStatus)}");
+            ShowNotification($"«{product.Name}»: {ProductStatusText(newStatus)}");
         }
     }
 
@@ -625,16 +726,72 @@
         ShowConfirm($"Удалить «{product.Name}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/Product/delete-product?id={product.Id}");
-            if (r.IsSuccessStatusCode) { Products.Remove(product); ShowNotification("Товар удалён"); StateHasChanged(); }
+            if (r.IsSuccessStatusCode) { Products.Remove(product); LogAction("Удаление", $"Товар «{product.Name}»"); ShowNotification("Товар удалён"); StateHasChanged(); }
         });
+    }
+
+    // ==================== МАССОВЫЕ ДЕЙСТВИЯ ТОВАРОВ ====================
+    private void DeleteSelectedProducts()
+    {
+        var selected = Products.Where(p => p.IsSelected).ToList();
+        ShowConfirm($"Удалить {selected.Count} товар(ов)?", async () =>
+        {
+            foreach (var p in selected)
+            {
+                var r = await Http.DeleteAsync($"api/Product/delete-product?id={p.Id}");
+                if (r.IsSuccessStatusCode) Products.Remove(p);
+            }
+            LogAction("Удаление", $"{selected.Count} товар(ов)");
+            ShowNotification($"Удалено: {selected.Count} товар(ов)");
+            StateHasChanged();
+        });
+    }
+
+    private async Task ShowSelectedProducts() => await SetSelectedStatus(0);
+    private async Task HideSelectedProducts() => await SetSelectedStatus(1);
+
+    private async Task SetSelectedStatus(int status)
+    {
+        var selected = Products.Where(p => p.IsSelected).ToList();
+        foreach (var p in selected)
+        {
+            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={p.Id}", new { Status = status });
+            if (r.IsSuccessStatusCode) p.Status = status;
+        }
+        LogAction("Изменение", $"{selected.Count} товар(ов): {ProductStatusText(status)}");
+        ShowNotification($"Обновлено: {selected.Count} товар(ов)");
+        StateHasChanged();
     }
 
     // ==================== ЗАКАЗЫ ====================
     private async Task ChangeOrderStatus(OrderDto order, int newStatus)
     {
         var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={order.Id}", new { Status = newStatus });
-        if (r.IsSuccessStatusCode) { order.Status = newStatus; ShowNotification($"Заказ #{order.Id}: статус изменён"); }
+        if (r.IsSuccessStatusCode)
+        {
+            order.Status = newStatus;
+            LogAction("Изменение", $"Заказ #{order.Id}: статус = {OrderStatusText(newStatus)}");
+            ShowNotification($"Заказ #{order.Id}: статус изменён");
+        }
     }
+
+    private async Task MassChangeOrderStatus(int newStatus)
+    {
+        var selected = Orders.Where(o => o.IsSelected).ToList();
+        foreach (var o in selected)
+        {
+            var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={o.Id}", new { Status = newStatus });
+            if (r.IsSuccessStatusCode) o.Status = newStatus;
+        }
+        LogAction("Изменение", $"{selected.Count} заказ(ов): {OrderStatusText(newStatus)}");
+        ShowNotification($"Обновлено: {selected.Count} заказ(ов)");
+        StateHasChanged();
+    }
+
+    private static string OrderStatusText(int s) => s switch
+    {
+        0 => "Ожидание", 1 => "Ожидает оплаты", 2 => "Оплачен", 3 => "В производстве", _ => "Выполнен"
+    };
 
     // ==================== ПОЛЬЗОВАТЕЛИ ====================
     private void DeleteUser(UserDto user)
@@ -642,7 +799,7 @@
         ShowConfirm($"Удалить «{user.Email}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/User?id={user.Id}");
-            if (r.IsSuccessStatusCode) { Users.Remove(user); ShowNotification($"Пользователь «{user.Email}» удалён"); StateHasChanged(); }
+            if (r.IsSuccessStatusCode) { Users.Remove(user); LogAction("Удаление", $"Пользователь «{user.Email}»"); ShowNotification($"Пользователь «{user.Email}» удалён"); StateHasChanged(); }
         });
     }
 
@@ -657,7 +814,6 @@
         __builder.OpenElement(0, "ul");
         __builder.AddAttribute(1, "class", "pagination pagination-sm mb-0");
 
-        // Prev
         __builder.OpenElement(2, "li");
         __builder.AddAttribute(3, "class", $"page-item {(page == 0 ? "disabled" : "")}");
         __builder.OpenElement(4, "button");
@@ -683,7 +839,6 @@
             __builder.CloseElement();
         }
 
-        // Next
         __builder.OpenElement(20, "li");
         __builder.AddAttribute(21, "class", $"page-item {(page >= totalPages - 1 ? "disabled" : "")}");
         __builder.OpenElement(22, "button");
@@ -699,7 +854,7 @@
         __builder.CloseElement();
     };
 
-    // ==================== КЛАСС СОРТИРОВКИ ====================
+    // ==================== КЛАССЫ ====================
     private class SortState
     {
         public string? Column { get; private set; }
@@ -713,4 +868,6 @@
 
         public string Icon(string column) => Column != column ? "" : Asc ? " \u25b2" : " \u25bc";
     }
+
+    private record AdminAction(DateTime Time, string Type, string Details);
 }
