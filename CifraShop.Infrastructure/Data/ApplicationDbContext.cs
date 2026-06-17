@@ -1,4 +1,4 @@
-﻿using CifraShop.Domain.Entities;
+using CifraShop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -13,6 +13,7 @@ namespace CifraShop.Infrastructure.Data
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<Product> Products => Set<Product>();
+        public DbSet<AdminAction> AdminActions => Set<AdminAction>();
 
         // Конструктор
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)

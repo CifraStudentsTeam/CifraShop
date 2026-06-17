@@ -44,3 +44,12 @@ public class UserDto
     public short? Balance { get; set; }
     public int Role { get; set; }
 }
+
+/// <summary>Модель действия администратора</summary>
+public class AdminActionDto
+{
+    public int Id { get; set; }
+    public string ActionType { get; set; } = "";
+    public string Details { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
