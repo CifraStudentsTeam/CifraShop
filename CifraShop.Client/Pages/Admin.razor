@@ -26,45 +26,9 @@
 
     <!-- МЕТРИКИ -->
     <div class="row g-2 mb-3">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body py-3 px-3 d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-secondary small">Товаров</div>
-                        <div class="fs-3 fw-bold mb-0">@Products.Count</div>
-                    </div>
-                    <div class="bg-primary bg-opacity-10 rounded-3 p-2">
-                        <i class="bi bi-box text-primary fs-4"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body py-3 px-3 d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-secondary small">Заказы</div>
-                        <div class="fs-3 fw-bold mb-0">@Orders.Count</div>
-                    </div>
-                    <div class="bg-warning bg-opacity-10 rounded-3 p-2">
-                        <i class="bi bi-cart-check text-warning fs-4"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body py-3 px-3 d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-secondary small">Пользователи</div>
-                        <div class="fs-3 fw-bold mb-0">@Users.Count</div>
-                    </div>
-                    <div class="bg-success bg-opacity-10 rounded-3 p-2">
-                        <i class="bi bi-people text-success fs-4"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <MetricCard Title="Товаров" Count="@Products.Count" Icon="bi-box" Color="primary" />
+        <MetricCard Title="Заказы" Count="@Orders.Count" Icon="bi-cart-check" Color="warning" />
+        <MetricCard Title="Пользователи" Count="@Users.Count" Icon="bi-people" Color="success" />
     </div>
 
     <!-- ==================== ТОВАРЫ ==================== -->
@@ -78,22 +42,15 @@
                     </button>
                 </div>
                 <div class="card-body pt-0">
-                    <!-- Поиск + фильтр -->
-                    <div class="d-flex gap-2 mb-2">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-secondary"></i></span>
-                            <input type="text" class="form-control bg-light border-0"
-                                   placeholder="Название, описание..."
-                                   @bind="ProductSearch" @bind:event="oninput" />
-                        </div>
-                        <select class="form-select form-select-sm" style="width:auto;" @bind="ProductFilter">
-                            <option value="">Все</option>
-                            <option value="0">В наличии</option>
-                            <option value="1">Нет в наличии</option>
-                            <option value="2">Скоро</option>
-                        </select>
-                    </div>
-                    <!-- Массовые действия -->
+                    <SearchBar Value="@ProductSearch" ValueChanged="@((string v) => ProductSearch = v)"
+                               FilterValue="@ProductFilter" FilterValueChanged="@((string v) => ProductFilter = v)"
+                               Placeholder="Название, описание...">
+                        <option value="">Все</option>
+                        <option value="0">В наличии</option>
+                        <option value="1">Нет в наличии</option>
+                        <option value="2">Скоро</option>
+                    </SearchBar>
+
                     @if (Products.Any(p => p.IsSelected))
                     {
                         <div class="d-flex gap-2 mb-2 p-2 bg-light rounded">
@@ -109,13 +66,14 @@
                             </button>
                         </div>
                     }
-                    @if (_loading)
+
+                    @if (_loadingProducts)
                     {
-                        <div class="text-center py-4 text-secondary"><div class="spinner-border spinner-border-sm me-1"></div>Загрузка...</div>
+                        <Spinner />
                     }
                     else if (!FilteredProducts.Any())
                     {
-                        <div class="text-center py-4 text-secondary small">Ничего не найдено</div>
+                        <EmptyState />
                     }
                     else
                     {
@@ -128,10 +86,10 @@
                                                    checked="@IsAllSelected"
                                                    @onchange="ToggleSelectAll" />
                                         </th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleProductSort("name")'>Товар @SortIcon("name", _productSortColumn, _productSortAsc)</th>
-                                        <th style="width:70px;cursor:pointer" @onclick='() => ToggleProductSort("price")'>Цена @SortIcon("price", _productSortColumn, _productSortAsc)</th>
-                                        <th style="width:80px;cursor:pointer" @onclick='() => ToggleProductSort("quantity")'>Склад @SortIcon("quantity", _productSortColumn, _productSortAsc)</th>
-                                        <th style="width:100px;cursor:pointer" @onclick='() => ToggleProductSort("status")'>Статус @SortIcon("status", _productSortColumn, _productSortAsc)</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleProductSort("name")'>Товар @_productSort.Icon("name")</th>
+                                        <th style="width:70px;cursor:pointer" @onclick='() => ToggleProductSort("price")'>Цена @_productSort.Icon("price")</th>
+                                        <th style="width:80px;cursor:pointer" @onclick='() => ToggleProductSort("quantity")'>Склад @_productSort.Icon("quantity")</th>
+                                        <th style="width:100px;cursor:pointer" @onclick='() => ToggleProductSort("status")'>Статус @_productSort.Icon("status")</th>
                                         <th style="width:70px;"></th>
                                     </tr>
                                 </thead>
@@ -154,9 +112,7 @@
                                                        @onchange="(ChangeEventArgs e) => OnQuantityChanged(p, e)" />
                                             </td>
                                             <td>
-                                                <span class="badge @(p.Status switch { 0 => "bg-success", 1 => "bg-secondary", _ => "bg-info" })">
-                                                    @(p.Status switch { 0 => "В наличии", 1 => "Нет", _ => "Скоро" })
-                                                </span>
+                                                <span class="badge @(ProductStatusBadge(p.Status))">@ProductStatusText(p.Status)</span>
                                             </td>
                                             <td class="text-nowrap">
                                                 <button class="btn btn-sm btn-outline-primary me-1" title="Редактировать"
@@ -173,33 +129,9 @@
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Информация + пагинация -->
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">
-                                @(FilteredProducts.Count()) товар(ов)
-                            </small>
-                            @if (TotalProductPages > 1)
-                            {
-                                <ul class="pagination pagination-sm mb-0">
-                                    <li class="page-item @(ProductPage == 0 ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => ProductPage--" disabled="@(ProductPage == 0)">
-                                            <i class="bi bi-chevron-left"></i>
-                                        </button>
-                                    </li>
-                                    @for (int i = 0; i < TotalProductPages; i++)
-                                    {
-                                        var idx = i;
-                                        <li class="page-item @(idx == ProductPage ? "active" : "")">
-                                            <button class="page-link" @onclick="() => ProductPage = idx">@(idx + 1)</button>
-                                        </li>
-                                    }
-                                    <li class="page-item @(ProductPage >= TotalProductPages - 1 ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => ProductPage++" disabled="@(ProductPage >= TotalProductPages - 1)">
-                                            <i class="bi bi-chevron-right"></i>
-                                        </button>
-                                    </li>
-                                </ul>
-                            }
+                            <small class="text-secondary">@(FilteredProducts.Count()) товар(ов)</small>
+                            @RenderPagination(ProductPage, TotalProductPages, p => ProductPage = p)
                         </div>
                     }
                 </div>
@@ -213,29 +145,24 @@
                     <h6 class="fw-semibold mb-0">Заказы</h6>
                 </div>
                 <div class="card-body pt-0">
-                    <div class="d-flex gap-2 mb-2">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-secondary"></i></span>
-                            <input type="text" class="form-control bg-light border-0"
-                                   placeholder="Номер, email..."
-                                   @bind="OrderSearch" @bind:event="oninput" />
-                        </div>
-                        <select class="form-select form-select-sm" style="width:auto;" @bind="OrderStatusFilter">
-                            <option value="">Все</option>
-                            <option value="0">Ожидание</option>
-                            <option value="1">Ожидает оплаты</option>
-                            <option value="2">Оплачен</option>
-                            <option value="3">В производстве</option>
-                            <option value="4">Выполнен</option>
-                        </select>
-                    </div>
-                    @if (_loading)
+                    <SearchBar Value="@OrderSearch" ValueChanged="@((string v) => OrderSearch = v)"
+                               FilterValue="@OrderStatusFilter" FilterValueChanged="@((string v) => OrderStatusFilter = v)"
+                               Placeholder="Номер, email...">
+                        <option value="">Все</option>
+                        <option value="0">Ожидание</option>
+                        <option value="1">Ожидает оплаты</option>
+                        <option value="2">Оплачен</option>
+                        <option value="3">В производстве</option>
+                        <option value="4">Выполнен</option>
+                    </SearchBar>
+
+                    @if (_loadingOrders)
                     {
-                        <div class="text-center py-4 text-secondary"><div class="spinner-border spinner-border-sm me-1"></div>Загрузка...</div>
+                        <Spinner />
                     }
                     else if (!FilteredOrders.Any())
                     {
-                        <div class="text-center py-4 text-secondary small">Ничего не найдено</div>
+                        <EmptyState />
                     }
                     else
                     {
@@ -243,22 +170,23 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("id")'>№ @SortIcon("id", _orderSortColumn, _orderSortAsc)</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("customer")'>Покупатель @SortIcon("customer", _orderSortColumn, _orderSortAsc)</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("id")'>№ @_orderSort.Icon("id")</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("customer")'>Покупатель @_orderSort.Icon("customer")</th>
                                         <th>Состав</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("sum")'>Сумма @SortIcon("sum", _orderSortColumn, _orderSortAsc)</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("status")'>Статус @SortIcon("status", _orderSortColumn, _orderSortAsc)</th>
+                                        <th>Дата</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("sum")'>Сумма @_orderSort.Icon("sum")</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("status")'>Статус @_orderSort.Icon("status")</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var o in PagedOrders)
                                     {
-                                        var items = string.Join(", ",
-                                            o.Items.Select(i => $"{i.Quantity}×{i.ProductName}"));
+                                        var items = string.Join(", ", o.Items.Select(i => $"{i.Quantity}\u00d7{i.ProductName}"));
                                         <tr>
                                             <td class="fw-semibold">#@o.Id</td>
                                             <td class="text-truncate" style="max-width:120px;">@o.CustomerLogin</td>
                                             <td><small class="text-truncate d-block" style="max-width:150px;">@items</small></td>
+                                            <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
                                             <td>@o.Sum ₽</td>
                                             <td>
                                                 <select class="form-select form-select-sm py-0"
@@ -278,28 +206,7 @@
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <small class="text-secondary">@(FilteredOrders.Count()) заказ(ов)</small>
-                            @if (TotalOrderPages > 1)
-                            {
-                                <ul class="pagination pagination-sm mb-0">
-                                    <li class="page-item @(OrderPage == 0 ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => OrderPage--" disabled="@(OrderPage == 0)">
-                                            <i class="bi bi-chevron-left"></i>
-                                        </button>
-                                    </li>
-                                    @for (int i = 0; i < TotalOrderPages; i++)
-                                    {
-                                        var idx = i;
-                                        <li class="page-item @(idx == OrderPage ? "active" : "")">
-                                            <button class="page-link" @onclick="() => OrderPage = idx">@(idx + 1)</button>
-                                        </li>
-                                    }
-                                    <li class="page-item @(OrderPage >= TotalOrderPages - 1 ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => OrderPage++" disabled="@(OrderPage >= TotalOrderPages - 1)">
-                                            <i class="bi bi-chevron-right"></i>
-                                        </button>
-                                    </li>
-                                </ul>
-                            }
+                            @RenderPagination(OrderPage, TotalOrderPages, p => OrderPage = p)
                         </div>
                     }
                 </div>
@@ -315,26 +222,21 @@
                     <h6 class="fw-semibold mb-0">Пользователи</h6>
                 </div>
                 <div class="card-body pt-0">
-                    <div class="d-flex gap-2 mb-2">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-secondary"></i></span>
-                            <input type="text" class="form-control bg-light border-0"
-                                   placeholder="Email..."
-                                   @bind="UserSearch" @bind:event="oninput" />
-                        </div>
-                        <select class="form-select form-select-sm" style="width:auto;" @bind="UserRoleFilter">
-                            <option value="">Все</option>
-                            <option value="0">Студенты</option>
-                            <option value="1">Админы</option>
-                        </select>
-                    </div>
-                    @if (_loading)
+                    <SearchBar Value="@UserSearch" ValueChanged="@((string v) => UserSearch = v)"
+                               FilterValue="@UserRoleFilter" FilterValueChanged="@((string v) => UserRoleFilter = v)"
+                               Placeholder="Email...">
+                        <option value="">Все</option>
+                        <option value="0">Студенты</option>
+                        <option value="1">Админы</option>
+                    </SearchBar>
+
+                    @if (_loadingUsers)
                     {
-                        <div class="text-center py-4 text-secondary"><div class="spinner-border spinner-border-sm me-1"></div>Загрузка...</div>
+                        <Spinner />
                     }
                     else if (!FilteredUsers.Any())
                     {
-                        <div class="text-center py-4 text-secondary small">Ничего не найдено</div>
+                        <EmptyState />
                     }
                     else
                     {
@@ -342,9 +244,9 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("email")'>Email @SortIcon("email", _userSortColumn, _userSortAsc)</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("balance")'>Баланс @SortIcon("balance", _userSortColumn, _userSortAsc)</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("role")'>Роль @SortIcon("role", _userSortColumn, _userSortAsc)</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("email")'>Email @_userSort.Icon("email")</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("balance")'>Баланс @_userSort.Icon("balance")</th>
+                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("role")'>Роль @_userSort.Icon("role")</th>
                                         <th style="width:50px;"></th>
                                     </tr>
                                 </thead>
@@ -372,28 +274,7 @@
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <small class="text-secondary">@(FilteredUsers.Count()) пользовател(ей)</small>
-                            @if (TotalUserPages > 1)
-                            {
-                                <ul class="pagination pagination-sm mb-0">
-                                    <li class="page-item @(UserPage == 0 ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => UserPage--" disabled="@(UserPage == 0)">
-                                            <i class="bi bi-chevron-left"></i>
-                                        </button>
-                                    </li>
-                                    @for (int i = 0; i < TotalUserPages; i++)
-                                    {
-                                        var idx = i;
-                                        <li class="page-item @(idx == UserPage ? "active" : "")">
-                                            <button class="page-link" @onclick="() => UserPage = idx">@(idx + 1)</button>
-                                        </li>
-                                    }
-                                    <li class="page-item @(UserPage >= TotalUserPages - 1 ? "disabled" : "")">
-                                        <button class="page-link" @onclick="() => UserPage++" disabled="@(UserPage >= TotalUserPages - 1)">
-                                            <i class="bi bi-chevron-right"></i>
-                                        </button>
-                                    </li>
-                                </ul>
-                            }
+                            @RenderPagination(UserPage, TotalUserPages, p => UserPage = p)
                         </div>
                     }
                 </div>
@@ -476,63 +357,85 @@
 </div>
 
 @code {
+    // ==================== ДАННЫЕ ====================
     private List<ProductDto> Products = new();
     private List<OrderDto> Orders = new();
     private List<UserDto> Users = new();
 
     private string? _notification;
     private string _notificationType = "success";
-    private bool _loading = true;
-
-    private string _productSearch = "";
-    private string ProductSearch { get => _productSearch; set { _productSearch = value; ProductPage = 0; } }
-    private string _productFilter = "";
-    private string ProductFilter { get => _productFilter; set { _productFilter = value; ProductPage = 0; } }
-    private string _orderSearch = "";
-    private string OrderSearch { get => _orderSearch; set { _orderSearch = value; OrderPage = 0; } }
-    private string _orderStatusFilter = "";
-    private string OrderStatusFilter { get => _orderStatusFilter; set { _orderStatusFilter = value; OrderPage = 0; } }
-    private string _userSearch = "";
-    private string UserSearch { get => _userSearch; set { _userSearch = value; UserPage = 0; } }
-    private string _userRoleFilter = "";
-    private string UserRoleFilter { get => _userRoleFilter; set { _userRoleFilter = value; UserPage = 0; } }
-
-    private const int PageSize = 8;
-    private int ProductPage;
-    private int OrderPage;
-    private int UserPage;
-
-    private bool _showProductModal;
-    private ProductDto? _editingProduct;
-    private string _formName = "";
-    private string _formDescription = "";
-    private short _formPrice;
-    private short _formQuantity;
+    private bool _loadingProducts = true;
+    private bool _loadingOrders = true;
+    private bool _loadingUsers = true;
 
     private PeriodicTimer? _refreshTimer;
 
-    // ========== ФИЛЬТРЫ ==========
+    // ==================== ПОИСК / ФИЛЬТР ====================
+    private string _search_products = "";
+    private string _filter_products = "";
+    private string _search_orders = "";
+    private string _filter_orders = "";
+    private string _search_users = "";
+    private string _filter_users = "";
+
+    private string ProductSearch { get => _search_products; set { _search_products = value; ProductPage = 0; } }
+    private string ProductFilter { get => _filter_products; set { _filter_products = value; ProductPage = 0; } }
+    private string OrderSearch { get => _search_orders; set { _search_orders = value; OrderPage = 0; } }
+    private string OrderStatusFilter { get => _filter_orders; set { _filter_orders = value; OrderPage = 0; } }
+    private string UserSearch { get => _search_users; set { _search_users = value; UserPage = 0; } }
+    private string UserRoleFilter { get => _filter_users; set { _filter_users = value; UserPage = 0; } }
+
+    // ==================== ПАГИНАЦИЯ ====================
+    private const int PageSize = 8;
+    private int ProductPage, OrderPage, UserPage;
+
+    // ==================== СОРТИРОВКА ====================
+    private SortState _productSort = new();
+    private SortState _orderSort = new();
+    private SortState _userSort = new();
+
+    private void ToggleProductSort(string col) { _productSort.Toggle(col); ProductPage = 0; }
+    private void ToggleOrderSort(string col) { _orderSort.Toggle(col); OrderPage = 0; }
+    private void ToggleUserSort(string col) { _userSort.Toggle(col); UserPage = 0; }
+
+    // ==================== ФИЛЬТРЫ ====================
     private IEnumerable<ProductDto> FilteredProducts =>
         Products
-            .Where(p => string.IsNullOrEmpty(_productSearch) ||
-                (p.Name ?? "").Contains(_productSearch, StringComparison.OrdinalIgnoreCase) ||
-                (p.Description ?? "").Contains(_productSearch, StringComparison.OrdinalIgnoreCase))
-            .Where(p => string.IsNullOrEmpty(_productFilter) || p.Status.ToString() == _productFilter);
+            .Where(p => string.IsNullOrEmpty(_search_products) ||
+                (p.Name ?? "").Contains(_search_products, StringComparison.OrdinalIgnoreCase) ||
+                (p.Description ?? "").Contains(_search_products, StringComparison.OrdinalIgnoreCase))
+            .Where(p => string.IsNullOrEmpty(_filter_products) || p.Status.ToString() == _filter_products);
 
     private IEnumerable<OrderDto> FilteredOrders =>
         Orders
-            .Where(o => string.IsNullOrEmpty(_orderSearch) ||
-                o.Id.ToString().Contains(_orderSearch) ||
-                (o.CustomerLogin ?? "").Contains(_orderSearch, StringComparison.OrdinalIgnoreCase))
-            .Where(o => string.IsNullOrEmpty(_orderStatusFilter) || o.Status.ToString() == _orderStatusFilter);
+            .Where(o => string.IsNullOrEmpty(_search_orders) ||
+                o.Id.ToString().Contains(_search_orders) ||
+                (o.CustomerLogin ?? "").Contains(_search_orders, StringComparison.OrdinalIgnoreCase))
+            .Where(o => string.IsNullOrEmpty(_filter_orders) || o.Status.ToString() == _filter_orders);
 
     private IEnumerable<UserDto> FilteredUsers =>
         Users
-            .Where(u => string.IsNullOrEmpty(_userSearch) ||
-                (u.Email ?? "").Contains(_userSearch, StringComparison.OrdinalIgnoreCase))
-            .Where(u => string.IsNullOrEmpty(_userRoleFilter) || u.Role.ToString() == _userRoleFilter);
+            .Where(u => string.IsNullOrEmpty(_search_users) ||
+                (u.Email ?? "").Contains(_search_users, StringComparison.OrdinalIgnoreCase))
+            .Where(u => string.IsNullOrEmpty(_filter_users) || u.Role.ToString() == _filter_users);
 
-    // ========== ПАГИНАЦИЯ ==========
+    // ==================== СОРТИРОВАННАЯ + ПАГИНИРОВАННАЯ ВЫБОРКА ====================
+    private IEnumerable<ProductDto> SortedProducts => SortCollection(FilteredProducts, _productSort,
+        ("name", p => p.Name), ("price", p => p.Price), ("quantity", p => p.Quantity), ("status", p => p.Status));
+    private IEnumerable<OrderDto> SortedOrders => SortCollection(FilteredOrders, _orderSort,
+        ("id", o => o.Id), ("customer", o => o.CustomerLogin), ("sum", o => o.Sum), ("status", o => o.Status));
+    private IEnumerable<UserDto> SortedUsers => SortCollection(FilteredUsers, _userSort,
+        ("email", u => u.Email), ("balance", u => u.Balance), ("role", u => u.Role));
+
+    private static IEnumerable<T> SortCollection<T>(IEnumerable<T> source, SortState sort,
+        params (string col, Func<T, IComparable> key)[] keys)
+    {
+        var map = keys.ToDictionary(k => k.col, k => k.key);
+        return sort.Column != null && map.TryGetValue(sort.Column, out var key)
+            ? (sort.Asc ? source.OrderBy(key) : source.OrderByDescending(key))
+            : source;
+    }
+
     private IEnumerable<ProductDto> PagedProducts => SortedProducts.Skip(ProductPage * PageSize).Take(PageSize);
     private IEnumerable<OrderDto> PagedOrders => SortedOrders.Skip(OrderPage * PageSize).Take(PageSize);
     private IEnumerable<UserDto> PagedUsers => SortedUsers.Skip(UserPage * PageSize).Take(PageSize);
@@ -541,68 +444,23 @@
     private int TotalOrderPages => Math.Max(1, (int)Math.Ceiling(FilteredOrders.Count() / (double)PageSize));
     private int TotalUserPages => Math.Max(1, (int)Math.Ceiling(FilteredUsers.Count() / (double)PageSize));
 
-    // ========== СОРТИРОВКА ==========
-    private string? _productSortColumn;
-    private bool _productSortAsc = true;
-    private string? _orderSortColumn;
-    private bool _orderSortAsc = true;
-    private string? _userSortColumn;
-    private bool _userSortAsc = true;
-
-    private void ToggleProductSort(string column)
-    {
-        if (_productSortColumn == column) _productSortAsc = !_productSortAsc;
-        else { _productSortColumn = column; _productSortAsc = true; }
-        ProductPage = 0;
-    }
-
-    private void ToggleOrderSort(string column)
-    {
-        if (_orderSortColumn == column) _orderSortAsc = !_orderSortAsc;
-        else { _orderSortColumn = column; _orderSortAsc = true; }
-        OrderPage = 0;
-    }
-
-    private void ToggleUserSort(string column)
-    {
-        if (_userSortColumn == column) _userSortAsc = !_userSortAsc;
-        else { _userSortColumn = column; _userSortAsc = true; }
-        UserPage = 0;
-    }
-
-    private string SortIcon(string column, string? sortColumn, bool asc) =>
-        sortColumn != column ? "" : asc ? " ▲" : " ▼";
-
-    private IEnumerable<ProductDto> SortedProducts => _productSortColumn switch
-    {
-        "name" => _productSortAsc ? FilteredProducts.OrderBy(p => p.Name) : FilteredProducts.OrderByDescending(p => p.Name),
-        "price" => _productSortAsc ? FilteredProducts.OrderBy(p => p.Price) : FilteredProducts.OrderByDescending(p => p.Price),
-        "quantity" => _productSortAsc ? FilteredProducts.OrderBy(p => p.Quantity) : FilteredProducts.OrderByDescending(p => p.Quantity),
-        "status" => _productSortAsc ? FilteredProducts.OrderBy(p => p.Status) : FilteredProducts.OrderByDescending(p => p.Status),
-        _ => FilteredProducts
-    };
-
-    private IEnumerable<OrderDto> SortedOrders => _orderSortColumn switch
-    {
-        "id" => _orderSortAsc ? FilteredOrders.OrderBy(o => o.Id) : FilteredOrders.OrderByDescending(o => o.Id),
-        "customer" => _orderSortAsc ? FilteredOrders.OrderBy(o => o.CustomerLogin) : FilteredOrders.OrderByDescending(o => o.CustomerLogin),
-        "sum" => _orderSortAsc ? FilteredOrders.OrderBy(o => o.Sum) : FilteredOrders.OrderByDescending(o => o.Sum),
-        "status" => _orderSortAsc ? FilteredOrders.OrderBy(o => o.Status) : FilteredOrders.OrderByDescending(o => o.Status),
-        _ => FilteredOrders
-    };
-
-    private IEnumerable<UserDto> SortedUsers => _userSortColumn switch
-    {
-        "email" => _userSortAsc ? FilteredUsers.OrderBy(u => u.Email) : FilteredUsers.OrderByDescending(u => u.Email),
-        "balance" => _userSortAsc ? FilteredUsers.OrderBy(u => u.Balance) : FilteredUsers.OrderByDescending(u => u.Balance),
-        "role" => _userSortAsc ? FilteredUsers.OrderBy(u => u.Role) : FilteredUsers.OrderByDescending(u => u.Role),
-        _ => FilteredUsers
-    };
-
-    // ========== ЧЕКБОКС ==========
+    // ==================== ЧЕКБОКС ====================
     private bool IsAllSelected => PagedProducts.Any() && PagedProducts.All(p => p.IsSelected);
 
-    // ========== ЖИЗНЕННЫЙ ЦИКЛ ==========
+    // ==================== МОДАЛКА ТОВАРА ====================
+    private bool _showProductModal;
+    private ProductDto? _editingProduct;
+    private string _formName = "";
+    private string _formDescription = "";
+    private short _formPrice;
+    private short _formQuantity;
+
+    // ==================== ПОДТВЕРЖДЕНИЕ ====================
+    private bool _showConfirmModal;
+    private string _confirmMessage = "";
+    private Func<Task>? _onConfirmAction;
+
+    // ==================== ЖИЗНЕННЫЙ ЦИКЛ ====================
     protected override async Task OnInitializedAsync()
     {
         await LoadAllData();
@@ -621,24 +479,23 @@
 
     public void Dispose() => _refreshTimer?.Dispose();
 
-    // ========== ЗАГРУЗКА ==========
+    // ==================== ЗАГРУЗКА ====================
     private async Task LoadAllData()
     {
-        try
-        {
-            var productsTask = Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all");
-            var ordersTask = Http.GetFromJsonAsync<List<OrderDto>>("api/Order/all");
-            var usersTask = Http.GetFromJsonAsync<List<UserDto>>("api/User/all");
-            await Task.WhenAll(productsTask, ordersTask, usersTask);
-            Products = productsTask.Result ?? new();
-            Orders = ordersTask.Result ?? new();
-            Users = usersTask.Result ?? new();
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка загрузки: {ex.Message}", "danger"); }
-        finally { _loading = false; }
+        var productsTask = LoadSection<List<ProductDto>>("api/Product/all", r => Products = r ?? new(), () => _loadingProducts = false);
+        var ordersTask = LoadSection<List<OrderDto>>("api/Order/all", r => Orders = r ?? new(), () => _loadingOrders = false);
+        var usersTask = LoadSection<List<UserDto>>("api/User/all", r => Users = r ?? new(), () => _loadingUsers = false);
+        await Task.WhenAll(productsTask, ordersTask, usersTask);
     }
 
-    // ========== УВЕДОМЛЕНИЯ ==========
+    private async Task LoadSection<T>(string url, Action<T?> setter, Action onFinally)
+    {
+        try { setter(await Http.GetFromJsonAsync<T>(url)); }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки: {ex.Message}", "danger"); }
+        finally { onFinally(); }
+    }
+
+    // ==================== УВЕДОМЛЕНИЯ ====================
     private void ShowNotification(string message, string type = "success")
     {
         _notification = message;
@@ -650,11 +507,7 @@
         });
     }
 
-    // ========== ПОДТВЕРЖДЕНИЕ ==========
-    private bool _showConfirmModal;
-    private string _confirmMessage = "";
-    private Func<Task>? _onConfirmAction;
-
+    // ==================== ПОДТВЕРЖДЕНИЕ ====================
     private void ShowConfirm(string message, Func<Task> action)
     {
         _confirmMessage = message;
@@ -662,21 +515,16 @@
         _showConfirmModal = true;
     }
 
-    private void CancelConfirm()
-    {
-        _showConfirmModal = false;
-        _onConfirmAction = null;
-    }
+    private void CancelConfirm() { _showConfirmModal = false; _onConfirmAction = null; }
 
     private async Task ExecuteConfirm()
     {
         _showConfirmModal = false;
-        if (_onConfirmAction is not null)
-            await _onConfirmAction();
+        if (_onConfirmAction is not null) await _onConfirmAction();
         _onConfirmAction = null;
     }
 
-    // ========== МАССОВЫЕ ДЕЙСТВИЯ ==========
+    // ==================== МАССОВЫЕ ДЕЙСТВИЯ ====================
     private void ToggleSelectAll(ChangeEventArgs e)
     {
         var val = (bool)e.Value!;
@@ -699,7 +547,6 @@
     }
 
     private async Task ShowSelectedProducts() => await SetSelectedStatus(0);
-
     private async Task HideSelectedProducts() => await SetSelectedStatus(1);
 
     private async Task SetSelectedStatus(int status)
@@ -707,15 +554,14 @@
         var selected = Products.Where(p => p.IsSelected).ToList();
         foreach (var p in selected)
         {
-            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={p.Id}",
-                new { Status = status });
+            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={p.Id}", new { Status = status });
             if (r.IsSuccessStatusCode) p.Status = status;
         }
         ShowNotification($"Обновлено: {selected.Count} товар(ов)");
         StateHasChanged();
     }
 
-    // ========== ТОВАРЫ ==========
+    // ==================== ТОВАРЫ ====================
     private void OpenProductModal(ProductDto? product = null)
     {
         _editingProduct = product;
@@ -732,9 +578,10 @@
     {
         try
         {
+            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity };
+
             if (_editingProduct == null)
             {
-                var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity };
                 var r = await Http.PostAsJsonAsync("api/Product/create-product", body);
                 if (r.IsSuccessStatusCode)
                 {
@@ -742,21 +589,18 @@
                     if (c != null) Products.Add(c);
                     ShowNotification("Товар создан");
                 }
-                else ShowNotification("Ошибка создания товара", "danger");
+                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
             }
             else
             {
-                var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity };
                 var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={_editingProduct.Id}", body);
                 if (r.IsSuccessStatusCode)
                 {
-                    _editingProduct.Name = _formName;
-                    _editingProduct.Description = _formDescription;
-                    _editingProduct.Price = _formPrice;
-                    _editingProduct.Quantity = _formQuantity;
+                    (_editingProduct.Name, _editingProduct.Description, _editingProduct.Price, _editingProduct.Quantity)
+                        = (_formName, _formDescription, _formPrice, _formQuantity);
                     ShowNotification("Товар обновлён");
                 }
-                else ShowNotification("Ошибка обновления товара", "danger");
+                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
             }
             CloseProductModal();
         }
@@ -781,38 +625,92 @@
         ShowConfirm($"Удалить «{product.Name}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/Product/delete-product?id={product.Id}");
-            if (r.IsSuccessStatusCode)
-            {
-                Products.Remove(product);
-                ShowNotification("Товар удалён");
-                StateHasChanged();
-            }
+            if (r.IsSuccessStatusCode) { Products.Remove(product); ShowNotification("Товар удалён"); StateHasChanged(); }
         });
     }
 
-    // ========== ЗАКАЗЫ ==========
+    // ==================== ЗАКАЗЫ ====================
     private async Task ChangeOrderStatus(OrderDto order, int newStatus)
     {
         var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={order.Id}", new { Status = newStatus });
-        if (r.IsSuccessStatusCode)
-        {
-            order.Status = newStatus;
-            ShowNotification($"Заказ #{order.Id}: статус изменён");
-        }
+        if (r.IsSuccessStatusCode) { order.Status = newStatus; ShowNotification($"Заказ #{order.Id}: статус изменён"); }
     }
 
-    // ========== ПОЛЬЗОВАТЕЛИ ==========
+    // ==================== ПОЛЬЗОВАТЕЛИ ====================
     private void DeleteUser(UserDto user)
     {
         ShowConfirm($"Удалить «{user.Email}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/User?id={user.Id}");
-            if (r.IsSuccessStatusCode)
-            {
-                Users.Remove(user);
-                ShowNotification($"Пользователь «{user.Email}» удалён");
-                StateHasChanged();
-            }
+            if (r.IsSuccessStatusCode) { Users.Remove(user); ShowNotification($"Пользователь «{user.Email}» удалён"); StateHasChanged(); }
         });
+    }
+
+    // ==================== ХЕЛПЕРЫ ====================
+    private static string ProductStatusBadge(int s) => s switch { 0 => "bg-success", 1 => "bg-secondary", _ => "bg-info" };
+    private static string ProductStatusText(int s) => s switch { 0 => "В наличии", 1 => "Нет", _ => "Скоро" };
+
+    private static RenderFragment RenderPagination(int page, int totalPages, Action<int> setPage) => __builder =>
+    {
+        if (totalPages <= 1) return;
+
+        __builder.OpenElement(0, "ul");
+        __builder.AddAttribute(1, "class", "pagination pagination-sm mb-0");
+
+        // Prev
+        __builder.OpenElement(2, "li");
+        __builder.AddAttribute(3, "class", $"page-item {(page == 0 ? "disabled" : "")}");
+        __builder.OpenElement(4, "button");
+        __builder.AddAttribute(5, "class", "page-link");
+        __builder.AddAttribute(6, "disabled", page == 0);
+        __builder.AddAttribute(7, "onclick", EventCallback.Factory.Create(__builder, () => setPage(page - 1)));
+        __builder.OpenElement(8, "i");
+        __builder.AddAttribute(9, "class", "bi bi-chevron-left");
+        __builder.CloseElement();
+        __builder.CloseElement();
+        __builder.CloseElement();
+
+        for (int i = 0; i < totalPages; i++)
+        {
+            var idx = i;
+            __builder.OpenElement(10, "li");
+            __builder.AddAttribute(11, "class", $"page-item {(idx == page ? "active" : "")}");
+            __builder.OpenElement(12, "button");
+            __builder.AddAttribute(13, "class", "page-link");
+            __builder.AddAttribute(14, "onclick", EventCallback.Factory.Create(__builder, () => setPage(idx)));
+            __builder.AddContent(15, idx + 1);
+            __builder.CloseElement();
+            __builder.CloseElement();
+        }
+
+        // Next
+        __builder.OpenElement(20, "li");
+        __builder.AddAttribute(21, "class", $"page-item {(page >= totalPages - 1 ? "disabled" : "")}");
+        __builder.OpenElement(22, "button");
+        __builder.AddAttribute(23, "class", "page-link");
+        __builder.AddAttribute(24, "disabled", page >= totalPages - 1);
+        __builder.AddAttribute(25, "onclick", EventCallback.Factory.Create(__builder, () => setPage(page + 1)));
+        __builder.OpenElement(26, "i");
+        __builder.AddAttribute(27, "class", "bi bi-chevron-right");
+        __builder.CloseElement();
+        __builder.CloseElement();
+        __builder.CloseElement();
+
+        __builder.CloseElement();
+    };
+
+    // ==================== КЛАСС СОРТИРОВКИ ====================
+    private class SortState
+    {
+        public string? Column { get; private set; }
+        public bool Asc { get; private set; } = true;
+
+        public void Toggle(string column)
+        {
+            if (Column == column) Asc = !Asc;
+            else { Column = column; Asc = true; }
+        }
+
+        public string Icon(string column) => Column != column ? "" : Asc ? " \u25b2" : " \u25bc";
     }
 }

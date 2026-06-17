@@ -1,0 +1,35 @@
+<div class="d-flex gap-2 mb-2">
+    <div class="input-group input-group-sm">
+        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-secondary"></i></span>
+        <input type="text" class="form-control bg-light border-0"
+               placeholder="@Placeholder"
+               value="@Value"
+               @oninput="OnInput" />
+    </div>
+    <select class="form-select form-select-sm" style="width:auto;"
+            value="@FilterValue"
+            @onchange="OnFilterChange">
+        @ChildContent
+    </select>
+</div>
+
+@code {
+    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string FilterValue { get; set; } = "";
+    [Parameter] public EventCallback<string> FilterValueChanged { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString() ?? "";
+        await ValueChanged.InvokeAsync(val);
+    }
+
+    private async Task OnFilterChange(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString() ?? "";
+        await FilterValueChanged.InvokeAsync(val);
+    }
+}
