@@ -1,6 +1,9 @@
-﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+﻿<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData"/>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        <RouteView RouteData="@routeData" />
     </Found>
+    <NotFound>
+        <h3>Не найдено</h3>
+        <p>К сожалению, контент, который вы ищете, не существует.</p>
+    </NotFound>
 </Router>

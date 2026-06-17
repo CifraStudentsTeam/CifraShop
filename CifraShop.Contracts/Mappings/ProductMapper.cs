@@ -1,4 +1,4 @@
-﻿using CifraShop.Contracts.Responses.Products;
+using CifraShop.Contracts.Responses.Products;
 using CifraShop.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -15,6 +15,7 @@ namespace CifraShop.Contracts.Mappings
                 Id = product.Id,
                 Name = product.Name,
                 Description = product.Description,
+                Price = (short)product.Price,
                 Quantity = product.Quantity,
                 Status = product.Status,
             };

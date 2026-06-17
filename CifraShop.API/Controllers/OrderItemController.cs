@@ -1,4 +1,4 @@
-п»їusing CifraShop.Application.Services.Interfaces;
+using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.OrderItem;
 using CifraShop.Contracts.Responses.OrderItem;
 using CifraShop.Domain.Entities;
@@ -16,40 +16,40 @@ namespace CifraShop.API.Controllers
         private readonly IOrderRepository _orderRepository;
         private readonly IProductRepository _productRepository;
 
-        //РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+        //Конструктор
         public OrderItemController(IOrderItemService orderItemService, IOrderRepository orderRepository, IProductRepository productRepository)
         {
-            orderItemService = _orderItemService;
-            orderRepository = _orderRepository;
-            productRepository = _productRepository;
+            _orderItemService = orderItemService;
+            _orderRepository = orderRepository;
+            _productRepository = productRepository;
         }
 
-        //РџРѕР»СѓС‡РµРЅРёРµ СЃРѕСЃС‚РѕРІР»СЏСЏСЋС‰РµР№ Р·Р°РєР°Р·Р° РїРѕ id
-        [HttpGet("/by-id")]
+        //Получение состовляяющей заказа по id
+        [HttpGet("by-id")]
         public async Task<ActionResult<OrderItem>> GetOrderItemById([FromQuery] int id)
         {
             var orderItem = await _orderItemService.GetOrderItemById(id);
 
             if (orderItem == null) 
-                return NotFound($"РЎРѕСЃС‚РѕРІР»СЏСЋС‰РµСЏ Р·Р°РєР°Р·Р° СЃ id {id} РЅРµ РЅР°Р№РґРµРЅ");
+                return NotFound($"Состовляющея заказа с id {id} не найден");
 
             return Ok(orderItem);
         }
 
-        //РџРѕР»СѓС‡РµРЅРёРµ СЃРѕСЃС‚РѕРІР»СЏСЋСЋС‰РµР№ Р·Р°РєР°Р·Р° РїРѕ id Р·Р°РєР°Р·Р°
+        //Получение состовляюющей заказа по id заказа
         [HttpGet("by-orderid")]
         public async Task<ActionResult<List<OrderItem>>> GetOrderItemsByOrderId([FromQuery] int id)
         {
             var orderItems = await _orderItemService.GetOrderItemsByOrderId(id);
 
             if (orderItems == null)
-                return NotFound($"РЎРѕСЃС‚РѕРІР»СЏСЋС‰РёРµ Р·Р°РєР°Р·Р° СЃ id Р·Р°РєР°Р·Р° {id} РЅРµ РЅР°Р№РґРµРЅ");
+                return NotFound($"Состовляющие заказа с id заказа {id} не найден");
 
             return Ok(orderItems);
         }
 
-        //РЎРѕР·РґР°РЅРёРµ СЃРѕСЃС‚РѕРІР»СЏСЋС‰РµР№ Р·Р°РєР°Р·Р°
-        [HttpPost("/create-orderitem")]
+        //Создание состовляющей заказа
+        [HttpPost("create-orderitem")]
         public async Task<ActionResult<OrderItem>> CreateOrderItem([FromBody] CreateOrderItemRequest dto)
         {
             if (!ModelState.IsValid)
@@ -58,30 +58,30 @@ namespace CifraShop.API.Controllers
             var order = await _orderRepository.GetOrderById(dto.OrderId);
 
             if (order == null)
-                return BadRequest($"Р—Р°РєР°Р· СЃ id {dto.OrderId} РЅРµ РЅР°Р№РґРµРЅ");
+                return BadRequest($"Заказ с id {dto.OrderId} не найден");
 
             var product = await _productRepository.GetProductsById(dto.ProductId);
 
             if (product == null)
-                return BadRequest($"РџСЂРѕРґСѓРєС‚ СЃ id {dto.ProductId} РЅРµ РЅР°Р№РґРµРЅ");
+                return BadRequest($"Продукт с id {dto.ProductId} не найден");
 
             await _orderItemService.CreateOrderItem(order, product, dto.Quantity);
             return CreatedAtAction(nameof(GetOrderItemById), new { orderItemId = 0 }, null);
         }
 
-        [HttpPut("/update-orderitem")]
+        [HttpPut("update-orderitem")]
         public async Task<IActionResult> UpdateOrderItem([FromQuery] int id, [FromBody] UpdateOrderItemResponce dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             if (id != dto.Id)
-                return BadRequest("РќРµСЃРѕРѕС‚РІРµС‚СЃРІРёРµ id РјРµР¶РґСѓ URL-Р°РґСЂРµСЃРѕРј Рё РѕСЃРЅРѕРІРЅС‹Рј С‚РµРєСЃС‚РѕРј");
+                return BadRequest("Несоответсвие id между URL-адресом и основным текстом");
 
             var existing = await _orderItemService.GetOrderItemById(id);
 
             if (existing == null)
-                return NotFound($"РЎРѕСЃС‚РѕРІР»СЏСЋС‰РµСЏ Р·Р°РєР°Р·Р° СЃ id {id} РЅРµ РЅР°Р№РґРµРЅ");
+                return NotFound($"Состовляющея заказа с id {id} не найден");
 
             existing.Quantity = dto.Quantity;
 
@@ -92,13 +92,13 @@ namespace CifraShop.API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("/delete-orderItem")]
+        [HttpDelete("delete-orderItem")]
         public async Task<IActionResult> DeleteOrderItem([FromQuery] int id)
         {
             var existing = await _orderItemService.GetOrderItemById(id);
 
             if (existing == null)
-                return NotFound($"РЎРѕСЃС‚РѕРІР»СЏСЋС‰РµСЏ Р·Р°РєР°Р·Р° СЃ id {id} РЅРµ РЅР°Р№РґРµРЅ");
+                return NotFound($"Состовляющея заказа с id {id} не найден");
 
             await _orderItemService.DeleteOrderItem(existing);
             return NoContent(); 

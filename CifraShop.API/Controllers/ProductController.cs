@@ -1,4 +1,4 @@
-﻿using CifraShop.Application.Services.Implementations;
+using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Products;
@@ -19,11 +19,11 @@ namespace CifraShop.API.Controllers
 
         public ProductController(IProductService productService)
         {
-            productService = _productService;
+            _productService = productService;
         }
 
         //Получение всех продуктов
-        [HttpGet("/all")]
+        [HttpGet("all")]
         public async Task<ActionResult<List<ProductResponce>>> GetAllProduct()
         {
             var products = await _productService.GetAllProducts();
@@ -36,7 +36,7 @@ namespace CifraShop.API.Controllers
         }
 
         //Получение продукта по id
-        [HttpGet("/by-id")]
+        [HttpGet("by-id")]
         public async Task<ActionResult<List<ProductResponce>>> GetProductsById([FromQuery] int id)
         {
             var product = await _productService.GetProductsById(id);
@@ -48,7 +48,7 @@ namespace CifraShop.API.Controllers
         }
 
         //Получение продуктов по имени
-        [HttpGet("/by-name")]
+        [HttpGet("by-name")]
         public async Task<ActionResult<List<ProductResponce>>> GetProductsByName([FromQuery] string name)
         {
             var products = await _productService.GetProductsByName(name);
@@ -61,7 +61,7 @@ namespace CifraShop.API.Controllers
         }
 
         //Получение продуктов по цене 
-        [HttpGet("/by-price")]
+        [HttpGet("by-price")]
         public async Task<ActionResult<List<ProductResponce>>> GetProductsByPrice([FromQuery] short price)
         {
             var products = await _productService.GetProductsByPrice(price);
@@ -74,7 +74,7 @@ namespace CifraShop.API.Controllers
         }
 
         //Получение продуктов по количеству 
-        [HttpGet("/by-quantity")]
+        [HttpGet("by-quantity")]
         public async Task<ActionResult<List<ProductResponce>>> GetProductsByQuantity([FromQuery] short quantity)
         {
             var products = await _productService.GetProductsByQuntity(quantity);
@@ -87,7 +87,7 @@ namespace CifraShop.API.Controllers
         }
 
         //Получение продуктов по статусу
-        [HttpGet("/by-status")]
+        [HttpGet("by-status")]
         public async Task<ActionResult<List<ProductResponce>>> GetProductsByStatus(StatusProduct statusProduct)
         {
             var products = await _productService.GetProductsByStatus(statusProduct);
@@ -100,7 +100,7 @@ namespace CifraShop.API.Controllers
         }
 
         //Создание продукта
-        [HttpPost("/create-product")]
+        [HttpPost("create-product")]
         public async Task<ProductResponce> CreateProduct([FromBody] CreateProductRequest request)
         {
             var product = await _productService.CreateProductData(request.Name, request.Description, request.Price, request.Quantity);
@@ -110,7 +110,7 @@ namespace CifraShop.API.Controllers
         }
 
         //Обновление продукта 
-        [HttpPut("/update-product")]
+        [HttpPut("update-product")]
         public async Task<IActionResult> UpdateProduct([FromBody] UppdateProductRequest request, [FromQuery] int id)
         {
             var product = await _productService.GetProductsById(id);
@@ -129,12 +129,16 @@ namespace CifraShop.API.Controllers
 
             if (request.Quantity.HasValue)
                 product.Quantity = request.Quantity.Value;
+
+            if (request.Status.HasValue)
+                product.Status = (Domain.Enums.StatusProduct)request.Status.Value;
            
             await _productService.UpdateProduct(product);
             return NoContent();
         }
 
         //Удаление продукта 
+        [HttpDelete("delete-product")]
         public async Task<IActionResult> DeleteProduct([FromQuery] int id)
         {
             var product = await _productService.GetProductsById(id);

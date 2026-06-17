@@ -1,4 +1,4 @@
-п»їusing CifraShop.Application.Services.Interfaces;
+using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Orders;
 using CifraShop.Contracts.Responses.Orders;
@@ -19,7 +19,7 @@ namespace CifraShop.API.Controllers
         private readonly IOrderItemService _orderItemService;
         private readonly IProductRepository _productRepository;
 
-        //РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+        //Конструктор
         public OrderController(IOrderService orderService, IUserRepository userRepository, IOrderItemService orderItemService, IProductRepository productRepository)
         {
             _orderService = orderService;
@@ -28,8 +28,8 @@ namespace CifraShop.API.Controllers
             _productRepository = productRepository;
         }
 
-        //РџРѕР»СѓС‡РµРЅРёРµ РІСЃРµС… Р·Р°РєР°Р·РѕРІ
-        [HttpGet("/all")]
+        //Получение всех заказов
+        [HttpGet("all")]
         public async Task<ActionResult<List<OrderResponse>>> GetAll()
         {
             var orders = await _orderService.GetAllOrder();
@@ -44,21 +44,21 @@ namespace CifraShop.API.Controllers
             return Ok(result);
         }
 
-        //РџРѕР»СѓС‡РµРЅРёРµ Р·Р°РєР°Р·Р° РїРѕ id
-        [HttpGet("/by-id")]
+        //Получение заказа по id
+        [HttpGet("by-id")]
         public async Task<ActionResult<OrderResponse>> GetById([FromQuery] int id)
         {
             var order = await _orderService.GetOrderById(id);
 
             if (order == null)
-                return NotFound($"Р—Р°РєР°Р· СЃ id {id} РЅРµ РЅР°Р№РґРµРЅ");
+                return NotFound($"Заказ с id {id} не найден");
 
             var items = await _orderItemService.GetOrderItemsByOrderId(order.Id);
             return Ok(order.ToResponce(items));
         }
 
-        //РџРѕР»СѓС‡РµРЅРёРµ Р·Р°РєР°Р·Р° РїРѕ Р»РѕРіРёРЅСѓ
-        [HttpGet("/by-login")]
+        //Получение заказа по логину
+        [HttpGet("by-login")]
         public async Task<ActionResult<List<OrderResponse>>> GetByCustomerLogin(string login)
         {
             var orders = await _orderService.GetOrdersByCustomerLogin(login);
@@ -72,7 +72,7 @@ namespace CifraShop.API.Controllers
             return Ok(result);
         }
 
-        //РџРѕР»СѓС‡РµРЅРёРµ Р·Р°РєР°Р·Р° РїРѕ СЃС‚Р°С‚СѓСЃСѓ 
+        //Получение заказа по статусу 
         [HttpGet("by-status")]
         public async Task<ActionResult<List<OrderResponse>>> GetByStatus(StatusOrder status)
         {
@@ -89,7 +89,7 @@ namespace CifraShop.API.Controllers
         }
 
 
-        //РџРѕР»СѓС‡РµРЅРёРµ Р·Р°РєР°Р·Р° РїРѕ СЃСѓРјРјРµ
+        //Получение заказа по сумме
         [HttpGet("by-sum")]
         public async Task<ActionResult<List<OrderResponse>>> GetBySum([FromQuery] short sum)
         {
@@ -105,7 +105,7 @@ namespace CifraShop.API.Controllers
             return Ok(result);
         }
 
-        //РЎРѕР·РґР°РЅРёРµ Р·Р°РєР°Р·Р°
+        //Создание заказа
         [HttpPost("create-order")]
         public async Task<ActionResult<OrderResponse>> Create([FromBody] CreateOrderRequest request)
         {
@@ -115,7 +115,7 @@ namespace CifraShop.API.Controllers
             var user = await _userRepository.GetUserByEmail(request.CustomerLogin);
 
             if (user == null)
-                return BadRequest($"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ Р»РѕРіРёРЅРѕРј {request.CustomerLogin} РЅРµ РЅР°Р№РґРµРЅ");
+                return BadRequest($"Пользователь с логином {request.CustomerLogin} не найден");
 
             int totalSum = 0;
             var orderItems = new List<OrderItem>();
@@ -125,7 +125,7 @@ namespace CifraShop.API.Controllers
                 var product = await _productRepository.GetProductsById(itemReq.ProductId);
 
                 if (product == null)
-                    return BadRequest($"РџСЂРѕРґСѓРєС‚ СЃ id {itemReq.ProductId} РЅРµ РЅР°Р№РґРµРЅ");
+                    return BadRequest($"Продукт с id {itemReq.ProductId} не найден");
 
                 var orderItem = new OrderItem
                 {
@@ -142,7 +142,7 @@ namespace CifraShop.API.Controllers
             var createdOrder = await _orderService.CreateOrder((short)totalSum, user, orderItems);
 
             if (createdOrder == null)
-                return StatusCode(500, "Р—Р°РєР°Р· РЅРµ Р±С‹Р» СЃРѕР·РґР°РЅ");
+                return StatusCode(500, "Заказ не был создан");
 
             foreach (var item in orderItems)
                 await _orderItemService.CreateOrderItem(createdOrder, item.ProductInOrder, item.Quantity);
@@ -152,14 +152,14 @@ namespace CifraShop.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, responce);
         }
 
-        //РћР±РЅРѕРІР»РµРЅРёРµ Р·Р°РєР°Р·Р°
+        //Обновление заказа
         [HttpPut("update-order")]
         public async Task<IActionResult> Update([FromQuery] int id, [FromBody] UpdateOrderRequest request)
         {
             var order = await _orderService.GetOrderById(id);
 
             if (order == null)
-                return NotFound($"Р—Р°РєР°Р· СЃ id {id} РЅРµ Р±С‹Р» РЅР°Р№РґРµРЅ");
+                return NotFound($"Заказ с id {id} не был найден");
 
             if (request.Status.HasValue)
                 order.Status = request.Status.Value;
@@ -171,7 +171,7 @@ namespace CifraShop.API.Controllers
             return NoContent();
         }
 
-        //РЈРґР°Р»РµРЅРёРµ Р·Р°РєР°Р·Р°
+        //Удаление заказа
         [HttpDelete("delete-order")]
         public async Task<IActionResult> Delete([FromQuery] int id)
         {
