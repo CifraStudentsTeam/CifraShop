@@ -1,6 +1,5 @@
 @page "/admin"
 @using System.Net.Http.Json
-@using CifraShop.Client.Models
 @implements IDisposable
 @inject HttpClient Http
 
@@ -155,23 +154,19 @@
                     </button>
                 </div>
                 <div class="card-body pt-0">
-                    <div class="d-flex gap-2 mb-2">
-                        <div class="input-group input-group-sm flex-grow-1">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-secondary"></i></span>
-                            <input type="text" class="form-control bg-light border-0" placeholder="Номер, email..."
-                                   value="@_orderSearch" @oninput="OnOrderSearchChanged" />
-                        </div>
-                        <select class="form-select form-select-sm" style="width:auto;"
-                                value="@_orderFilter" @onchange="OnOrderFilterChanged">
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        <SearchBar Value="@_orderSearch" ValueChanged="OnOrderSearchChanged"
+                                   FilterValue="@_orderFilter" FilterValueChanged="OnOrderFilterChanged"
+                                   Placeholder="Номер, email...">
                             <option value="">Все</option>
                             @foreach (var s in OrderStatuses)
                             {
                                 <option value="@s.Key">@s.Value</option>
                             }
-                        </select>
+                        </SearchBar>
                         <input type="date" class="form-control form-control-sm" style="width:auto;"
                                value="@_orderDateFrom" @onchange="OnOrderDateFromChanged" />
-                        <input type="date" class="form-select form-select-sm" style="width:auto;"
+                        <input type="date" class="form-control form-control-sm" style="width:auto;"
                                value="@_orderDateTo" @onchange="OnOrderDateToChanged" />
                     </div>
 
@@ -624,9 +619,9 @@
 
     private CancellationTokenSource? _productSearchCts, _orderSearchCts, _userSearchCts;
 
-    private async Task OnProductSearchChanged(ChangeEventArgs e)
+    private async Task OnProductSearchChanged(string value)
     {
-        _productSearch = e.Value?.ToString() ?? "";
+        _productSearch = value;
         _productPage = 0;
         _productSearchCts?.Cancel();
         _productSearchCts = new CancellationTokenSource();
@@ -634,16 +629,16 @@
         await LoadProducts();
     }
 
-    private async Task OnProductFilterChanged(ChangeEventArgs e)
+    private async Task OnProductFilterChanged(string value)
     {
-        _productFilter = e.Value?.ToString() ?? "";
+        _productFilter = value;
         _productPage = 0;
         await LoadProducts();
     }
 
-    private async Task OnOrderSearchChanged(ChangeEventArgs e)
+    private async Task OnOrderSearchChanged(string value)
     {
-        _orderSearch = e.Value?.ToString() ?? "";
+        _orderSearch = value;
         _orderPage = 0;
         _orderSearchCts?.Cancel();
         _orderSearchCts = new CancellationTokenSource();
@@ -651,9 +646,9 @@
         await LoadOrders();
     }
 
-    private async Task OnOrderFilterChanged(ChangeEventArgs e)
+    private async Task OnOrderFilterChanged(string value)
     {
-        _orderFilter = e.Value?.ToString() ?? "";
+        _orderFilter = value;
         _orderPage = 0;
         await LoadOrders();
     }
@@ -672,9 +667,9 @@
         await LoadOrders();
     }
 
-    private async Task OnUserSearchChanged(ChangeEventArgs e)
+    private async Task OnUserSearchChanged(string value)
     {
-        _userSearch = e.Value?.ToString() ?? "";
+        _userSearch = value;
         _userPage = 0;
         _userSearchCts?.Cancel();
         _userSearchCts = new CancellationTokenSource();
@@ -682,9 +677,9 @@
         await LoadUsers();
     }
 
-    private async Task OnUserFilterChanged(ChangeEventArgs e)
+    private async Task OnUserFilterChanged(string value)
     {
-        _userFilter = e.Value?.ToString() ?? "";
+        _userFilter = value;
         _userPage = 0;
         await LoadUsers();
     }

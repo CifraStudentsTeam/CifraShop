@@ -1,9 +1,13 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" />
     </Found>
     <NotFound>
-        <h3>Не найдено</h3>
-        <p>К сожалению, контент, который вы ищете, не существует.</p>
+        <PageTitle>Не найдено</PageTitle>
+        <div class="container py-5 text-center">
+            <h3 class="fw-bold">404</h3>
+            <p class="text-secondary">Страница не найдена</p>
+            <a href="/" class="btn btn-primary btn-sm">На главную</a>
+        </div>
     </NotFound>
 </Router>
