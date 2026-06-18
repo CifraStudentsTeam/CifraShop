@@ -1,7 +1,4 @@
 using CifraShop.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
 {

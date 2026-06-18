@@ -1,4 +1,4 @@
-﻿using CifraShop.Contracts.Responses.OrderItem;
+using CifraShop.Contracts.Responses.OrderItem;
 using CifraShop.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -14,6 +14,6 @@ namespace CifraShop.Contracts.Responses.Orders
         public DateTime DateOfPurchase { get; set; }
         public string CustomerLogin { get; set; }
         public int CustomerId {  get; set; }
-        public List<OrderItem.OrderResponse> Items { get; set; }
+        public List<OrderItem.OrderItemResponse> Items { get; set; }
     }
 }

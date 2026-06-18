@@ -1,15 +1,11 @@
-﻿using CifraShop.Contracts.Responses.Orders;
+using CifraShop.Contracts.Responses.Orders;
 using CifraShop.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace CifraShop.Contracts.Mappings
 {
     public static class OrderMapping
     {
-        public static OrderResponse ToResponce(this Order order, List<OrderItem> items)
+        public static OrderResponse ToResponse(this Order order, List<OrderItem> items)
         {
             return new OrderResponse
             {

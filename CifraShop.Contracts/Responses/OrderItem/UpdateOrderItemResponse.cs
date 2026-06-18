@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace CifraShop.Contracts.Responses.OrderItem
 {
-    public class UpdateOrderItemResponce
+    public class UpdateOrderItemResponse
     {
         public int Id { get; set; }
         public short Quantity { get; set; }

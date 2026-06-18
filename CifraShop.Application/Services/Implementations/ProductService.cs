@@ -1,10 +1,7 @@
-﻿using CifraShop.Application.Services.Interfaces;
+using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using CifraShop.Infrastructure.Data.Repositories.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CifraShop.Application.Services.Implementations
 {
@@ -12,36 +9,28 @@ namespace CifraShop.Application.Services.Implementations
     {
         private readonly IProductRepository _repository;
 
-        //Конструктор
         public ProductService(IProductRepository repository)
             => _repository = repository;
 
-        //Получение всех заказов
         public Task<List<Product>> GetAllProducts()
-            => _repository.UploadingProductData();
+            => _repository.GetAll();
 
-        //Получение продукта по id
-        public Task<Product> GetProductsById(int id)
-            => _repository.GetProductsById(id);
-        
-        //Получение продуктов по имени
+        public Task<Product> GetProductById(int id)
+            => _repository.GetProductById(id);
+
         public Task<List<Product>> GetProductsByName(string name)
             => _repository.GetProductsByName(name);
 
-        //Получение продукта по цене
         public Task<List<Product>> GetProductsByPrice(short price)
             => _repository.GetProductsByPrice(price);
 
-        //Получение продуктов по количеству
-        public Task<List<Product>> GetProductsByQuntity(short quntity)
-            => _repository.GetProductsByQuntity(quntity);
+        public Task<List<Product>> GetProductsByQuantity(short quantity)
+            => _repository.GetProductsByQuantity(quantity);
 
-        //Получение продукта по статусу 
         public Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct)
             => _repository.GetProductsByStatus(statusProduct);
 
-        //Создание продукта
-        public async Task<Product> CreateProductData(string name, string description, short price, short quantity)
+        public async Task<Product> CreateProduct(string name, string description, short price, short quantity)
         {
             var product = new Product
             {
@@ -52,16 +41,14 @@ namespace CifraShop.Application.Services.Implementations
                 Status = StatusProduct.OnSaleSoon
             };
 
-            await _repository.AddPoduct(product);
-            return product; 
+            await _repository.AddProduct(product);
+            return product;
         }
 
-        //Обовление продукта
         public Task UpdateProduct(Product productToUpdate)
             => _repository.UpdateProduct(productToUpdate);
 
-        //Удаление продукта
         public Task DeleteProduct(Product productToDelete)
             => _repository.DeleteProduct(productToDelete);
-    }   
+    }
 }

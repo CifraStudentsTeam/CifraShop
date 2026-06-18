@@ -1,21 +1,17 @@
-﻿using CifraShop.Domain.Entities;
+using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CifraShop.Application.Services.Interfaces
 {
     public interface IOrderService
     {
-        public Task<List<Order>> GetAllOrder();
-        public Task<Order> GetOrderById(int id);
-        public Task<List<Order>> GetOrdersByStatus(StatusOrder status);
-        public Task<List<Order>> GetOrdersBySum(short sum);
-        public Task<List<Order>> GetOrdersByCustomerLogin(string customerLogin);
-        public Task<Order> CreateOrder(short sum, User customer, List<OrderItem> orderItems);
-        public Task UpdateOrder(Order orderToUpdate);
-        public Task DeleteOrder(Order orderToDelete);
+        Task<List<Order>> GetAllOrders();
+        Task<Order> GetOrderById(int id);
+        Task<List<Order>> GetOrdersByStatus(StatusOrder status);
+        Task<List<Order>> GetOrdersBySum(short sum);
+        Task<List<Order>> GetOrdersByCustomerLogin(string customerLogin);
+        Task<Order> CreateOrder(short sum, int customerId, string customerLogin, List<OrderItem> orderItems);
+        Task UpdateOrder(Order orderToUpdate);
+        Task DeleteOrder(Order orderToDelete);
     }
 }

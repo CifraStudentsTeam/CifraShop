@@ -4,8 +4,6 @@ using CifraShop.Contracts.Requests.Orders;
 using CifraShop.Contracts.Responses.Orders;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
@@ -15,49 +13,43 @@ namespace CifraShop.API.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
-        private readonly IUserRepository _userRepository;
         private readonly IOrderItemService _orderItemService;
-        private readonly IProductRepository _productRepository;
+        private readonly IUserService _userService;
 
-        //Конструктор
-        public OrderController(IOrderService orderService, IUserRepository userRepository, IOrderItemService orderItemService, IProductRepository productRepository)
+        public OrderController(IOrderService orderService, IOrderItemService orderItemService, IUserService userService)
         {
             _orderService = orderService;
-            _userRepository = userRepository;
             _orderItemService = orderItemService;
-            _productRepository = productRepository;
+            _userService = userService;
         }
 
-        //Получение всех заказов
         [HttpGet("all")]
         public async Task<ActionResult<List<OrderResponse>>> GetAll()
         {
-            var orders = await _orderService.GetAllOrder();
+            var orders = await _orderService.GetAllOrders();
             var result = new List<OrderResponse>();
 
             foreach (var order in orders)
             {
                 var items = await _orderItemService.GetOrderItemsByOrderId(order.Id);
-                result.Add(order.ToResponce(items));
+                result.Add(order.ToResponse(items));
             }
 
             return Ok(result);
         }
 
-        //Получение заказа по id
         [HttpGet("by-id")]
         public async Task<ActionResult<OrderResponse>> GetById([FromQuery] int id)
         {
             var order = await _orderService.GetOrderById(id);
 
             if (order == null)
-                return NotFound($"Заказ с id {id} не найден");
+                return NotFound($"Р—Р°РєР°Р· СЃ id {id} РЅРµ РЅР°Р№РґРµРЅ");
 
             var items = await _orderItemService.GetOrderItemsByOrderId(order.Id);
-            return Ok(order.ToResponce(items));
+            return Ok(order.ToResponse(items));
         }
 
-        //Получение заказа по логину
         [HttpGet("by-login")]
         public async Task<ActionResult<List<OrderResponse>>> GetByCustomerLogin(string login)
         {
@@ -67,29 +59,26 @@ namespace CifraShop.API.Controllers
             foreach (var order in orders)
             {
                 var items = await _orderItemService.GetOrderItemsByOrderId(order.Id);
-                result.Add(order.ToResponce(items));
+                result.Add(order.ToResponse(items));
             }
             return Ok(result);
         }
 
-        //Получение заказа по статусу 
         [HttpGet("by-status")]
         public async Task<ActionResult<List<OrderResponse>>> GetByStatus(StatusOrder status)
         {
             var orders = await _orderService.GetOrdersByStatus(status);
             var result = new List<OrderResponse>();
 
-            foreach(var order in orders)
+            foreach (var order in orders)
             {
                 var items = await _orderItemService.GetOrderItemsByOrderId(order.Id);
-                result.Add(order.ToResponce(items));
+                result.Add(order.ToResponse(items));
             }
 
             return Ok(result);
         }
 
-
-        //Получение заказа по сумме
         [HttpGet("by-sum")]
         public async Task<ActionResult<List<OrderResponse>>> GetBySum([FromQuery] short sum)
         {
@@ -99,67 +88,50 @@ namespace CifraShop.API.Controllers
             foreach (var order in orders)
             {
                 var items = await _orderItemService.GetOrderItemsByOrderId(order.Id);
-                result.Add(order.ToResponce(items));
+                result.Add(order.ToResponse(items));
             }
 
             return Ok(result);
         }
 
-        //Создание заказа
         [HttpPost("create-order")]
         public async Task<ActionResult<OrderResponse>> Create([FromBody] CreateOrderRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userRepository.GetUserByEmail(request.CustomerLogin);
+            var user = await _userService.GetUserByEmail(request.CustomerLogin);
 
             if (user == null)
-                return BadRequest($"Пользователь с логином {request.CustomerLogin} не найден");
+                return BadRequest($"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ Р»РѕРіРёРЅРѕРј {request.CustomerLogin} РЅРµ РЅР°Р№РґРµРЅ");
 
-            int totalSum = 0;
-            var orderItems = new List<OrderItem>();
-
-            foreach (var itemReq in request.Items)
-            {
-                var product = await _productRepository.GetProductsById(itemReq.ProductId);
-
-                if (product == null)
-                    return BadRequest($"Продукт с id {itemReq.ProductId} не найден");
-
-                var orderItem = new OrderItem
-                {
-                    ProductId = product.Id,
-                    ProductInOrder = product,
-                    Price = product.Price,
-                    Quantity = product.Quantity
-                };
-
-                orderItems.Add(orderItem);
-                totalSum += product.Price * itemReq.Quantity;
-            }
-
-            var createdOrder = await _orderService.CreateOrder((short)totalSum, user, orderItems);
+            var createdOrder = await _orderService.CreateOrder(0, user.Id, user.Email, new List<OrderItem>());
 
             if (createdOrder == null)
-                return StatusCode(500, "Заказ не был создан");
+                return StatusCode(500, "Р—Р°РєР°Р· РЅРµ Р±С‹Р» СЃРѕР·РґР°РЅ");
 
-            foreach (var item in orderItems)
-                await _orderItemService.CreateOrderItem(createdOrder, item.ProductInOrder, item.Quantity);
+            short totalSum = 0;
+            foreach (var itemReq in request.Items)
+            {
+                var orderItem = await _orderItemService.CreateOrderItem(createdOrder.Id, itemReq.ProductId, itemReq.Quantity);
+                totalSum += (short)(orderItem.Price * itemReq.Quantity);
+            }
+
+            createdOrder.Sum = totalSum;
+            await _orderService.UpdateOrder(createdOrder);
 
             var finalItems = await _orderItemService.GetOrderItemsByOrderId(createdOrder.Id);
-            var responce = createdOrder.ToResponce(finalItems);
-            return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, responce);
+            var response = createdOrder.ToResponse(finalItems);
+            return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, response);
         }
 
-        //Обновление заказа
         [HttpPut("update-order")]
         public async Task<IActionResult> Update([FromQuery] int id, [FromBody] UpdateOrderRequest request)
         {
             var order = await _orderService.GetOrderById(id);
 
             if (order == null)
-                return NotFound($"Заказ с id {id} не был найден");
+                return NotFound($"Р—Р°РєР°Р· СЃ id {id} РЅРµ РЅР°Р№РґРµРЅ");
 
             if (request.Status.HasValue)
                 order.Status = request.Status.Value;
@@ -171,7 +143,6 @@ namespace CifraShop.API.Controllers
             return NoContent();
         }
 
-        //Удаление заказа
         [HttpDelete("delete-order")]
         public async Task<IActionResult> Delete([FromQuery] int id)
         {

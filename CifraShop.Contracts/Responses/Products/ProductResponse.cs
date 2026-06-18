@@ -1,13 +1,8 @@
-using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Linq;
 
 namespace CifraShop.Contracts.Responses.Products
 {
-    public class ProductResponce
+    public class ProductResponse
     {
         public int Id { get; set; }
         public string Name { get; set; }

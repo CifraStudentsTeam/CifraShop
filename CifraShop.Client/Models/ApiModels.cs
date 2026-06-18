@@ -1,6 +1,6 @@
 namespace CifraShop.Client.Models;
 
-/// <summary>Модель товара, соответствующая ProductResponce с API</summary>
+/// <summary>Модель товара, соответствующая ProductResponse с API</summary>
 public class ProductDto
 {
     public int Id { get; set; }

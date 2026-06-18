@@ -1,10 +1,7 @@
-﻿using CifraShop.Application.Services.Interfaces;
+using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using CifraShop.Infrastructure.Data.Repositories.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CifraShop.Application.Services.Implementations
 {
@@ -12,54 +9,44 @@ namespace CifraShop.Application.Services.Implementations
     {
         private readonly IOrderRepository _repository;
 
-        //Констуктор
         public OrderService(IOrderRepository repository)
             => _repository = repository;
 
-        //Получение всех заказов
-        public async Task<List<Order>> GetAllOrder()
-            => await _repository.UploadingOrderData();
+        public Task<List<Order>> GetAllOrders()
+            => _repository.GetAll();
 
-        //Получение заказа по id
-        public async Task<Order> GetOrderById(int id)
-            => await _repository.GetOrderById(id);
+        public Task<Order> GetOrderById(int id)
+            => _repository.GetOrderById(id);
 
-        //Получние заказов по логину
-        public async Task<List<Order>> GetOrdersByCustomerLogin(string customerLogin)
-            => await _repository.GetOrdersByLogin(customerLogin);
+        public Task<List<Order>> GetOrdersByCustomerLogin(string customerLogin)
+            => _repository.GetOrdersByLogin(customerLogin);
 
-        //Получение заказа по статусу
-        public async Task<List<Order>> GetOrdersByStatus(StatusOrder status)
-            => await _repository.GetOrdersByStatus(status);
+        public Task<List<Order>> GetOrdersByStatus(StatusOrder status)
+            => _repository.GetOrdersByStatus(status);
 
-        //Получение заказа по сумме        
-        public async Task<List<Order>> GetOrdersBySum(short sum)
-            => await _repository.GetOrdersBySum(sum);
+        public Task<List<Order>> GetOrdersBySum(short sum)
+            => _repository.GetOrdersBySum(sum);
 
-        //Создание заказа
-        public async Task<Order> CreateOrder(short sum, User customer, List<OrderItem> orderItems)
+        public async Task<Order> CreateOrder(short sum, int customerId, string customerLogin, List<OrderItem> orderItems)
         {
             var order = new Order
             {
                 Status = StatusOrder.Pending,
                 Sum = sum,
                 DateOfPurchase = DateTime.Now,
-                CustomerLogin = customer.Email,
-                CustomerId = customer.Id,
-                Customer = customer,
+                CustomerLogin = customerLogin,
+                CustomerId = customerId,
                 OrderItems = orderItems
             };
-            
+
             await _repository.AddOrder(order);
             return order;
         }
 
-        //Обновление заказа
         public Task UpdateOrder(Order orderToUpdate)
             => _repository.UpdateOrder(orderToUpdate);
 
-        //Удаление заказа
-        public async Task DeleteOrder(Order ordeToDelete)
-            => await _repository.DeleteOrder(ordeToDelete);
+        public Task DeleteOrder(Order orderToDelete)
+            => _repository.DeleteOrder(orderToDelete);
     }
 }

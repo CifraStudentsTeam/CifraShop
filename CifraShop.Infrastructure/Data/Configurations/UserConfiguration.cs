@@ -1,11 +1,6 @@
-﻿using CifraShop.Domain.Entities;
-using CifraShop.Domain.Enums;
+using CifraShop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CifraShop.Infrastructure.Data.Configurations
 {
@@ -13,9 +8,8 @@ namespace CifraShop.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            #region Настройка таблицы пользователя
             builder.ToTable("Users");
-            builder.HasKey(u  => u.Id);
+            builder.HasKey(u => u.Id);
             builder.Property(u => u.Id)
                    .HasColumnName("Id")
                    .UseIdentityColumn();
@@ -34,14 +28,11 @@ namespace CifraShop.Infrastructure.Data.Configurations
                    .HasColumnName("UserRole")
                    .HasConversion<string>()
                    .IsRequired();
-            #endregion
 
-            #region Настройка связи с пользователем
             builder.HasMany(u => u.Orders)
                    .WithOne(o => o.Customer)
                    .HasForeignKey(o => o.CustomerId)
                    .OnDelete(DeleteBehavior.Restrict);
-            #endregion
         }
     }
 }

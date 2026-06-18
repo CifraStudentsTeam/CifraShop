@@ -1,9 +1,6 @@
-﻿using CifraShop.Domain.Entities;
+using CifraShop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CifraShop.Infrastructure.Data.Configurations
 {
@@ -11,7 +8,6 @@ namespace CifraShop.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<OrderItem> builder)
         {
-            #region Настройка таблицы с состовляющей заказа
             builder.ToTable("OrderItems");
             builder.HasKey(oi => oi.Id);
             builder.Property(oi => oi.Id)
@@ -23,18 +19,15 @@ namespace CifraShop.Infrastructure.Data.Configurations
             builder.Property(oi => oi.Price)
                    .HasColumnName("Price")
                    .IsRequired();
-            #endregion
 
-            #region Настройка связей с состовляющей заказа
-            builder.HasOne(oi => oi.OrderInOrder)
+            builder.HasOne(oi => oi.Order)
                    .WithMany(o => o.OrderItems)
                    .HasForeignKey(oi => oi.OrderId)
                    .OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne(oi => oi.ProductInOrder)
+            builder.HasOne(oi => oi.Product)
                    .WithMany(p => p.OrderItems)
                    .HasForeignKey(oi => oi.ProductId)
                    .OnDelete(DeleteBehavior.Restrict);
-            #endregion
         }
     }
 }

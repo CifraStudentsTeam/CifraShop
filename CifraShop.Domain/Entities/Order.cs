@@ -1,7 +1,4 @@
-﻿using CifraShop.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using CifraShop.Domain.Enums;
 
 namespace CifraShop.Domain.Entities
 {

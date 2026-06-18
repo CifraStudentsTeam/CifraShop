@@ -1,12 +1,6 @@
-﻿using CifraShop.Domain.Entities;
-using CifraShop.Domain.Enums;
+using CifraShop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CifraShop.Infrastructure.Data.Configurations
 {
@@ -14,11 +8,10 @@ namespace CifraShop.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Product> builder)
         {
-            #region Настройка таблицы с продуктом
             builder.ToTable("Product");
             builder.HasKey(p => p.Id);
             builder.Property(p => p.Id)
-                   .HasColumnName("Id")       
+                   .HasColumnName("Id")
                    .UseIdentityColumn();
             builder.Property(p => p.Name)
                    .HasColumnName("Name")
@@ -41,18 +34,13 @@ namespace CifraShop.Infrastructure.Data.Configurations
                    .HasColumnName("ThePathToTheImage")
                    .HasMaxLength(100)
                    .IsRequired(false);
-            #endregion
 
-            #region Настройка игнора продукта
             builder.Ignore(p => p.IsSelected);
-            #endregion
 
-            #region Настройка связей с продуктом
             builder.HasMany(p => p.OrderItems)
-                   .WithOne(oi => oi.ProductInOrder)
+                   .WithOne(oi => oi.Product)
                    .HasForeignKey(oi => oi.ProductId)
                    .OnDelete(DeleteBehavior.Restrict);
-            #endregion
         }
     }
 }

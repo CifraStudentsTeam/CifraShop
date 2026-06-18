@@ -1,20 +1,17 @@
-﻿using CifraShop.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using CifraShop.Domain.Entities;
 
 namespace CifraShop.Application.Services.Interfaces
 {
     public interface IUserService
     {
-        public Task<List<User>> GetAllUsers();
-        public Task<List<User>> GetAllAdmins();
-        public Task<List<User>> GetAllStudents();
-        public Task<User> GetUserById(int id);
-        public Task<User> GetUserByEmail(string email);
-        public Task<User> CreateAdmin(string email, string password);
-        public Task<User> CreateStudent(string email, string password);
-        public Task UpdateUser(User userToUpdate);
-        public Task DeleteUser(User userToDelete);
+        Task<List<User>> GetAllUsers();
+        Task<List<User>> GetAllAdmins();
+        Task<List<User>> GetAllStudents();
+        Task<User> GetUserById(int id);
+        Task<User> GetUserByEmail(string email);
+        Task<User> CreateAdmin(string email, string password);
+        Task<User> CreateStudent(string email, string password);
+        Task UpdateUser(User userToUpdate);
+        Task DeleteUser(User userToDelete);
     }
 }
