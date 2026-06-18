@@ -11,6 +11,7 @@ namespace CifraShop.Infrastructure.Data
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<Product> Products => Set<Product>();
         public DbSet<AdminAction> AdminActions => Set<AdminAction>();
+        public DbSet<NotificationSettings> NotificationSettings => Set<NotificationSettings>();
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {

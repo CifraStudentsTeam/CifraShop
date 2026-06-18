@@ -26,6 +26,8 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminActionService, AdminActionService>();
+builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepositoryEfCore>();
+builder.Services.AddScoped<INotificationSettingsService, NotificationSettingsService>();
 
 builder.Services.AddCors(options =>
 {
