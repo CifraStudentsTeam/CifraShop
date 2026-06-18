@@ -20,7 +20,7 @@ namespace CifraShop.Application.Services.Implementations
             {
                 ActionType = type,
                 Details = details,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
             await _repository.AddAction(action);
         }

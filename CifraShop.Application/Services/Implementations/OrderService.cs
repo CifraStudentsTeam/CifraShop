@@ -43,7 +43,7 @@ namespace CifraShop.Application.Services.Implementations
             {
                 Status = StatusOrder.Pending,
                 Sum = sum,
-                DateOfPurchase = DateTime.Now,
+                DateOfPurchase = DateTime.UtcNow,
                 CustomerLogin = customerLogin,
                 CustomerId = customerId,
                 OrderItems = orderItems
