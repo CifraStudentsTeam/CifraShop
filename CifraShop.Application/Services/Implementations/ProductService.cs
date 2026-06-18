@@ -1,4 +1,5 @@
 using CifraShop.Application.Services.Interfaces;
+using CifraShop.Contracts.Responses.Common;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using CifraShop.Infrastructure.Data.Repositories.Interfaces;
@@ -14,6 +15,12 @@ namespace CifraShop.Application.Services.Implementations
 
         public Task<List<Product>> GetAllProducts()
             => _repository.GetAll();
+
+        public async Task<PagedResponse<Product>> GetProductsPaged(int page, int pageSize)
+        {
+            var (items, total) = await _repository.GetAllPaged(page, pageSize);
+            return new PagedResponse<Product> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+        }
 
         public Task<Product> GetProductById(int id)
             => _repository.GetProductById(id);
@@ -50,5 +57,8 @@ namespace CifraShop.Application.Services.Implementations
 
         public Task DeleteProduct(Product productToDelete)
             => _repository.DeleteProduct(productToDelete);
+
+        public Task DeleteRange(List<int> ids)
+            => _repository.DeleteRange(ids);
     }
 }

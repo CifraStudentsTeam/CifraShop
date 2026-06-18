@@ -15,6 +15,14 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<Product>> GetAll()
             => await _context.Products.ToListAsync();
 
+        public async Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize)
+        {
+            var query = _context.Products;
+            var total = await query.CountAsync();
+            var items = await query.Skip(page * pageSize).Take(pageSize).ToListAsync();
+            return (items, total);
+        }
+
         public async Task<List<Product>> GetProductsByName(string name)
             => await _context.Products.Where(x => x.Name == name).ToListAsync();
 
@@ -45,6 +53,13 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task DeleteProduct(Product productToDelete)
         {
             _context.Products.Remove(productToDelete);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteRange(List<int> ids)
+        {
+            var products = await _context.Products.Where(p => ids.Contains(p.Id)).ToListAsync();
+            _context.Products.RemoveRange(products);
             await _context.SaveChangesAsync();
         }
     }

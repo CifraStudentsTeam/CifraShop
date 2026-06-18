@@ -1,4 +1,5 @@
 using CifraShop.Application.Services.Interfaces;
+using CifraShop.Contracts.Responses.Common;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using CifraShop.Infrastructure.Data.Repositories.Interfaces;
@@ -20,6 +21,12 @@ namespace CifraShop.Application.Services.Implementations
 
         public Task<List<User>> GetAllUsers()
             => _repository.GetAllUsers();
+
+        public async Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize)
+        {
+            var (items, total) = await _repository.GetAllUsersPaged(page, pageSize);
+            return new PagedResponse<User> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+        }
 
         public Task<User> GetUserById(int id)
             => _repository.GetUserById(id);
@@ -52,6 +59,20 @@ namespace CifraShop.Application.Services.Implementations
 
             await _repository.AddUser(student);
             return student;
+        }
+
+        public async Task<User> CreateUser(string email, string password, string role)
+        {
+            var user = new User
+            {
+                Email = email,
+                Password = password,
+                Role = role == "Admin" ? UserRole.Admin : UserRole.Student,
+                Balance = 0
+            };
+
+            await _repository.AddUser(user);
+            return user;
         }
 
         public Task UpdateUser(User userToUpdate)

@@ -1,6 +1,7 @@
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Users;
+using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.User;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,46 +20,41 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<List<UserResponse>>> GetAll()
         {
             var users = await _userService.GetAllUsers();
-            var result = new List<UserResponse>();
+            return Ok(users.Select(u => u.ToResponse()).ToList());
+        }
 
-            foreach (var user in users)
-                result.Add(user.ToResponse());
-
-            return Ok(result);
+        [HttpGet("paged")]
+        public async Task<ActionResult<PagedResponse<UserResponse>>> GetPaged([FromQuery] int page = 0, [FromQuery] int pageSize = 8)
+        {
+            var paged = await _userService.GetUsersPaged(page, pageSize);
+            return Ok(new PagedResponse<UserResponse>
+            {
+                Items = paged.Items.Select(u => u.ToResponse()).ToList(),
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            });
         }
 
         [HttpGet("all-admins")]
         public async Task<ActionResult<List<UserResponse>>> GetAllAdmins()
         {
             var users = await _userService.GetAllAdmins();
-            var result = new List<UserResponse>();
-
-            foreach (var user in users)
-                result.Add(user.ToResponse());
-
-            return Ok(result);
+            return Ok(users.Select(u => u.ToResponse()).ToList());
         }
 
         [HttpGet("all-students")]
         public async Task<ActionResult<List<UserResponse>>> GetAllStudents()
         {
             var users = await _userService.GetAllStudents();
-            var result = new List<UserResponse>();
-
-            foreach (var user in users)
-                result.Add(user.ToResponse());
-
-            return Ok(result);
+            return Ok(users.Select(u => u.ToResponse()).ToList());
         }
 
         [HttpGet("by-id")]
         public async Task<ActionResult<UserResponse>> GetUserById([FromQuery] int id)
         {
             var user = await _userService.GetUserById(id);
-
-            if (user == null)
-                return NotFound($"Пользователь с id {id} не найден");
-
+            if (user == null) return NotFound($"Пользователь с id {id} не найден");
             return Ok(user.ToResponse());
         }
 
@@ -66,10 +62,14 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<UserResponse>> GetUserByEmail([FromQuery] string email)
         {
             var user = await _userService.GetUserByEmail(email);
+            if (user == null) return NotFound($"Пользователь с почтой {email} не найден");
+            return Ok(user.ToResponse());
+        }
 
-            if (user == null)
-                return NotFound($"Пользователь с почтой {email} не найден");
-
+        [HttpPost("create-user")]
+        public async Task<ActionResult<UserResponse>> CreateUser([FromBody] CreateUserRequest request)
+        {
+            var user = await _userService.CreateUser(request.Email, request.Password, "Student");
             return Ok(user.ToResponse());
         }
 
@@ -77,10 +77,6 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<UserResponse>> CreateAdmin([FromBody] CreateUserRequest request)
         {
             var admin = await _userService.CreateAdmin(request.Email, request.Password);
-
-            if (admin == null)
-                return StatusCode(500, "Админ не был создан");
-
             return Ok(admin.ToResponse());
         }
 
@@ -88,10 +84,6 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<UserResponse>> CreateStudent([FromBody] CreateUserRequest request)
         {
             var student = await _userService.CreateStudent(request.Email, request.Password);
-
-            if (student == null)
-                return StatusCode(500, "Студент не был создан");
-
             return Ok(student.ToResponse());
         }
 
@@ -99,18 +91,11 @@ namespace CifraShop.API.Controllers
         public async Task<IActionResult> UpdateUser([FromQuery] int id, [FromBody] UpdateUserRequest request)
         {
             var user = await _userService.GetUserById(id);
+            if (user == null) return NotFound($"Пользователь id {id} не найден");
 
-            if (user == null)
-                return NotFound($"Пользователь id {id} не найден");
-
-            if (request.Email != null)
-                user.Email = request.Email;
-
-            if (request.Password != null)
-                user.Password = request.Password;
-
-            if (request.Balance.HasValue)
-                user.Balance = request.Balance.Value;
+            if (request.Email != null) user.Email = request.Email;
+            if (request.Password != null) user.Password = request.Password;
+            if (request.Balance.HasValue) user.Balance = request.Balance.Value;
 
             await _userService.UpdateUser(user);
             return NoContent();
@@ -120,10 +105,7 @@ namespace CifraShop.API.Controllers
         public async Task<IActionResult> DeleteUser([FromQuery] int id)
         {
             var user = await _userService.GetUserById(id);
-
-            if (user == null)
-                return NotFound($"Пользователь с id {id} не найден");
-
+            if (user == null) return NotFound($"Пользователь с id {id} не найден");
             await _userService.DeleteUser(user);
             return NoContent();
         }

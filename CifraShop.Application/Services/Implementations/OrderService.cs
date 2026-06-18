@@ -1,4 +1,5 @@
 using CifraShop.Application.Services.Interfaces;
+using CifraShop.Contracts.Responses.Common;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using CifraShop.Infrastructure.Data.Repositories.Interfaces;
@@ -15,6 +16,12 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<Order>> GetAllOrders()
             => _repository.GetAll();
 
+        public async Task<PagedResponse<Order>> GetOrdersPaged(int page, int pageSize)
+        {
+            var (items, total) = await _repository.GetAllPaged(page, pageSize);
+            return new PagedResponse<Order> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+        }
+
         public Task<Order> GetOrderById(int id)
             => _repository.GetOrderById(id);
 
@@ -26,6 +33,9 @@ namespace CifraShop.Application.Services.Implementations
 
         public Task<List<Order>> GetOrdersBySum(short sum)
             => _repository.GetOrdersBySum(sum);
+
+        public Task<List<Order>> GetOrdersByDateRange(DateTime from, DateTime to)
+            => _repository.GetOrdersByDateRange(from, to);
 
         public async Task<Order> CreateOrder(short sum, int customerId, string customerLogin, List<OrderItem> orderItems)
         {
@@ -45,6 +55,9 @@ namespace CifraShop.Application.Services.Implementations
 
         public Task UpdateOrder(Order orderToUpdate)
             => _repository.UpdateOrder(orderToUpdate);
+
+        public Task UpdateStatusRange(List<int> ids, StatusOrder newStatus)
+            => _repository.UpdateStatusRange(ids, newStatus);
 
         public Task DeleteOrder(Order orderToDelete)
             => _repository.DeleteOrder(orderToDelete);

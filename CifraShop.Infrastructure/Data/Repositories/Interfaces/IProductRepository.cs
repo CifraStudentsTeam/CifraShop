@@ -6,6 +6,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
     public interface IProductRepository
     {
         Task<List<Product>> GetAll();
+        Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize);
         Task<Product> GetProductById(int id);
         Task<List<Product>> GetProductsByName(string name);
         Task<List<Product>> GetProductsByPrice(short price);
@@ -14,5 +15,6 @@ namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
         Task AddProduct(Product productToAdd);
         Task UpdateProduct(Product productToUpdate);
         Task DeleteProduct(Product productToDelete);
+        Task DeleteRange(List<int> ids);
     }
 }

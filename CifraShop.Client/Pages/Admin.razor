@@ -26,9 +26,9 @@
 
     <!-- МЕТРИКИ -->
     <div class="row g-2 mb-3">
-        <MetricCard Title="Товаров" Count="@Products.Count" Icon="bi-box" Color="primary" />
-        <MetricCard Title="Заказы" Count="@Orders.Count" Icon="bi-cart-check" Color="warning" />
-        <MetricCard Title="Пользователи" Count="@Users.Count" Icon="bi-people" Color="success" />
+        <MetricCard Title="Товаров" Count="@_productTotalCount" Icon="bi-box" Color="primary" />
+        <MetricCard Title="Заказы" Count="@_orderTotalCount" Icon="bi-cart-check" Color="warning" />
+        <MetricCard Title="Пользователи" Count="@_userTotalCount" Icon="bi-people" Color="success" />
     </div>
 
     <!-- ==================== ТОВАРЫ ==================== -->
@@ -42,8 +42,8 @@
                     </button>
                 </div>
                 <div class="card-body pt-0">
-                    <SearchBar Value="@ProductSearch" ValueChanged="@((string v) => ProductSearch = v)"
-                               FilterValue="@ProductFilter" FilterValueChanged="@((string v) => ProductFilter = v)"
+                    <SearchBar Value="@_productSearch" ValueChanged="OnProductSearchChanged"
+                               FilterValue="@_productFilter" FilterValueChanged="OnProductFilterChanged"
                                Placeholder="Название, описание...">
                         <option value="">Все</option>
                         <option value="0">В наличии</option>
@@ -71,7 +71,7 @@
                     {
                         <Spinner />
                     }
-                    else if (!FilteredProducts.Any())
+                    else if (!Products.Any())
                     {
                         <EmptyState />
                     }
@@ -83,18 +83,19 @@
                                     <tr>
                                         <th style="width:2.25rem">
                                             <input type="checkbox" class="form-check-input"
-                                                   checked="@IsAllSelected"
-                                                   @onchange="ToggleSelectAll" />
+                                                   checked="@(IsAllProductsSelected)"
+                                                   indeterminate="@(IsProductPartialSelected)"
+                                                   @onchange="ToggleSelectAllProducts" />
                                         </th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleProductSort("name")'>Товар @_productSort.Icon("name")</th>
-                                        <th style="width:4rem;cursor:pointer" @onclick='() => ToggleProductSort("price")'>Цена @_productSort.Icon("price")</th>
-                                        <th style="width:5rem;cursor:pointer" @onclick='() => ToggleProductSort("quantity")'>Склад @_productSort.Icon("quantity")</th>
-                                        <th style="width:6rem;cursor:pointer" @onclick='() => ToggleProductSort("status")'>Статус @_productSort.Icon("status")</th>
+                                        <th>Товар</th>
+                                        <th style="width:4rem;">Цена</th>
+                                        <th style="width:5rem;">Склад</th>
+                                        <th style="width:6rem;">Статус</th>
                                         <th style="width:4rem;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var p in PagedProducts)
+                                    @foreach (var p in Products)
                                     {
                                         <tr class="@(p.Status != 0 ? "opacity-50" : "")">
                                             <td><input type="checkbox" class="form-check-input" @bind="p.IsSelected" /></td>
@@ -135,9 +136,9 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">@(FilteredProducts.Count()) товар(ов)</small>
-                            <Pagination Page="ProductPage" TotalPages="TotalProductPages"
-                                         PageChanged="p => ProductPage = p" />
+                            <small class="text-secondary">@_productTotalCount товар(ов)</small>
+                            <Pagination Page="_productPage" TotalPages="@_productTotalPages"
+                                         PageChanged="p => { _productPage = p; _ = LoadProducts(); }" />
                         </div>
                     }
                 </div>
@@ -147,19 +148,32 @@
         <!-- ==================== ЗАКАЗЫ ==================== -->
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 pt-3 px-3">
+                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
                     <h6 class="fw-semibold mb-0">Заказы</h6>
+                    <button class="btn btn-primary btn-sm" @onclick="() => _showOrderModal = true">
+                        <i class="bi bi-plus-lg me-1"></i>Создать
+                    </button>
                 </div>
                 <div class="card-body pt-0">
-                    <SearchBar Value="@OrderSearch" ValueChanged="@((string v) => OrderSearch = v)"
-                               FilterValue="@OrderStatusFilter" FilterValueChanged="@((string v) => OrderStatusFilter = v)"
-                               Placeholder="Номер, email...">
-                        <option value="">Все</option>
-                        @foreach (var s in OrderStatuses)
-                        {
-                            <option value="@s.Key">@s.Value</option>
-                        }
-                    </SearchBar>
+                    <div class="d-flex gap-2 mb-2">
+                        <div class="input-group input-group-sm flex-grow-1">
+                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-secondary"></i></span>
+                            <input type="text" class="form-control bg-light border-0" placeholder="Номер, email..."
+                                   value="@_orderSearch" @oninput="OnOrderSearchChanged" />
+                        </div>
+                        <select class="form-select form-select-sm" style="width:auto;"
+                                value="@_orderFilter" @onchange="OnOrderFilterChanged">
+                            <option value="">Все</option>
+                            @foreach (var s in OrderStatuses)
+                            {
+                                <option value="@s.Key">@s.Value</option>
+                            }
+                        </select>
+                        <input type="date" class="form-control form-control-sm" style="width:auto;"
+                               value="@_orderDateFrom" @onchange="OnOrderDateFromChanged" />
+                        <input type="date" class="form-select form-select-sm" style="width:auto;"
+                               value="@_orderDateTo" @onchange="OnOrderDateToChanged" />
+                    </div>
 
                     @if (Orders.Any(o => o.IsSelected))
                     {
@@ -180,7 +194,7 @@
                     {
                         <Spinner />
                     }
-                    else if (!FilteredOrders.Any())
+                    else if (!Orders.Any())
                     {
                         <EmptyState />
                     }
@@ -192,19 +206,20 @@
                                     <tr>
                                         <th style="width:2.25rem">
                                             <input type="checkbox" class="form-check-input"
-                                                   checked="@IsAllOrdersSelected"
-                                                   @onchange="ToggleOrderSelectAll" />
+                                                   checked="@(IsAllOrdersSelected)"
+                                                   indeterminate="@(IsOrderPartialSelected)"
+                                                   @onchange="ToggleSelectAllOrders" />
                                         </th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("id")'>№ @_orderSort.Icon("id")</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("customer")'>Покупатель @_orderSort.Icon("customer")</th>
+                                        <th>№</th>
+                                        <th>Покупатель</th>
                                         <th>Состав</th>
                                         <th>Дата</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("sum")'>Сумма @_orderSort.Icon("sum")</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleOrderSort("status")'>Статус @_orderSort.Icon("status")</th>
+                                        <th>Сумма</th>
+                                        <th>Статус</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var o in PagedOrders)
+                                    @foreach (var o in Orders)
                                     {
                                         var items = string.Join(", ", o.Items.Select(i => $"{i.Quantity}\u00d7{i.ProductName}"));
                                         var isExpanded = _expandedOrderId == o.Id;
@@ -262,9 +277,9 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">@(FilteredOrders.Count()) заказ(ов)</small>
-                            <Pagination Page="OrderPage" TotalPages="TotalOrderPages"
-                                         PageChanged="p => OrderPage = p" />
+                            <small class="text-secondary">@_orderTotalCount заказ(ов)</small>
+                            <Pagination Page="_orderPage" TotalPages="@_orderTotalPages"
+                                         PageChanged="p => { _orderPage = p; _ = LoadOrders(); }" />
                         </div>
                     }
                 </div>
@@ -276,12 +291,15 @@
     <div class="row g-3 mb-3">
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 pt-3 px-3">
+                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
                     <h6 class="fw-semibold mb-0">Пользователи</h6>
+                    <button class="btn btn-primary btn-sm" @onclick="() => _showUserModal = true">
+                        <i class="bi bi-plus-lg me-1"></i>Добавить
+                    </button>
                 </div>
                 <div class="card-body pt-0">
-                    <SearchBar Value="@UserSearch" ValueChanged="@((string v) => UserSearch = v)"
-                               FilterValue="@UserRoleFilter" FilterValueChanged="@((string v) => UserRoleFilter = v)"
+                    <SearchBar Value="@_userSearch" ValueChanged="OnUserSearchChanged"
+                               FilterValue="@_userFilter" FilterValueChanged="OnUserFilterChanged"
                                Placeholder="Email...">
                         <option value="">Все</option>
                         <option value="0">Студенты</option>
@@ -292,7 +310,7 @@
                     {
                         <Spinner />
                     }
-                    else if (!FilteredUsers.Any())
+                    else if (!Users.Any())
                     {
                         <EmptyState />
                     }
@@ -302,18 +320,22 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("email")'>Email @_userSort.Icon("email")</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("balance")'>Баланс @_userSort.Icon("balance")</th>
-                                        <th style="cursor:pointer" @onclick='() => ToggleUserSort("role")'>Роль @_userSort.Icon("role")</th>
-                                        <th style="width:3rem;"></th>
+                                        <th>Email</th>
+                                        <th>Баланс</th>
+                                        <th>Роль</th>
+                                        <th style="width:5rem;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var u in PagedUsers)
+                                    @foreach (var u in Users)
                                     {
                                         <tr>
                                             <td class="text-truncate" style="max-width:15rem;">@u.Email</td>
-                                            <td>@(u.Balance?.ToString() ?? "—")</td>
+                                            <td>
+                                                <span style="cursor:pointer" @onclick="() => OpenEditUserModal(u)">
+                                                    @(u.Balance?.ToString() ?? "—")
+                                                </span>
+                                            </td>
                                             <td>
                                                 <span class="badge @(u.Role == 1 ? "bg-warning text-dark" : "bg-info")">
                                                     @(u.Role == 1 ? "Админ" : "Студент")
@@ -331,9 +353,9 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">@(FilteredUsers.Count()) пользовател(ей)</small>
-                            <Pagination Page="UserPage" TotalPages="TotalUserPages"
-                                         PageChanged="p => UserPage = p" />
+                            <small class="text-secondary">@_userTotalCount пользовател(ей)</small>
+                            <Pagination Page="_userPage" TotalPages="@_userTotalPages"
+                                         PageChanged="p => { _userPage = p; _ = LoadUsers(); }" />
                         </div>
                     }
                 </div>
@@ -342,21 +364,25 @@
     </div>
 
     <!-- ==================== ИСТОРИЯ ДЕЙСТВИЙ ==================== -->
-    @if (_actionHistory.Any())
-    {
-        <div class="row g-3 mb-3">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-3">
-                    <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center"
-                         style="cursor:pointer" @onclick="() => _showHistory = !_showHistory">
-                        <h6 class="fw-semibold mb-0">
-                            <i class="bi bi-clock-history me-1"></i>История действий (@_actionHistory.Count)
-                        </h6>
-                        <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary"></i>
-                    </div>
-                    @if (_showHistory)
-                    {
-                        <div class="card-body pt-0" style="max-height:15rem;overflow-y:auto;">
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center"
+                     style="cursor:pointer" @onclick="() => _showHistory = !_showHistory">
+                    <h6 class="fw-semibold mb-0">
+                        <i class="bi bi-clock-history me-1"></i>История действий (@_actionHistory.Count)
+                    </h6>
+                    <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary"></i>
+                </div>
+                @if (_showHistory)
+                {
+                    <div class="card-body pt-0" style="max-height:15rem;overflow-y:auto;">
+                        @if (!_actionHistory.Any())
+                        {
+                            <div class="text-center py-3 text-secondary small">Нет записей</div>
+                        }
+                        else
+                        {
                             @foreach (var a in _actionHistory)
                             {
                                 <div class="d-flex align-items-start gap-2 py-1 border-bottom">
@@ -365,21 +391,18 @@
                                     <small>@a.Details</small>
                                 </div>
                             }
-                        </div>
-                    }
-                </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
-    }
+    </div>
 
     <!-- ==================== МОДАЛКА ТОВАРА ==================== -->
     @if (_showProductModal)
     {
-        <div class="modal fade show d-block" tabindex="-1"
-             style="background-color: rgba(0,0,0,0.5);"
-             @onclick="CloseProductModal">
-            <div class="modal-dialog modal-dialog-centered"
-                 @onclick:stopPropagation="true">
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CloseProductModal">
+            <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
                 <div class="modal-content rounded-3 shadow">
                     <div class="modal-header border-0 pb-0">
                         <h6 class="modal-title fw-semibold">
@@ -396,8 +419,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Описание</label>
-                            <textarea class="form-control" rows="2" @bind="_formDescription"
-                                      placeholder="Краткое описание товара"></textarea>
+                            <textarea class="form-control" rows="2" @bind="_formDescription" placeholder="Краткое описание товара"></textarea>
                         </div>
                         <div class="row g-3">
                             <div class="col-6">
@@ -411,11 +433,135 @@
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary btn-sm" @onclick="CloseProductModal">Отмена</button>
+                        <button type="button" class="btn btn-secondary btn-sm" @onclick="CloseProductModal" disabled="@_saving">Отмена</button>
                         <button type="button" class="btn btn-primary btn-sm"
-                                disabled="@(_formName.Length == 0)"
+                                disabled="@(_formName.Length == 0 || _saving)"
                                 @onclick="SaveProduct">
+                            @if (_saving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-lg me-1"></i>
+                            }
+                            Сохранить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- МОДАЛКА ПОЛЬЗОВАТЕЛЯ -->
+    @if (_showUserModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showUserModal = false">
+            <div class="modal-dialog modal-sm modal-dialog-centered" @onclick:stopPropagation="true">
+                <div class="modal-content rounded-3 shadow">
+                    <div class="modal-header border-0 pb-0">
+                        <h6 class="modal-title fw-semibold"><i class="bi bi-person-plus me-1"></i>Новый пользователь</h6>
+                        <button type="button" class="btn-close" @onclick="() => _showUserModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" @bind="_newUserEmail" placeholder="user@example.com" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Пароль <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" @bind="_newUserPassword" placeholder="Пароль" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Роль</label>
+                            <select class="form-select form-select-sm" @bind="_newUserRole">
+                                <option value="Student">Студент</option>
+                                <option value="Admin">Админ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showUserModal = false">Отмена</button>
+                        <button type="button" class="btn btn-primary btn-sm"
+                                disabled="@(_newUserEmail.Length == 0 || _newUserPassword.Length == 0)"
+                                @onclick="CreateUser">
+                            <i class="bi bi-check-lg me-1"></i>Создать
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- МОДАЛКА РЕДАКТИРОВАНИЯ БАЛАНСА -->
+    @if (_showEditUserModal && _editingUser != null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showEditUserModal = false">
+            <div class="modal-dialog modal-sm modal-dialog-centered" @onclick:stopPropagation="true">
+                <div class="modal-content rounded-3 shadow">
+                    <div class="modal-header border-0 pb-0">
+                        <h6 class="modal-title fw-semibold"><i class="bi bi-wallet2 me-1"></i>Баланс — @_editingUser.Email</h6>
+                        <button type="button" class="btn-close" @onclick="() => _showEditUserModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label small fw-medium">Баланс</label>
+                        <input type="number" class="form-control" @bind="_editBalance" />
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showEditUserModal = false">Отмена</button>
+                        <button type="button" class="btn btn-primary btn-sm" @onclick="SaveUserBalance">
                             <i class="bi bi-check-lg me-1"></i>Сохранить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- МОДАЛКА СОЗДАНИЯ ЗАКАЗА -->
+    @if (_showOrderModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showOrderModal = false">
+            <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+                <div class="modal-content rounded-3 shadow">
+                    <div class="modal-header border-0 pb-0">
+                        <h6 class="modal-title fw-semibold"><i class="bi bi-cart-plus me-1"></i>Новый заказ</h6>
+                        <button type="button" class="btn-close" @onclick="() => _showOrderModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Email покупателя <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" @bind="_newOrderLogin" placeholder="user@example.com" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Товары</label>
+                            @foreach (var item in _newOrderItems)
+                            {
+                                <div class="d-flex gap-2 mb-2 align-items-center">
+                                    <select class="form-select form-select-sm" style="flex:1;" @bind="item.ProductId">
+                                        <option value="0">Выберите товар</option>
+                                        @foreach (var p in _allProductsForOrder)
+                                        {
+                                            <option value="@p.Id">@p.Name (@p.Price ₽)</option>
+                                        }
+                                    </select>
+                                    <input type="number" class="form-control form-control-sm" style="width:4rem;" @bind="item.Quantity" min="1" />
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => _newOrderItems.Remove(item)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            }
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => _newOrderItems.Add(new OrderItemForm())">
+                                <i class="bi bi-plus me-1"></i>Добавить позицию
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showOrderModal = false">Отмена</button>
+                        <button type="button" class="btn btn-primary btn-sm"
+                                disabled="@(_newOrderLogin.Length == 0 || !_newOrderItems.Any(i => i.ProductId > 0))"
+                                @onclick="CreateOrder">
+                            <i class="bi bi-check-lg me-1"></i>Создать
                         </button>
                     </div>
                 </div>
@@ -426,11 +572,8 @@
     <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ -->
     @if (_showConfirmModal)
     {
-        <div class="modal fade show d-block" tabindex="-1"
-             style="background-color: rgba(0,0,0,0.5);"
-             @onclick="CancelConfirm">
-            <div class="modal-dialog modal-sm modal-dialog-centered"
-                 @onclick:stopPropagation="true">
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CancelConfirm">
+            <div class="modal-dialog modal-sm modal-dialog-centered" @onclick:stopPropagation="true">
                 <div class="modal-content rounded-3 shadow">
                     <div class="modal-body text-center py-4">
                         <i class="bi bi-exclamation-triangle text-warning fs-1 mb-2 d-block"></i>
@@ -447,98 +590,135 @@
 </div>
 
 @code {
-    // ==================== ДАННЫЕ ====================
     private List<ProductDto> Products = new();
     private List<OrderDto> Orders = new();
     private List<UserDto> Users = new();
     private List<AdminActionDto> _actionHistory = new();
+    private List<ProductDto> _allProductsForOrder = new();
 
     private string? _notification;
     private string _notificationType = "success";
     private bool _loadingProducts = true;
     private bool _loadingOrders = true;
     private bool _loadingUsers = true;
+    private bool _saving;
+
+    private int _productTotalCount, _orderTotalCount, _userTotalCount;
+    private int _productPage, _orderPage, _userPage;
+    private const int PageSize = 8;
+    private int _productTotalPages => Math.Max(1, (int)Math.Ceiling(_productTotalCount / (double)PageSize));
+    private int _orderTotalPages => Math.Max(1, (int)Math.Ceiling(_orderTotalCount / (double)PageSize));
+    private int _userTotalPages => Math.Max(1, (int)Math.Ceiling(_userTotalCount / (double)PageSize));
 
     private PeriodicTimer? _refreshTimer;
 
-    // ==================== СПРАВОЧНИКИ ====================
     private static readonly Dictionary<string, string> OrderStatuses = new()
     {
         ["0"] = "Ожидание", ["1"] = "Ожидает оплаты", ["2"] = "Оплачен",
         ["3"] = "В производстве", ["4"] = "Выполнен"
     };
 
-    // ==================== ПОИСК / ФИЛЬТР ====================
-    private string _search_products = "", _filter_products = "";
-    private string _search_orders = "", _filter_orders = "";
-    private string _search_users = "", _filter_users = "";
+    private string _productSearch = "", _productFilter = "";
+    private string _orderSearch = "", _orderFilter = "", _orderDateFrom = "", _orderDateTo = "";
+    private string _userSearch = "", _userFilter = "";
 
-    private string ProductSearch { get => _search_products; set { _search_products = value; ProductPage = 0; } }
-    private string ProductFilter { get => _filter_products; set { _filter_products = value; ProductPage = 0; } }
-    private string OrderSearch { get => _search_orders; set { _search_orders = value; OrderPage = 0; } }
-    private string OrderStatusFilter { get => _filter_orders; set { _filter_orders = value; OrderPage = 0; } }
-    private string UserSearch { get => _search_users; set { _search_users = value; UserPage = 0; } }
-    private string UserRoleFilter { get => _filter_users; set { _filter_users = value; UserPage = 0; } }
+    private CancellationTokenSource? _productSearchCts, _orderSearchCts, _userSearchCts;
 
-    // ==================== ПАГИНАЦИЯ / СОРТИРОВКА ====================
-    private const int PageSize = 8;
-    private int ProductPage, OrderPage, UserPage;
-    private SortState _productSort = new(), _orderSort = new(), _userSort = new();
-    private void ToggleProductSort(string c) { _productSort.Toggle(c); ProductPage = 0; }
-    private void ToggleOrderSort(string c) { _orderSort.Toggle(c); OrderPage = 0; }
-    private void ToggleUserSort(string c) { _userSort.Toggle(c); UserPage = 0; }
+    private async Task OnProductSearchChanged(ChangeEventArgs e)
+    {
+        _productSearch = e.Value?.ToString() ?? "";
+        _productPage = 0;
+        _productSearchCts?.Cancel();
+        _productSearchCts = new CancellationTokenSource();
+        try { await Task.Delay(300, _productSearchCts.Token); } catch (TaskCanceledException) { return; }
+        await LoadProducts();
+    }
 
-    // ==================== РАСКРЫТИЕ / ЧЕКБОКСЫ ====================
+    private async Task OnProductFilterChanged(ChangeEventArgs e)
+    {
+        _productFilter = e.Value?.ToString() ?? "";
+        _productPage = 0;
+        await LoadProducts();
+    }
+
+    private async Task OnOrderSearchChanged(ChangeEventArgs e)
+    {
+        _orderSearch = e.Value?.ToString() ?? "";
+        _orderPage = 0;
+        _orderSearchCts?.Cancel();
+        _orderSearchCts = new CancellationTokenSource();
+        try { await Task.Delay(300, _orderSearchCts.Token); } catch (TaskCanceledException) { return; }
+        await LoadOrders();
+    }
+
+    private async Task OnOrderFilterChanged(ChangeEventArgs e)
+    {
+        _orderFilter = e.Value?.ToString() ?? "";
+        _orderPage = 0;
+        await LoadOrders();
+    }
+
+    private async Task OnOrderDateFromChanged(ChangeEventArgs e)
+    {
+        _orderDateFrom = e.Value?.ToString() ?? "";
+        _orderPage = 0;
+        await LoadOrders();
+    }
+
+    private async Task OnOrderDateToChanged(ChangeEventArgs e)
+    {
+        _orderDateTo = e.Value?.ToString() ?? "";
+        _orderPage = 0;
+        await LoadOrders();
+    }
+
+    private async Task OnUserSearchChanged(ChangeEventArgs e)
+    {
+        _userSearch = e.Value?.ToString() ?? "";
+        _userPage = 0;
+        _userSearchCts?.Cancel();
+        _userSearchCts = new CancellationTokenSource();
+        try { await Task.Delay(300, _userSearchCts.Token); } catch (TaskCanceledException) { return; }
+        await LoadUsers();
+    }
+
+    private async Task OnUserFilterChanged(ChangeEventArgs e)
+    {
+        _userFilter = e.Value?.ToString() ?? "";
+        _userPage = 0;
+        await LoadUsers();
+    }
+
+    private bool IsAllProductsSelected => Products.Any() && Products.All(p => p.IsSelected);
+    private bool IsProductPartialSelected => Products.Any(p => p.IsSelected) && !IsAllProductsSelected;
+    private bool IsAllOrdersSelected => Orders.Any() && Orders.All(o => o.IsSelected);
+    private bool IsOrderPartialSelected => Orders.Any(o => o.IsSelected) && !IsAllOrdersSelected;
+
+    private void ToggleSelectAllProducts(ChangeEventArgs e) { var v = (bool)e.Value!; foreach (var p in Products) p.IsSelected = v; }
+    private void ToggleSelectAllOrders(ChangeEventArgs e) { var v = (bool)e.Value!; foreach (var o in Orders) o.IsSelected = v; }
+
     private int? _expandedOrderId;
     private void ToggleOrderExpand(int id) => _expandedOrderId = _expandedOrderId == id ? null : id;
 
-    private bool IsAllSelected => PagedProducts.Any() && PagedProducts.All(p => p.IsSelected);
-    private bool IsAllOrdersSelected => PagedOrders.Any() && PagedOrders.All(o => o.IsSelected);
-    private void ToggleSelectAll(ChangeEventArgs e) { var v = (bool)e.Value!; foreach (var p in PagedProducts) p.IsSelected = v; }
-    private void ToggleOrderSelectAll(ChangeEventArgs e) { var v = (bool)e.Value!; foreach (var o in PagedOrders) o.IsSelected = v; }
-
-    // ==================== МОДАЛКА / ПОДТВЕРЖДЕНИЕ ====================
     private bool _showProductModal, _showConfirmModal, _showHistory;
+    private bool _showUserModal, _showEditUserModal, _showOrderModal;
     private ProductDto? _editingProduct;
+    private UserDto? _editingUser;
     private string _formName = "", _formDescription = "", _confirmMessage = "";
     private short _formPrice, _formQuantity;
     private Func<Task>? _onConfirmAction;
 
-    // ==================== ФИЛЬТРЫ ====================
-    private IEnumerable<ProductDto> FilteredProducts =>
-        Products.Where(p => string.IsNullOrEmpty(_search_products) ||
-                (p.Name ?? "").Contains(_search_products, StringComparison.OrdinalIgnoreCase) ||
-                (p.Description ?? "").Contains(_search_products, StringComparison.OrdinalIgnoreCase))
-            .Where(p => string.IsNullOrEmpty(_filter_products) || p.Status.ToString() == _filter_products);
+    private string _newUserEmail = "", _newUserPassword = "", _newUserRole = "Student";
+    private short _editBalance;
+    private string _newOrderLogin = "";
+    private List<OrderItemForm> _newOrderItems = new();
 
-    private IEnumerable<OrderDto> FilteredOrders =>
-        Orders.Where(o => string.IsNullOrEmpty(_search_orders) ||
-                o.Id.ToString().Contains(_search_orders) ||
-                (o.CustomerLogin ?? "").Contains(_search_orders, StringComparison.OrdinalIgnoreCase))
-            .Where(o => string.IsNullOrEmpty(_filter_orders) || o.Status.ToString() == _filter_orders);
+    private class OrderItemForm
+    {
+        public int ProductId { get; set; }
+        public short Quantity { get; set; } = 1;
+    }
 
-    private IEnumerable<UserDto> FilteredUsers =>
-        Users.Where(u => string.IsNullOrEmpty(_search_users) ||
-                (u.Email ?? "").Contains(_search_users, StringComparison.OrdinalIgnoreCase))
-            .Where(u => string.IsNullOrEmpty(_filter_users) || u.Role.ToString() == _filter_users);
-
-    // ==================== СОРТИРОВКА + ПАГИНАЦИЯ ====================
-    private IEnumerable<ProductDto> SortedProducts => ApplySort(FilteredProducts, _productSort,
-        ("name", p => p.Name), ("price", p => p.Price), ("quantity", p => p.Quantity), ("status", p => p.Status));
-    private IEnumerable<OrderDto> SortedOrders => ApplySort(FilteredOrders, _orderSort,
-        ("id", o => o.Id), ("customer", o => o.CustomerLogin), ("sum", o => o.Sum), ("status", o => o.Status));
-    private IEnumerable<UserDto> SortedUsers => ApplySort(FilteredUsers, _userSort,
-        ("email", u => u.Email), ("balance", u => u.Balance), ("role", u => u.Role));
-
-    private IEnumerable<ProductDto> PagedProducts => SortedProducts.Skip(ProductPage * PageSize).Take(PageSize);
-    private IEnumerable<OrderDto> PagedOrders => SortedOrders.Skip(OrderPage * PageSize).Take(PageSize);
-    private IEnumerable<UserDto> PagedUsers => SortedUsers.Skip(UserPage * PageSize).Take(PageSize);
-
-    private int TotalProductPages => Math.Max(1, (int)Math.Ceiling(FilteredProducts.Count() / (double)PageSize));
-    private int TotalOrderPages => Math.Max(1, (int)Math.Ceiling(FilteredOrders.Count() / (double)PageSize));
-    private int TotalUserPages => Math.Max(1, (int)Math.Ceiling(FilteredUsers.Count() / (double)PageSize));
-
-    // ==================== ЖИЗНЕННЫЙ ЦИКЛ ====================
     protected override async Task OnInitializedAsync()
     {
         await LoadAllData();
@@ -556,40 +736,70 @@
         }
     }
 
-    public void Dispose() => _refreshTimer?.Dispose();
-
-    // ==================== ЗАГРУЗКА ====================
-    private async Task LoadAllData()
+    public void Dispose()
     {
-        var t1 = LoadSection<List<ProductDto>>("api/Product/all", r => Products = r ?? new(), () => _loadingProducts = false);
-        var t2 = LoadSection<List<OrderDto>>("api/Order/all", r => Orders = r ?? new(), () => _loadingOrders = false);
-        var t3 = LoadSection<List<UserDto>>("api/User/all", r => Users = r ?? new(), () => _loadingUsers = false);
-        await Task.WhenAll(t1, t2, t3);
+        _refreshTimer?.Dispose();
+        _productSearchCts?.Dispose();
+        _orderSearchCts?.Dispose();
+        _userSearchCts?.Dispose();
     }
 
-    private async Task LoadSection<T>(string url, Action<T?> setter, Action onFinally)
+    private async Task LoadAllData()
     {
-        try { setter(await Http.GetFromJsonAsync<T>(url)); }
-        catch (Exception ex) { ShowNotification($"Ошибка загрузки: {ex.Message}", "danger"); }
-        finally { onFinally(); }
+        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers());
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            _loadingProducts = Products.Count == 0;
+            var r = await Http.GetFromJsonAsync<PagedProductResponse>($"api/Product/paged?page={_productPage}&pageSize={PageSize}");
+            if (r != null) { Products = r.Items; _productTotalCount = r.TotalCount; }
+        }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки товаров: {ex.Message}", "danger"); }
+        finally { _loadingProducts = false; }
+    }
+
+    private async Task LoadOrders()
+    {
+        try
+        {
+            _loadingOrders = Orders.Count == 0;
+            var r = await Http.GetFromJsonAsync<PagedOrderResponse>($"api/Order/paged?page={_orderPage}&pageSize={PageSize}");
+            if (r != null) { Orders = r.Items; _orderTotalCount = r.TotalCount; }
+        }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки заказов: {ex.Message}", "danger"); }
+        finally { _loadingOrders = false; }
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            _loadingUsers = Users.Count == 0;
+            var r = await Http.GetFromJsonAsync<PagedUserResponse>($"api/User/paged?page={_userPage}&pageSize={PageSize}");
+            if (r != null) { Users = r.Items; _userTotalCount = r.TotalCount; }
+        }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки пользователей: {ex.Message}", "danger"); }
+        finally { _loadingUsers = false; }
     }
 
     private async Task LoadHistory()
     {
         try { _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=50") ?? new(); }
-        catch { /* история не критична */ }
+        catch { }
     }
 
     private async Task LogAction(string type, string details)
     {
         try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details }); }
-        catch { /* лог не критичен */ }
+        catch { }
         _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, CreatedAt = DateTime.Now });
         if (_actionHistory.Count > 50) _actionHistory.RemoveAt(_actionHistory.Count - 1);
         await InvokeAsync(StateHasChanged);
     }
 
-    // ==================== УВЕДОМЛЕНИЯ / ПОДТВЕРЖДЕНИЕ ====================
     private void ShowNotification(string message, string type = "success")
     {
         _notification = message; _notificationType = type;
@@ -603,7 +813,6 @@
     private async Task ExecuteConfirm()
     { _showConfirmModal = false; if (_onConfirmAction is not null) await _onConfirmAction(); _onConfirmAction = null; }
 
-    // ==================== ТОВАРЫ ====================
     private void OpenProductModal(ProductDto? product = null)
     {
         _editingProduct = product;
@@ -616,6 +825,7 @@
 
     private async Task SaveProduct()
     {
+        _saving = true;
         try
         {
             var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity };
@@ -647,14 +857,26 @@
             }
         }
         catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
+        finally { _saving = false; }
     }
 
     private async Task OnQuantityChanged(ProductDto product, ChangeEventArgs e)
     {
+        var oldQuantity = product.Quantity;
         if (short.TryParse(e.Value?.ToString(), out short q) && product.Quantity != q)
         {
             var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Quantity = q });
-            if (r.IsSuccessStatusCode) { product.Quantity = q; await LogAction("Изменение", $"«{product.Name}»: склад = {q}"); ShowNotification($"«{product.Name}»: количество = {q}"); }
+            if (r.IsSuccessStatusCode)
+            {
+                product.Quantity = q;
+                await LogAction("Изменение", $"«{product.Name}»: склад = {q}");
+                ShowNotification($"«{product.Name}»: количество = {q}");
+            }
+            else
+            {
+                product.Quantity = oldQuantity;
+                ShowNotification($"Не удалось обновить количество «{product.Name}»", "danger");
+            }
         }
     }
 
@@ -670,18 +892,25 @@
         ShowConfirm($"Удалить «{product.Name}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/Product/delete-product?id={product.Id}");
-            if (r.IsSuccessStatusCode) { Products.Remove(product); await LogAction("Удаление", $"Товар «{product.Name}»"); ShowNotification("Товар удалён"); StateHasChanged(); }
+            if (r.IsSuccessStatusCode) { Products.Remove(product); _productTotalCount--; await LogAction("Удаление", $"Товар «{product.Name}»"); ShowNotification("Товар удалён"); StateHasChanged(); }
         });
     }
 
-    // ==================== МАССОВЫЕ ТОВАРОВ ====================
     private void DeleteSelectedProducts()
     {
         var sel = Products.Where(p => p.IsSelected).ToList();
         ShowConfirm($"Удалить {sel.Count} товар(ов)?", async () =>
         {
-            foreach (var p in sel) { var r = await Http.DeleteAsync($"api/Product/delete-product?id={p.Id}"); if (r.IsSuccessStatusCode) Products.Remove(p); }
-            await LogAction("Удаление", $"{sel.Count} товар(ов)"); ShowNotification($"Удалено: {sel.Count} товар(ов)"); StateHasChanged();
+            var ids = sel.Select(p => p.Id).ToList();
+            var r = await Http.PostAsJsonAsync("api/Product/batch-delete", new { ProductIds = ids });
+            if (r.IsSuccessStatusCode)
+            {
+                foreach (var p in sel) Products.Remove(p);
+                _productTotalCount -= sel.Count;
+                await LogAction("Удаление", $"{sel.Count} товар(ов)");
+                ShowNotification($"Удалено: {sel.Count} товар(ов)");
+                StateHasChanged();
+            }
         });
     }
 
@@ -691,8 +920,12 @@
     private async Task SetSelectedStatus(int status)
     {
         var sel = Products.Where(p => p.IsSelected).ToList();
-        foreach (var p in sel) { var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={p.Id}", new { Status = status }); if (r.IsSuccessStatusCode) p.Status = status; }
-        await LogAction("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}"); ShowNotification($"Обновлено: {sel.Count} товар(ов)"); StateHasChanged();
+        var ids = sel.Select(p => p.Id).ToList();
+        var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = status });
+        if (r.IsSuccessStatusCode) foreach (var p in sel) p.Status = status;
+        await LogAction("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}");
+        ShowNotification($"Обновлено: {sel.Count} товар(ов)");
+        StateHasChanged();
     }
 
     private async Task ChangeOrderStatus(OrderDto order, int newStatus)
@@ -706,38 +939,85 @@
     {
         if (!OrderStatuses.ContainsKey(newStatus.ToString())) return;
         var sel = Orders.Where(o => o.IsSelected).ToList();
-        foreach (var o in sel) { var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={o.Id}", new { Status = newStatus }); if (r.IsSuccessStatusCode) o.Status = newStatus; }
-        await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[newStatus.ToString()]}"); ShowNotification($"Обновлено: {sel.Count} заказ(ов)"); StateHasChanged();
+        var ids = sel.Select(o => o.Id).ToList();
+        var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = newStatus });
+        if (r.IsSuccessStatusCode) foreach (var o in sel) o.Status = newStatus;
+        await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[newStatus.ToString()]}");
+        ShowNotification($"Обновлено: {sel.Count} заказ(ов)");
+        StateHasChanged();
     }
 
-    // ==================== ПОЛЬЗОВАТЕЛИ ====================
-    private void DeleteUser(UserDto user)
+    private async Task CreateUser()
+    {
+        var body = new { Email = _newUserEmail, Password = _newUserPassword };
+        var url = _newUserRole == "Admin" ? "api/User/create-admin" : "api/User/create-student";
+        var r = await Http.PostAsJsonAsync(url, body);
+        if (r.IsSuccessStatusCode)
+        {
+            var user = await r.Content.ReadFromJsonAsync<UserDto>();
+            if (user != null) Users.Add(user);
+            _userTotalCount++;
+            await LogAction("Создание", $"Пользователь «{_newUserEmail}» ({_newUserRole})");
+            ShowNotification("Пользователь создан");
+            _showUserModal = false;
+            _newUserEmail = ""; _newUserPassword = ""; _newUserRole = "Student";
+            StateHasChanged();
+        }
+        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
+    }
+
+    private void OpenEditUserModal(UserDto user)
+    {
+        _editingUser = user;
+        _editBalance = user.Balance ?? 0;
+        _showEditUserModal = true;
+    }
+
+    private async Task SaveUserBalance()
+    {
+        if (_editingUser == null) return;
+        var r = await Http.PutAsJsonAsync($"api/User?id={_editingUser.Id}", new { Balance = _editBalance });
+        if (r.IsSuccessStatusCode)
+        {
+            _editingUser.Balance = _editBalance;
+            await LogAction("Изменение", $"Баланс «{_editingUser.Email}» = {_editBalance}");
+            ShowNotification("Баланс обновлён");
+            _showEditUserModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteUser(UserDto user)
     {
         ShowConfirm($"Удалить «{user.Email}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/User?id={user.Id}");
-            if (r.IsSuccessStatusCode) { Users.Remove(user); await LogAction("Удаление", $"Пользователь «{user.Email}»"); ShowNotification($"Пользователь «{user.Email}» удалён"); StateHasChanged(); }
+            if (r.IsSuccessStatusCode) { Users.Remove(user); _userTotalCount--; await LogAction("Удаление", $"Пользователь «{user.Email}»"); ShowNotification($"Пользователь «{user.Email}» удалён"); StateHasChanged(); }
         });
     }
 
-    // ==================== ХЕЛПЕРЫ ====================
+    private async Task CreateOrder()
+    {
+        var items = _newOrderItems.Where(i => i.ProductId > 0).Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList();
+        var body = new { CustomerLogin = _newOrderLogin, Items = items };
+        var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
+        if (r.IsSuccessStatusCode)
+        {
+            await LogAction("Создание", $"Заказ для «{_newOrderLogin}» ({items.Count} поз.)");
+            ShowNotification("Заказ создан");
+            _showOrderModal = false;
+            _newOrderLogin = ""; _newOrderItems.Clear();
+            _orderPage = 0;
+            await LoadOrders();
+        }
+        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
+    }
+
     private static string StatusBadge(int s) => s switch { 0 => "bg-success", 1 => "bg-secondary", _ => "bg-info" };
     private static string StatusText(int s) => s switch { 0 => "В наличии", 1 => "Нет", _ => "Скоро" };
     private static string ActionBadge(string t) => t switch { "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary" };
 
-    private static IEnumerable<T> ApplySort<T>(IEnumerable<T> source, SortState sort,
-        params (string col, Func<T, IComparable> key)[] keys)
-    {
-        var map = keys.ToDictionary(k => k.col, k => k.key);
-        return sort.Column != null && map.TryGetValue(sort.Column, out var key)
-            ? (sort.Asc ? source.OrderBy(key) : source.OrderByDescending(key)) : source;
-    }
-
-    private class SortState
-    {
-        public string? Column { get; private set; }
-        public bool Asc { get; private set; } = true;
-        public void Toggle(string c) { if (Column == c) Asc = !Asc; else { Column = c; Asc = true; } }
-        public string Icon(string c) => Column != c ? "" : Asc ? " \u25b2" : " \u25bc";
-    }
+    private class PagedProductResponse { public List<ProductDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
+    private class PagedOrderResponse { public List<OrderDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
+    private class PagedUserResponse { public List<UserDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
 }
