@@ -166,7 +166,7 @@
                         <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
                             <span class="small text-secondary me-auto align-self-center">Выбрано: @Orders.Count(o => o.IsSelected)</span>
                             <select class="form-select form-select-sm" style="width:auto;"
-                                    @onchange="e => MassChangeOrderStatus(int.Parse(e.Value!.ToString()!))">
+                                    @onchange="e => { if (int.TryParse(e.Value?.ToString(), out int s)) MassChangeOrderStatus(s); }">
                                 <option value="">Сменить статус на...</option>
                                 @foreach (var s in OrderStatuses)
                                 {
@@ -628,6 +628,7 @@
                     if (c != null) Products.Add(c);
                     await LogAction("Создание", $"Товар «{_formName}»");
                     ShowNotification("Товар создан");
+                    CloseProductModal();
                 }
                 else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
             }
@@ -640,10 +641,10 @@
                         = (_formName, _formDescription, _formPrice, _formQuantity);
                     await LogAction("Изменение", $"Товар #{_editingProduct.Id} «{_formName}»");
                     ShowNotification("Товар обновлён");
+                    CloseProductModal();
                 }
                 else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
             }
-            CloseProductModal();
         }
         catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
     }
@@ -659,7 +660,7 @@
 
     private async Task ToggleProductStatus(ProductDto product)
     {
-        var newStatus = product.Status == 0 ? 1 : 0;
+        var newStatus = product.Status switch { 0 => 1, 1 => 2, _ => 0 };
         var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = newStatus });
         if (r.IsSuccessStatusCode) { product.Status = newStatus; await LogAction("Изменение", $"«{product.Name}»: {StatusText(newStatus)}"); ShowNotification($"«{product.Name}»: {StatusText(newStatus)}"); }
     }
@@ -694,15 +695,16 @@
         await LogAction("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}"); ShowNotification($"Обновлено: {sel.Count} товар(ов)"); StateHasChanged();
     }
 
-    // ==================== ЗАКАЗЫ ====================
     private async Task ChangeOrderStatus(OrderDto order, int newStatus)
     {
+        if (!OrderStatuses.ContainsKey(newStatus.ToString())) return;
         var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={order.Id}", new { Status = newStatus });
         if (r.IsSuccessStatusCode) { order.Status = newStatus; await LogAction("Изменение", $"Заказ #{order.Id}: статус = {OrderStatuses[newStatus.ToString()]}"); ShowNotification($"Заказ #{order.Id}: статус изменён"); }
     }
 
     private async Task MassChangeOrderStatus(int newStatus)
     {
+        if (!OrderStatuses.ContainsKey(newStatus.ToString())) return;
         var sel = Orders.Where(o => o.IsSelected).ToList();
         foreach (var o in sel) { var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={o.Id}", new { Status = newStatus }); if (r.IsSuccessStatusCode) o.Status = newStatus; }
         await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[newStatus.ToString()]}"); ShowNotification($"Обновлено: {sel.Count} заказ(ов)"); StateHasChanged();
