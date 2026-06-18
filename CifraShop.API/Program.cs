@@ -1,14 +1,20 @@
 using CifraShop.API.Middleware;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
+using CifraShop.Infrastructure.Data;
 using CifraShop.Infrastructure.Data.Repositories.Implementations;
 using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
+
+builder.Services.AddDbContext<ApplicationContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IOrderItemRepository, OrderItemRepositoryEfCore>();
 builder.Services.AddScoped<IOrderRepository, OrderRepositoryEfCore>();
