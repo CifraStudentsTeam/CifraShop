@@ -1,5 +1,5 @@
 using CifraShop.Domain.Entities;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CifraShop.Infrastructure.Data.Repositories.Implementations

@@ -8,7 +8,7 @@ public class ProductDto
     public string Description { get; set; } = "";
     public short Price { get; set; }
     public short Quantity { get; set; }
-    public int Status { get; set; }
+    public StatusProduct Status { get; set; }
     public bool IsSelected { get; set; }
 }
 
@@ -27,11 +27,11 @@ public class OrderItemDto
 public class OrderDto
 {
     public int Id { get; set; }
-    public int Status { get; set; }
+    public StatusOrder Status { get; set; }
     public bool IsSelected { get; set; }
     public short Sum { get; set; }
     public DateTime DateOfPurchase { get; set; }
-    public string CustomerLogin { get; set; } = "";
+    public string CustomerEmail { get; set; } = "";
     public int CustomerId { get; set; }
     public List<OrderItemDto> Items { get; set; } = new();
 }
@@ -42,7 +42,7 @@ public class UserDto
     public int Id { get; set; }
     public string Email { get; set; } = "";
     public short? Balance { get; set; }
-    public int Role { get; set; }
+    public UserRole Role { get; set; }
 }
 
 /// <summary>Модель действия администратора</summary>

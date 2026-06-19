@@ -20,18 +20,15 @@ namespace CifraShop.Infrastructure.Data.Configurations
             builder.Property(o => o.Sum)
                    .HasColumnName("Sum")
                    .IsRequired();
-            builder.Property(o => o.CustomerLogin)
-                   .HasColumnName("CustomerLogin")
-                   .HasMaxLength(40)
-                   .IsRequired();
+            builder.HasOne(o => o.Customer)
+                   .WithMany(u => u.Orders)
+                   .HasForeignKey(o => o.CustomerId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasMany(o => o.OrderItems)
                    .WithOne(oi => oi.Order)
                    .HasForeignKey(oi => oi.OrderId)
                    .OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne(o => o.Customer)
-                   .WithMany(u => u.Orders)
-                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

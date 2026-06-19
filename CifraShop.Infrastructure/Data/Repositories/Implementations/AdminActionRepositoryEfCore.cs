@@ -1,5 +1,5 @@
 using CifraShop.Domain.Entities;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CifraShop.Infrastructure.Data.Repositories.Implementations
@@ -19,7 +19,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
 
         public async Task AddAction(AdminAction action)
         {
-            _context.AdminActions.Add(action);
+            await _context.AdminActions.AddAsync(action);
             await _context.SaveChangesAsync();
         }
     }

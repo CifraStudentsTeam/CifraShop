@@ -36,6 +36,8 @@ namespace CifraShop.API.Middleware
                 ArgumentException argEx => (HttpStatusCode.BadRequest, argEx.Message),
                 KeyNotFoundException keyEx => (HttpStatusCode.NotFound, keyEx.Message),
                 UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Доступ запрещён"),
+                InvalidOperationException opEx => (HttpStatusCode.Conflict, opEx.Message),
+                OverflowException ovfEx => (HttpStatusCode.BadRequest, ovfEx.Message),
                 _ => (HttpStatusCode.InternalServerError, "Внутренняя ошибка сервера")
             };
 

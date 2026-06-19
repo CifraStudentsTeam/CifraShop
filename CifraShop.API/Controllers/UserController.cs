@@ -95,7 +95,6 @@ namespace CifraShop.API.Controllers
 
             if (request.Email != null) user.Email = request.Email;
             if (request.Password != null) user.Password = request.Password;
-            if (request.Balance.HasValue) user.Balance = request.Balance.Value;
 
             await _userService.UpdateUser(user);
             return NoContent();

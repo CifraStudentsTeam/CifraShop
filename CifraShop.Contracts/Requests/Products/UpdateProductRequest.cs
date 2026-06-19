@@ -1,3 +1,5 @@
+using CifraShop.Domain.Enums;
+
 namespace CifraShop.Contracts.Requests.Products
 {
     public class UpdateProductRequest
@@ -6,6 +8,6 @@ namespace CifraShop.Contracts.Requests.Products
         public string? Description { get; set; }
         public short? Price { get; set; }
         public short? Quantity { get; set; }
-        public int? Status { get; set; }
+        public StatusProduct? Status { get; set; }
     }
 }

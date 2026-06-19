@@ -174,7 +174,7 @@
                         <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
                             <span class="small text-secondary me-auto align-self-center">Выбрано: @Orders.Count(o => o.IsSelected)</span>
                             <select class="form-select form-select-sm" style="width:auto;"
-                                    @onchange="e => { if (int.TryParse(e.Value?.ToString(), out int s)) MassChangeOrderStatus(s); }">
+                                    @onchange="e => { if (int.TryParse(e.Value?.ToString(), out int s)) MassChangeOrderStatus((StatusOrder)s); }">
                                 <option value="">Сменить статус на...</option>
                                 @foreach (var s in OrderStatuses)
                                 {
@@ -223,14 +223,14 @@
                                                 <input type="checkbox" class="form-check-input" @bind="o.IsSelected" />
                                             </td>
                                             <td class="fw-semibold">#@o.Id</td>
-                                            <td class="text-truncate" style="max-width:7.5rem;">@o.CustomerLogin</td>
+                                            <td class="text-truncate" style="max-width:7.5rem;">@o.CustomerEmail</td>
                                             <td><small class="text-truncate d-block" style="max-width:9rem;">@items</small></td>
                                             <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
                                             <td>@o.Sum ₽</td>
                                             <td @onclick:stopPropagation="true">
                                                 <select class="form-select form-select-sm py-0"
                                                         value="@o.Status"
-                                                        @onchange="e => ChangeOrderStatus(o, int.Parse(e.Value!.ToString()!))">
+                                                        @onchange="e => ChangeOrderStatus(o, (StatusOrder)int.Parse(e.Value!.ToString()!))">
                                                     @foreach (var s in OrderStatuses)
                                                     {
                                                         <option value="@s.Key" selected="@(o.Status.ToString() == s.Key)">@s.Value</option>
@@ -331,8 +331,8 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <span class="badge @(u.Role == 1 ? "bg-warning text-dark" : "bg-info")">
-                                                    @(u.Role == 1 ? "Админ" : "Студент")
+                                                <span class="badge @(u.Role == UserRole.Admin ? "bg-warning text-dark" : "bg-info")">
+                                                    @(u.Role == UserRole.Admin ? "Админ" : "Студент")
                                                 </span>
                                             </td>
                                             <td>
@@ -565,7 +565,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Email покупателя <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" @bind="_newOrderLogin" placeholder="user@example.com" />
+                            <input type="email" class="form-control" @bind="_newOrderEmail" placeholder="user@example.com" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Товары</label>
@@ -593,7 +593,7 @@
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showOrderModal = false">Отмена</button>
                         <button type="button" class="btn btn-primary btn-sm"
-                                disabled="@(_newOrderLogin.Length == 0 || !_newOrderItems.Any(i => i.ProductId > 0))"
+                                disabled="@(_newOrderEmail.Length == 0 || !_newOrderItems.Any(i => i.ProductId > 0))"
                                 @onclick="CreateOrder">
                             <i class="bi bi-check-lg me-1"></i>Создать
                         </button>
@@ -823,7 +823,7 @@
 
     private string _newUserEmail = "", _newUserPassword = "", _newUserRole = "Student";
     private short _editBalance;
-    private string _newOrderLogin = "";
+    private string _newOrderEmail = "";
     private List<OrderItemForm> _newOrderItems = new();
 
     private class OrderItemForm
@@ -995,8 +995,13 @@
 
     private async Task ToggleProductStatus(ProductDto product)
     {
-        var newStatus = product.Status switch { 0 => 1, 1 => 2, _ => 0 };
-        var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = newStatus });
+        var newStatus = product.Status switch
+        {
+            StatusProduct.InStock => StatusProduct.OutOfStock,
+            StatusProduct.OutOfStock => StatusProduct.ComingSoon,
+            _ => StatusProduct.InStock
+        };
+        var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = (int)newStatus });
         if (r.IsSuccessStatusCode) { product.Status = newStatus; await LogAction("Изменение", $"«{product.Name}»: {StatusText(newStatus)}"); ShowNotification($"«{product.Name}»: {StatusText(newStatus)}"); }
     }
 
@@ -1027,35 +1032,40 @@
         });
     }
 
-    private async Task ShowSelectedProducts() => await SetSelectedStatus(0);
-    private async Task HideSelectedProducts() => await SetSelectedStatus(1);
+    private async Task ShowSelectedProducts() => await SetSelectedProductStatus(StatusProduct.InStock);
+    private async Task HideSelectedProducts() => await SetSelectedProductStatus(StatusProduct.OutOfStock);
 
-    private async Task SetSelectedStatus(int status)
+    private async Task SetSelectedProductStatus(StatusProduct status)
     {
         var sel = Products.Where(p => p.IsSelected).ToList();
-        var ids = sel.Select(p => p.Id).ToList();
-        var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = status });
-        if (r.IsSuccessStatusCode) foreach (var p in sel) p.Status = status;
+        foreach (var product in sel)
+        {
+            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = (int)status });
+            if (r.IsSuccessStatusCode) product.Status = status;
+        }
         await LogAction("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}");
         ShowNotification($"Обновлено: {sel.Count} товар(ов)");
         StateHasChanged();
     }
 
-    private async Task ChangeOrderStatus(OrderDto order, int newStatus)
+    private async Task ChangeOrderStatus(OrderDto order, StatusOrder newStatus)
     {
-        if (!OrderStatuses.ContainsKey(newStatus.ToString())) return;
-        var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={order.Id}", new { Status = newStatus });
-        if (r.IsSuccessStatusCode) { order.Status = newStatus; await LogAction("Изменение", $"Заказ #{order.Id}: статус = {OrderStatuses[newStatus.ToString()]}"); ShowNotification($"Заказ #{order.Id}: статус изменён"); }
+        var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={order.Id}", new { Status = (int)newStatus });
+        if (r.IsSuccessStatusCode)
+        {
+            order.Status = newStatus;
+            await LogAction("Изменение", $"Заказ #{order.Id}: статус = {OrderStatuses[((int)newStatus).ToString()]}");
+            ShowNotification($"Заказ #{order.Id}: статус изменён");
+        }
     }
 
-    private async Task MassChangeOrderStatus(int newStatus)
+    private async Task MassChangeOrderStatus(StatusOrder newStatus)
     {
-        if (!OrderStatuses.ContainsKey(newStatus.ToString())) return;
         var sel = Orders.Where(o => o.IsSelected).ToList();
         var ids = sel.Select(o => o.Id).ToList();
-        var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = newStatus });
+        var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = (int)newStatus });
         if (r.IsSuccessStatusCode) foreach (var o in sel) o.Status = newStatus;
-        await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[newStatus.ToString()]}");
+        await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[((int)newStatus).ToString()]}");
         ShowNotification($"Обновлено: {sel.Count} заказ(ов)");
         StateHasChanged();
     }
@@ -1112,14 +1122,14 @@
     private async Task CreateOrder()
     {
         var items = _newOrderItems.Where(i => i.ProductId > 0).Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList();
-        var body = new { CustomerLogin = _newOrderLogin, Items = items };
+        var body = new { CustomerEmail = _newOrderEmail, Items = items };
         var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
         if (r.IsSuccessStatusCode)
         {
-            await LogAction("Создание", $"Заказ для «{_newOrderLogin}» ({items.Count} поз.)");
+            await LogAction("Создание", $"Заказ для «{_newOrderEmail}» ({items.Count} поз.)");
             ShowNotification("Заказ создан");
             _showOrderModal = false;
-            _newOrderLogin = ""; _newOrderItems.Clear();
+            _newOrderEmail = ""; _newOrderItems.Clear();
             _orderPage = 0;
             await LoadOrders();
         }
@@ -1167,8 +1177,19 @@
         _notificationSettings.Remove(settings);
     }
 
-    private static string StatusBadge(int s) => s switch { 0 => "bg-success", 1 => "bg-secondary", _ => "bg-info" };
-    private static string StatusText(int s) => s switch { 0 => "В наличии", 1 => "Нет", _ => "Скоро" };
+    private static string StatusBadge(StatusProduct s) => s switch
+    {
+        StatusProduct.InStock => "bg-success",
+        StatusProduct.OutOfStock => "bg-secondary",
+        _ => "bg-info"
+    };
+
+    private static string StatusText(StatusProduct s) => s switch
+    {
+        StatusProduct.InStock => "В наличии",
+        StatusProduct.OutOfStock => "Нет в наличии",
+        _ => "Скоро в продаже"
+    };
     private static string ActionBadge(string t) => t switch { "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary" };
 
     private class PagedProductResponse { public List<ProductDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }

@@ -1,6 +1,6 @@
 using CifraShop.Domain.Entities;
 
-namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
+namespace CifraShop.Domain.Repositories
 {
     public interface IAdminActionRepository
     {

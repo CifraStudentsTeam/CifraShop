@@ -1,4 +1,5 @@
 using CifraShop.Domain.Entities;
+using CifraShop.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -33,6 +34,25 @@ namespace CifraShop.Infrastructure.Data.Configurations
                    .WithOne(o => o.Customer)
                    .HasForeignKey(o => o.CustomerId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasData(
+                new User
+                {
+                    Id = 1,
+                    Email = "admin@cifrashop.ru",
+                    Password = "admin123",
+                    Balance = null,
+                    Role = UserRole.Admin
+                },
+                new User
+                {
+                    Id = 2,
+                    Email = "student@cifrashop.ru",
+                    Password = "student123",
+                    Balance = 5000,
+                    Role = UserRole.Student
+                }
+            );
         }
     }
 }

@@ -2,7 +2,7 @@ using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Responses.Common;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 
 namespace CifraShop.Application.Services.Implementations
 {
@@ -18,11 +18,16 @@ namespace CifraShop.Application.Services.Implementations
 
         public async Task<PagedResponse<Product>> GetProductsPaged(int page, int pageSize)
         {
+            if (page < 0)
+                throw new ArgumentException("Номер страницы не может быть отрицательным");
+            if (pageSize <= 0)
+                throw new ArgumentException("Размер страницы должен быть больше 0");
+
             var (items, total) = await _repository.GetAllPaged(page, pageSize);
             return new PagedResponse<Product> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
         }
 
-        public Task<Product> GetProductById(int id)
+        public Task<Product?> GetProductById(int id)
             => _repository.GetProductById(id);
 
         public Task<List<Product>> GetProductsByName(string name)
@@ -39,26 +44,50 @@ namespace CifraShop.Application.Services.Implementations
 
         public async Task<Product> CreateProduct(string name, string description, short price, short quantity)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Название товара обязательно");
+            if (price <= 0)
+                throw new ArgumentException("Цена товара должна быть больше 0");
+            if (quantity < 0)
+                throw new ArgumentException("Количество товара не может быть отрицательным");
+
             var product = new Product
             {
                 Name = name,
                 Description = description,
                 Price = price,
                 Quantity = quantity,
-                Status = StatusProduct.OnSaleSoon
+                Status = quantity > 0 ? StatusProduct.InStock : StatusProduct.OutOfStock
             };
 
             await _repository.AddProduct(product);
             return product;
         }
 
-        public Task UpdateProduct(Product productToUpdate)
-            => _repository.UpdateProduct(productToUpdate);
+        public async Task UpdateProduct(Product productToUpdate)
+        {
+            if (productToUpdate == null)
+                throw new ArgumentNullException(nameof(productToUpdate));
+            if (string.IsNullOrWhiteSpace(productToUpdate.Name))
+                throw new ArgumentException("Название товара обязательно");
+            if (productToUpdate.Quantity < 0)
+                throw new ArgumentException("Количество товара не может быть отрицательным");
+
+            productToUpdate.Status = productToUpdate.Quantity == 0
+                ? StatusProduct.OutOfStock
+                : StatusProduct.InStock;
+
+            await _repository.UpdateProduct(productToUpdate);
+        }
 
         public Task DeleteProduct(Product productToDelete)
             => _repository.DeleteProduct(productToDelete);
 
         public Task DeleteRange(List<int> ids)
-            => _repository.DeleteRange(ids);
+        {
+            if (ids == null || ids.Count == 0)
+                throw new ArgumentException("Список id не может быть пустым");
+            return _repository.DeleteRange(ids);
+        }
     }
 }

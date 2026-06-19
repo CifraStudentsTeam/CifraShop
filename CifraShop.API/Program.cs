@@ -2,8 +2,8 @@ using CifraShop.API.Middleware;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Infrastructure.Data;
+using CifraShop.Domain.Repositories;
 using CifraShop.Infrastructure.Data.Repositories.Implementations;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,7 +49,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthorization();
 

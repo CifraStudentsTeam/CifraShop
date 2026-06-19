@@ -1,6 +1,6 @@
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CifraShop.Infrastructure.Data.Repositories.Implementations
@@ -29,10 +29,10 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<User>> GetAllStudents()
             => await _context.Users.Where(x => x.Role == UserRole.Student).ToListAsync();
 
-        public async Task<User> GetUserById(int id)
+        public async Task<User?> GetUserById(int id)
             => await _context.Users.SingleOrDefaultAsync(x => x.Id == id);
 
-        public async Task<User> GetUserByEmail(string email)
+        public async Task<User?> GetUserByEmail(string email)
             => await _context.Users.SingleOrDefaultAsync(x => x.Email == email);
 
         public async Task AddUser(User userToAdd)

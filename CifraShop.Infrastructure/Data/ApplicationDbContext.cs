@@ -23,6 +23,8 @@ namespace CifraShop.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new ProductConfiguration());
             modelBuilder.ApplyConfiguration(new OrderConfiguration());
             modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
+            modelBuilder.ApplyConfiguration(new AdminActionConfiguration());
+            modelBuilder.ApplyConfiguration(new NotificationSettingsConfiguration());
         }
     }
 }

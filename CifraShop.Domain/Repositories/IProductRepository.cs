@@ -1,13 +1,13 @@
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 
-namespace CifraShop.Infrastructure.Data.Repositories.Interfaces
+namespace CifraShop.Domain.Repositories
 {
     public interface IProductRepository
     {
         Task<List<Product>> GetAll();
         Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize);
-        Task<Product> GetProductById(int id);
+        Task<Product?> GetProductById(int id);
         Task<List<Product>> GetProductsByName(string name);
         Task<List<Product>> GetProductsByPrice(short price);
         Task<List<Product>> GetProductsByQuantity(short quantity);

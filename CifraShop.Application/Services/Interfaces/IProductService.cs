@@ -8,7 +8,7 @@ namespace CifraShop.Application.Services.Interfaces
     {
         Task<List<Product>> GetAllProducts();
         Task<PagedResponse<Product>> GetProductsPaged(int page, int pageSize);
-        Task<Product> GetProductById(int id);
+        Task<Product?> GetProductById(int id);
         Task<List<Product>> GetProductsByName(string name);
         Task<List<Product>> GetProductsByPrice(short price);
         Task<List<Product>> GetProductsByQuantity(short quantity);

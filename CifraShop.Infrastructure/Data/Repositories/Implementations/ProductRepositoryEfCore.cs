@@ -1,6 +1,6 @@
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CifraShop.Infrastructure.Data.Repositories.Implementations
@@ -35,7 +35,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct)
             => await _context.Products.Where(x => x.Status == statusProduct).ToListAsync();
 
-        public async Task<Product> GetProductById(int id)
+        public async Task<Product?> GetProductById(int id)
             => await _context.Products.SingleOrDefaultAsync(x => x.Id == id);
 
         public async Task AddProduct(Product productToAdd)
@@ -58,9 +58,8 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
 
         public async Task DeleteRange(List<int> ids)
         {
-            var products = await _context.Products.Where(p => ids.Contains(p.Id)).ToListAsync();
-            _context.Products.RemoveRange(products);
-            await _context.SaveChangesAsync();
+            var products = _context.Products.Where(p => ids.Contains(p.Id));
+            await products.ExecuteDeleteAsync();
         }
     }
 }

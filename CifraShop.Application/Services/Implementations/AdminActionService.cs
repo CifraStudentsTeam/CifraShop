@@ -1,6 +1,6 @@
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Entities;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 
 namespace CifraShop.Application.Services.Implementations
 {
@@ -12,10 +12,19 @@ namespace CifraShop.Application.Services.Implementations
             => _repository = repository;
 
         public Task<List<AdminAction>> GetLastActions(int count)
-            => _repository.GetLastActions(count);
+        {
+            if (count <= 0)
+                throw new ArgumentException("Количество действий должно быть больше 0");
+            return _repository.GetLastActions(count);
+        }
 
         public async Task AddAction(string type, string details)
         {
+            if (string.IsNullOrWhiteSpace(type))
+                throw new ArgumentException("Тип действия обязателен");
+            if (string.IsNullOrWhiteSpace(details))
+                throw new ArgumentException("Детали действия обязательны");
+
             var action = new AdminAction
             {
                 ActionType = type,

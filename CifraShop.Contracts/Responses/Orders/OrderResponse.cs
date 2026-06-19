@@ -12,8 +12,8 @@ namespace CifraShop.Contracts.Responses.Orders
         public StatusOrder Status { get; set; }
         public short Sum { get; set; }
         public DateTime DateOfPurchase { get; set; }
-        public string CustomerLogin { get; set; }
+        public string CustomerEmail { get; set; } = string.Empty;
         public int CustomerId {  get; set; }
-        public List<OrderItem.OrderItemResponse> Items { get; set; }
+        public List<OrderItem.OrderItemResponse> Items { get; set; } = new();
     }
 }

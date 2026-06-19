@@ -9,8 +9,8 @@ namespace CifraShop.Application.Services.Interfaces
         Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize);
         Task<List<User>> GetAllAdmins();
         Task<List<User>> GetAllStudents();
-        Task<User> GetUserById(int id);
-        Task<User> GetUserByEmail(string email);
+        Task<User?> GetUserById(int id);
+        Task<User?> GetUserByEmail(string email);
         Task<User> CreateAdmin(string email, string password);
         Task<User> CreateStudent(string email, string password);
         Task<User> CreateUser(string email, string password, string role);

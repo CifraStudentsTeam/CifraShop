@@ -20,11 +20,10 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<ActionResult<List<ProductResponse>>> GetAllProduct()
+        public async Task<ActionResult<List<ProductResponse>>> GetAllProducts()
         {
             var products = await _productService.GetAllProducts();
-            var result = products.Select(p => p.ToResponse()).ToList();
-            return Ok(result);
+            return Ok(products.Select(p => p.ToResponse()).ToList());
         }
 
         [HttpGet("paged")]
@@ -44,7 +43,7 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<ProductResponse>> GetProductById([FromQuery] int id)
         {
             var product = await _productService.GetProductById(id);
-            if (product == null) return NotFound($"Продукт с id {id} не найден");
+            if (product == null) return NotFound($"Товар с id {id} не найден");
             return Ok(product.ToResponse());
         }
 
@@ -87,13 +86,13 @@ namespace CifraShop.API.Controllers
         public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductRequest request, [FromQuery] int id)
         {
             var product = await _productService.GetProductById(id);
-            if (product == null) return NotFound($"Продукт с id {id} не найден");
+            if (product == null) return NotFound($"Товар с id {id} не найден");
 
             if (request.Name != null) product.Name = request.Name;
             if (request.Description != null) product.Description = request.Description;
             if (request.Price.HasValue) product.Price = request.Price.Value;
             if (request.Quantity.HasValue) product.Quantity = request.Quantity.Value;
-            if (request.Status.HasValue) product.Status = (StatusProduct)request.Status.Value;
+            if (request.Status.HasValue) product.Status = request.Status.Value;
 
             await _productService.UpdateProduct(product);
             return NoContent();
@@ -103,7 +102,7 @@ namespace CifraShop.API.Controllers
         public async Task<IActionResult> DeleteProduct([FromQuery] int id)
         {
             var product = await _productService.GetProductById(id);
-            if (product == null) return NotFound($"Продукт с id {id} не найден");
+            if (product == null) return NotFound($"Товар с id {id} не найден");
             await _productService.DeleteProduct(product);
             return NoContent();
         }

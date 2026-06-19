@@ -1,6 +1,6 @@
-namespace CifraShop.Contracts.Responses.OrderItem
+namespace CifraShop.Contracts.Requests.OrderItem
 {
-    public class UpdateOrderItemResponse
+    public class UpdateOrderItemRequest
     {
         public int Id { get; set; }
         public short Quantity { get; set; }

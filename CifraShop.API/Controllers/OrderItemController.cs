@@ -2,7 +2,6 @@ using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.OrderItem;
 using CifraShop.Contracts.Responses.OrderItem;
-using CifraShop.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
@@ -12,22 +11,18 @@ namespace CifraShop.API.Controllers
     public class OrderItemController : ControllerBase
     {
         private readonly IOrderItemService _orderItemService;
-        private readonly IOrderService _orderService;
 
-        public OrderItemController(IOrderItemService orderItemService, IOrderService orderService)
+        public OrderItemController(IOrderItemService orderItemService)
         {
             _orderItemService = orderItemService;
-            _orderService = orderService;
         }
 
         [HttpGet("by-id")]
         public async Task<ActionResult<OrderItemResponse>> GetOrderItemById([FromQuery] int id)
         {
             var orderItem = await _orderItemService.GetOrderItemById(id);
-
             if (orderItem == null)
                 return NotFound($"Составляющая заказа с id {id} не найдена");
-
             return Ok(orderItem.ToResponse());
         }
 
@@ -44,17 +39,12 @@ namespace CifraShop.API.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var order = await _orderService.GetOrderById(dto.OrderId);
-
-            if (order == null)
-                return BadRequest($"Заказ с id {dto.OrderId} не найден");
-
             var orderItem = await _orderItemService.CreateOrderItem(dto.OrderId, dto.ProductId, dto.Quantity);
             return CreatedAtAction(nameof(GetOrderItemById), new { id = orderItem.Id }, orderItem.ToResponse());
         }
 
         [HttpPut("update-orderitem")]
-        public async Task<IActionResult> UpdateOrderItem([FromQuery] int id, [FromBody] UpdateOrderItemResponse dto)
+        public async Task<IActionResult> UpdateOrderItem([FromQuery] int id, [FromBody] UpdateOrderItemRequest dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -63,12 +53,10 @@ namespace CifraShop.API.Controllers
                 return BadRequest("Идентификатор из URL-параметра не совпадает с телом запроса");
 
             var existing = await _orderItemService.GetOrderItemById(id);
-
             if (existing == null)
                 return NotFound($"Составляющая заказа с id {id} не найдена");
 
             existing.Quantity = dto.Quantity;
-
             if (dto.Price.HasValue)
                 existing.Price = dto.Price.Value;
 
@@ -76,11 +64,10 @@ namespace CifraShop.API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("delete-orderItem")]
+        [HttpDelete("delete-order-item")]
         public async Task<IActionResult> DeleteOrderItem([FromQuery] int id)
         {
             var existing = await _orderItemService.GetOrderItemById(id);
-
             if (existing == null)
                 return NotFound($"Составляющая заказа с id {id} не найдена");
 

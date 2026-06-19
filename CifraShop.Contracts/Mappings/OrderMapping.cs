@@ -5,7 +5,7 @@ namespace CifraShop.Contracts.Mappings
 {
     public static class OrderMapping
     {
-        public static OrderResponse ToResponse(this Order order, List<OrderItem> items)
+        public static OrderResponse ToResponse(this Order order)
         {
             return new OrderResponse
             {
@@ -13,9 +13,9 @@ namespace CifraShop.Contracts.Mappings
                 Status = order.Status,
                 Sum = order.Sum,
                 DateOfPurchase = order.DateOfPurchase,
-                CustomerLogin = order.CustomerLogin,
+                CustomerEmail = order.Customer?.Email ?? "",
                 CustomerId = order.CustomerId,
-                Items = items.Select(i => i.ToResponse()).ToList()
+                Items = order.OrderItems?.Select(i => i.ToResponse()).ToList() ?? new()
             };
         }
     }

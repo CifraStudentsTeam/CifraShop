@@ -1,5 +1,5 @@
 using CifraShop.Domain.Entities;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CifraShop.Infrastructure.Data.Repositories.Implementations
@@ -12,10 +12,16 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             => _context = context;
 
         public async Task<List<OrderItem>> GetOrderItemsByOrderId(int orderId)
-            => await _context.OrderItems.Where(oi => oi.OrderId == orderId).ToListAsync();
+            => await _context.OrderItems
+                .Include(oi => oi.Order)
+                .Include(oi => oi.Product)
+                .Where(oi => oi.OrderId == orderId).ToListAsync();
 
-        public async Task<OrderItem> GetOrderItemById(int orderItemId)
-            => await _context.OrderItems.SingleOrDefaultAsync(oi => oi.Id == orderItemId);
+        public async Task<OrderItem?> GetOrderItemById(int orderItemId)
+            => await _context.OrderItems
+                .Include(oi => oi.Order)
+                .Include(oi => oi.Product)
+                .SingleOrDefaultAsync(oi => oi.Id == orderItemId);
 
         public async Task AddOrderItem(OrderItem orderItemToAdd)
         {

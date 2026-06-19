@@ -1,6 +1,6 @@
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Entities;
-using CifraShop.Infrastructure.Data.Repositories.Interfaces;
+using CifraShop.Domain.Repositories;
 
 namespace CifraShop.Application.Services.Implementations
 {
@@ -22,6 +22,21 @@ namespace CifraShop.Application.Services.Implementations
 
         public async Task<NotificationSettings> Create(string email, string telegramBotToken, string telegramChatId, string branch, bool notifyOnNewOrder, bool notifyOnStatusChange, bool notifyOnLowStock, int lowStockThreshold)
         {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email обязателен");
+            if (string.IsNullOrWhiteSpace(telegramBotToken))
+                throw new ArgumentException("Telegram-токен обязателен");
+            if (string.IsNullOrWhiteSpace(telegramChatId))
+                throw new ArgumentException("Telegram Chat ID обязателен");
+            if (string.IsNullOrWhiteSpace(branch))
+                throw new ArgumentException("Филиал обязателен");
+            if (lowStockThreshold < 0)
+                throw new ArgumentException("Порог уведомления о низком запасе не может быть отрицательным");
+
+            var existing = await _repository.GetByBranch(branch);
+            if (existing != null)
+                throw new ArgumentException($"Настройки для филиала \"{branch}\" уже существуют");
+
             var settings = new NotificationSettings
             {
                 Email = email,

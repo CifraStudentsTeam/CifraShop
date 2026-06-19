@@ -8,7 +8,6 @@ namespace CifraShop.Domain.Entities
         public StatusOrder Status { get; set; }
         public short Sum { get; set; }
         public DateTime DateOfPurchase { get; set; }
-        public string CustomerLogin { get; set; }
         public int CustomerId { get; set; }
         public User Customer { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
