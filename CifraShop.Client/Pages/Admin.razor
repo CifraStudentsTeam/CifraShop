@@ -6,11 +6,7 @@
 <PageTitle>Админ-панель — CifraShop</PageTitle>
 
 <style>
-    .autocomplete-wrap { position: relative; }
-    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 1050; background: #fff; border: 1px solid #dee2e6; border-top: 0; border-radius: 0 0 0.375rem 0.375rem; max-height: 12rem; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,.1); }
-    .autocomplete-list .autocomplete-item { padding: 0.4rem 0.75rem; cursor: pointer; font-size: 0.85rem; }
-    .autocomplete-list .autocomplete-item:hover { background: #e9ecef; }
-    .editable-cell { cursor: pointer; border-bottom: 1px dashed #dee2e6; }
+    .autocomplete-item:hover { background: #e9ecef; }
     .editable-cell:hover { border-bottom-color: #0d6efd; }
 </style>
 
@@ -37,7 +33,7 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <small class="text-secondary">Филиал:</small>
-            <select class="form-select form-select-sm" style="width:auto;" @bind="_selectedBranch">
+            <select class="form-select form-select-sm w-auto" @bind="_selectedBranch">
                 <option value="">Все филиалы</option>
                 @foreach (var branch in _notificationSettings.Select(s => s.Branch).Distinct().OrderBy(b => b))
                 {
@@ -206,7 +202,7 @@
                                         <span class="ms-2 text-muted">· @_totalStockValue.ToString("N0") ₽ на складе</span>
                                     }
                                 </small>
-                                <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
                                         value="@_pageSize" @onchange="OnPageSizeChanged">
                                     <option value="5">5</option>
                                     <option value="8">8</option>
@@ -244,10 +240,10 @@
                         </SearchBar>
                         <div class="d-flex align-items-center gap-1">
                             <small class="text-secondary">с</small>
-                            <input type="date" class="form-control form-control-sm" style="width:auto;"
+                            <input type="date" class="form-control form-control-sm w-auto"
                                    value="@_orderDateFrom" @onchange="OnOrderDateFromChanged" />
                             <small class="text-secondary">по</small>
-                            <input type="date" class="form-control form-control-sm" style="width:auto;"
+                            <input type="date" class="form-control form-control-sm w-auto"
                                    value="@_orderDateTo" @onchange="OnOrderDateToChanged" />
                         </div>
                     </div>
@@ -256,7 +252,7 @@
                     {
                         <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
                             <span class="small text-secondary me-auto align-self-center">Выбрано: @Orders.Count(o => o.IsSelected)</span>
-                            <select class="form-select form-select-sm" style="width:auto;"
+                            <select class="form-select form-select-sm w-auto"
                                     @onchange="async e => { if (int.TryParse(e.Value?.ToString(), out int s)) await MassChangeOrderStatus((StatusOrder)s); }">
                                 <option value="">Сменить статус на...</option>
                                 @foreach (var s in OrderStatuses)
@@ -384,7 +380,7 @@
                                         <span class="ms-2 text-muted">· @_totalRevenue.ToString("N0") ₽</span>
                                     }
                                 </small>
-                                <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
                                         value="@_pageSize" @onchange="OnPageSizeChanged">
                                     <option value="5">5</option>
                                     <option value="8">8</option>
@@ -464,7 +460,7 @@
                                             <td class="text-secondary small">#@u.Id</td>
                                             <td class="text-truncate" style="max-width:15rem;">@u.Email</td>
                                             <td>
-                                                <span class="editable-cell px-1 rounded" @onclick="() => OpenEditUserModal(u)"
+                                                <span class="px-1 rounded border-bottom border-secondary" style="cursor:pointer" @onclick="() => OpenEditUserModal(u)"
                                                       title="Нажмите для редактирования">
                                                     @(u.Balance?.ToString("N0") ?? "0") ₽
                                                     <i class="bi bi-pencil small text-primary ms-1"></i>
@@ -489,7 +485,7 @@
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <div class="d-flex align-items-center gap-2">
                                 <small class="text-secondary">@_userTotalCount пользовател(ей)</small>
-                                <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
                                         value="@_pageSize" @onchange="OnPageSizeChanged">
                                     <option value="5">5</option>
                                     <option value="8">8</option>
@@ -584,14 +580,14 @@
                     <div class="d-flex align-items-center gap-2">
                         @if (_actionHistory.Any())
                         {
-                            <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                            <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
                                     @onchange="OnHistoryTypeFilterChanged" @onclick:stopPropagation="true">
                                 <option value="">Все типы</option>
                                 <option value="Создание">Создание</option>
                                 <option value="Изменение">Изменение</option>
                                 <option value="Удаление">Удаление</option>
                             </select>
-                            <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                            <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
                                     @onchange="OnHistoryBranchFilterChanged" @onclick:stopPropagation="true">
                                 <option value="">Все филиалы</option>
                                 @foreach (var branch in _availableBranches)
@@ -796,16 +792,16 @@
                         <button type="button" class="btn-close" @onclick="() => _showOrderModal = false"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-3 autocomplete-wrap">
+                        <div class="mb-3 position-relative">
                             <label class="form-label small fw-medium">Email покупателя <span class="text-danger">*</span></label>
                             <input type="email" class="form-control" @bind="_newOrderEmail" @bind:after="OnOrderEmailInput"
                                    placeholder="Начните вводить email..." autocomplete="off" />
                             @if (_emailSuggestions.Any())
                             {
-                                <div class="autocomplete-list">
+                                <div class="position-absolute top-100 start-0 end-0 bg-white border border-top-0 rounded-bottom shadow-sm overflow-y-auto" style="z-index:1050;max-height:12rem;">
                                     @foreach (var u in _emailSuggestions)
                                     {
-                                        <div class="autocomplete-item" @onclick="() => SelectOrderEmail(u.Email)">
+                                        <div class="autocomplete-item py-1 px-3 small" style="cursor:pointer" @onclick="() => SelectOrderEmail(u.Email)">
                                             <strong>@u.Email</strong>
                                             <small class="text-secondary ms-1">(@u.Role)</small>
                                         </div>
@@ -818,7 +814,7 @@
                             @foreach (var item in _newOrderItems)
                             {
                                 <div class="d-flex gap-2 mb-2 align-items-center">
-                                    <select class="form-select form-select-sm" style="flex:1;" @bind="item.ProductId">
+                                    <select class="form-select form-select-sm flex-grow-1" @bind="item.ProductId">
                                         <option value="0">Выберите товар</option>
                                         @foreach (var p in _allProductsForOrder.Where(p => p.Status == StatusProduct.InStock))
                                         {
