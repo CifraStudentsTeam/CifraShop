@@ -8,5 +8,6 @@ namespace CifraShop.Contracts.Requests.AdminAction
     {
         public string ActionType { get; set; } = string.Empty;
         public string Details { get; set; } = string.Empty;
+        public string Branch { get; set; } = string.Empty;
     }
 }

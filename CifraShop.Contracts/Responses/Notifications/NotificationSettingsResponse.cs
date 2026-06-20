@@ -7,6 +7,7 @@ namespace CifraShop.Contracts.Responses.Notifications
         public string TelegramBotToken { get; set; } = string.Empty;
         public string TelegramChatId { get; set; } = string.Empty;
         public string Branch { get; set; } = string.Empty;
+        public string? AdminEmails { get; set; }
         public bool NotifyOnNewOrder { get; set; }
         public bool NotifyOnStatusChange { get; set; }
         public bool NotifyOnLowStock { get; set; }

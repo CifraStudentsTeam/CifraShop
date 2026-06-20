@@ -11,11 +11,16 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public AdminActionRepositoryEfCore(ApplicationContext context)
             => _context = context;
 
-        public async Task<List<AdminAction>> GetLastActions(int count)
-            => await _context.AdminActions
+        public async Task<List<AdminAction>> GetLastActions(int count, string? branch = null)
+        {
+            var query = _context.AdminActions.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(branch))
+                query = query.Where(a => a.Branch == branch);
+            return await query
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(count)
                 .ToListAsync();
+        }
 
         public async Task AddAction(AdminAction action)
         {

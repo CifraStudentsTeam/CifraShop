@@ -28,14 +28,14 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<Order>> GetAllOrders()
             => _repository.GetAll();
 
-        public async Task<PagedResponse<Order>> GetOrdersPaged(int page, int pageSize)
+        public async Task<PagedResponse<Order>> GetOrdersPaged(int page, int pageSize, string? search = null, StatusOrder? status = null, DateTime? dateFrom = null, DateTime? dateTo = null)
         {
             if (page < 0)
                 throw new ArgumentException("Номер страницы не может быть отрицательным");
             if (pageSize <= 0)
                 throw new ArgumentException("Размер страницы должен быть больше 0");
 
-            var (items, total) = await _repository.GetAllPaged(page, pageSize);
+            var (items, total) = await _repository.GetAllPaged(page, pageSize, search, status, dateFrom, dateTo);
             return new PagedResponse<Order> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
         }
 
@@ -108,9 +108,6 @@ namespace CifraShop.Application.Services.Implementations
                 DateOfPurchase = DateTime.UtcNow,
                 CustomerId = user.Id
             };
-
-            foreach (var item in orderItems)
-                item.OrderId = order.Id;
 
             return await _repository.CreateOrderInTransaction(order, orderItems, stockUpdates);
         }

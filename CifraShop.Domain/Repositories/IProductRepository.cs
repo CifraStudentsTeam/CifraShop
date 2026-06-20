@@ -6,7 +6,7 @@ namespace CifraShop.Domain.Repositories
     public interface IProductRepository
     {
         Task<List<Product>> GetAll();
-        Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize);
+        Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusProduct? status = null);
         Task<Product?> GetProductById(int id);
         Task<List<Product>> GetProductsByName(string name);
         Task<List<Product>> GetProductsByPrice(short price);

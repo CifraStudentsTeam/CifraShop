@@ -9,6 +9,7 @@ namespace CifraShop.Domain.Entities
         public int Id { get; set; }
         public string ActionType { get; set; } = string.Empty;
         public string Details { get; set; } = string.Empty;
+        public string Branch { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
     }
 }

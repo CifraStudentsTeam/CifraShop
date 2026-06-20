@@ -10,6 +10,7 @@ namespace CifraShop.Infrastructure.Data
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<Product> Products => Set<Product>();
+        public DbSet<ProductImage> ProductImages => Set<ProductImage>();
         public DbSet<AdminAction> AdminActions => Set<AdminAction>();
         public DbSet<NotificationSettings> NotificationSettings => Set<NotificationSettings>();
 

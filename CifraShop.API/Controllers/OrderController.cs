@@ -25,9 +25,15 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("paged")]
-        public async Task<ActionResult<PagedResponse<OrderResponse>>> GetPaged([FromQuery] int page = 0, [FromQuery] int pageSize = 8)
+        public async Task<ActionResult<PagedResponse<OrderResponse>>> GetPaged(
+            [FromQuery] int page = 0,
+            [FromQuery] int pageSize = 8,
+            [FromQuery] string? search = null,
+            [FromQuery] StatusOrder? status = null,
+            [FromQuery] DateTime? dateFrom = null,
+            [FromQuery] DateTime? dateTo = null)
         {
-            var paged = await _orderService.GetOrdersPaged(page, pageSize);
+            var paged = await _orderService.GetOrdersPaged(page, pageSize, search, status, dateFrom, dateTo);
             return Ok(new PagedResponse<OrderResponse>
             {
                 Items = paged.Items.Select(o => o.ToResponse()).ToList(),

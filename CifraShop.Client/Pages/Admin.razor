@@ -5,14 +5,18 @@
 
 <PageTitle>Админ-панель — CifraShop</PageTitle>
 
+<style>
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 1050; background: #fff; border: 1px solid #dee2e6; border-top: 0; border-radius: 0 0 0.375rem 0.375rem; max-height: 12rem; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,.1); }
+    .autocomplete-list .autocomplete-item { padding: 0.4rem 0.75rem; cursor: pointer; font-size: 0.85rem; }
+    .autocomplete-list .autocomplete-item:hover { background: #e9ecef; }
+    .editable-cell { cursor: pointer; border-bottom: 1px dashed #dee2e6; }
+    .editable-cell:hover { border-bottom-color: #0d6efd; }
+</style>
+
 <div class="container-fluid px-3 py-2">
 
-    <!-- ШАПКА -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Админ-панель</h5>
-    </div>
-
-    <!-- УВЕДОМЛЕНИЯ -->
+    <!-- УВЕДОМЛЕНИЕ (Toast) -->
     @if (!string.IsNullOrEmpty(_notification))
     {
         <div class="alert alert-@_notificationType alert-dismissible fade show py-2 small" role="alert">
@@ -22,11 +26,31 @@
         </div>
     }
 
-    <!-- МЕТРИКИ -->
+    <!-- ШАПКА + МЕТРИКИ -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap me-1"></i>Админ-панель</h5>
+            @if (_lastUpdated.HasValue)
+            {
+                <small class="text-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Обновлено @_lastUpdated.Value.ToString("HH:mm:ss")</small>
+            }
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <small class="text-secondary">Филиал:</small>
+            <select class="form-select form-select-sm" style="width:auto;" @bind="_selectedBranch">
+                <option value="">Все филиалы</option>
+                @foreach (var branch in _notificationSettings.Select(s => s.Branch).Distinct().OrderBy(b => b))
+                {
+                    <option value="@branch">@branch</option>
+                }
+            </select>
+        </div>
+    </div>
     <div class="row g-2 mb-3">
-        <MetricCard Title="Товаров" Count="@_productTotalCount" Icon="bi-box" Color="primary" />
-        <MetricCard Title="Заказы" Count="@_orderTotalCount" Icon="bi-cart-check" Color="warning" />
-        <MetricCard Title="Пользователи" Count="@_userTotalCount" Icon="bi-people" Color="success" />
+        <MetricCard Title="Товаров" Count="@_productTotalCount" Subtitle="@_lowStockSubtitle" Icon="bi-box" Color="primary" />
+        <MetricCard Title="Заказы" Count="@_orderTotalCount" Subtitle="@($"{_totalRevenue:N0} ₽ выручка")" Icon="bi-cart-check" Color="warning" />
+        <MetricCard Title="Пользователи" Count="@_userTotalCount" Subtitle="@($"{_adminCount} админ(ов)")" Icon="bi-people" Color="success" />
+        <MetricCard Title="Филиалы" Count="@_notificationSettings.Count" Subtitle="@($"{_configuredFilials} с настройками")" Icon="bi-geo-alt" Color="info" />
     </div>
 
     <!-- ==================== ТОВАРЫ ==================== -->
@@ -34,7 +58,7 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0">Товары</h6>
+                    <h6 class="fw-semibold mb-0"><i class="bi bi-box me-1"></i>Товары</h6>
                     <button class="btn btn-primary btn-sm" @onclick="() => OpenProductModal()">
                         <i class="bi bi-plus-lg me-1"></i>Добавить
                     </button>
@@ -43,7 +67,7 @@
                     <SearchBar Value="@_productSearch" ValueChanged="OnProductSearchChanged"
                                FilterValue="@_productFilter" FilterValueChanged="OnProductFilterChanged"
                                Placeholder="Название, описание...">
-                        <option value="">Все</option>
+                        <option value="">Все статусы</option>
                         <option value="0">В наличии</option>
                         <option value="1">Нет в наличии</option>
                         <option value="2">Скоро</option>
@@ -71,7 +95,17 @@
                     }
                     else if (!Products.Any())
                     {
-                        <EmptyState />
+                        <div class="text-center py-4 text-secondary small">
+                            <i class="bi bi-box fs-3 d-block mb-1"></i>
+                            @if (!string.IsNullOrEmpty(_productSearch) || !string.IsNullOrEmpty(_productFilter))
+                            {
+                                <span>Товары не найдены по заданным критериям</span>
+                            }
+                            else
+                            {
+                                <span>Товаров пока нет. Добавьте первый товар</span>
+                            }
+                        </div>
                     }
                     else
                     {
@@ -95,18 +129,42 @@
                                 <tbody>
                                     @foreach (var p in Products)
                                     {
-                                        <tr class="@(p.Status != 0 ? "opacity-50" : "")">
+                                        var isLowStock = p.Status == StatusProduct.InStock && p.Quantity <= 5;
+                                        var isOutOfStock = p.Status == StatusProduct.OutOfStock;
+                                        <tr class="@(isOutOfStock ? "opacity-50" : "") @(isLowStock ? "table-warning" : "")">
                                             <td><input type="checkbox" class="form-check-input" @bind="p.IsSelected" /></td>
                                             <td>
-                                                <div class="fw-semibold text-truncate" style="max-width:12rem;">@p.Name</div>
-                                                @if (!string.IsNullOrEmpty(p.Description))
-                                                {
-                                                    <small class="text-secondary text-truncate d-block" style="max-width:12rem;">@p.Description</small>
-                                                }
+                                                <div class="d-flex align-items-center gap-2">
+                                                    @if (!string.IsNullOrEmpty(p.ImageUrl))
+                                                    {
+                                                        <img src="@p.ImageUrl" alt="@p.Name"
+                                                             style="width:2rem;height:2rem;object-fit:cover;border-radius:0.375rem;" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                                             style="width:2rem;height:2rem;">
+                                                            <i class="bi bi-image text-secondary small"></i>
+                                                        </div>
+                                                    }
+                                                    <div>
+                                                        <div class="fw-semibold text-truncate" style="max-width:10rem;">
+                                                            @p.Name
+                                                            @if (isLowStock)
+                                                            {
+                                                                <i class="bi bi-exclamation-triangle text-warning ms-1" title="Низкий остаток"></i>
+                                                            }
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(p.Description))
+                                                        {
+                                                            <small class="text-secondary text-truncate d-block" style="max-width:10rem;">@p.Description</small>
+                                                        }
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td>@p.Price ₽</td>
                                             <td>
-                                                <input type="number" class="form-control form-control-sm"
+                                                <input type="number" class="form-control form-control-sm @(isLowStock ? "border-warning" : "")"
                                                        style="width:3.75rem;" value="@p.Quantity"
                                                        @onchange="(ChangeEventArgs e) => OnQuantityChanged(p, e)" />
                                             </td>
@@ -134,9 +192,15 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">@_productTotalCount товар(ов)</small>
-                            <Pagination Page="_productPage" TotalPages="@_productTotalPages"
-                                         PageChanged="p => { _productPage = p; _ = LoadProducts(); }" />
+                            <small class="text-secondary">
+                                @_productTotalCount товар(ов)
+                                @if (_totalStockValue > 0)
+                                {
+                                    <span class="ms-2 text-muted">· @_totalStockValue.ToString("N0") ₽ на складе</span>
+                                }
+                            </small>
+                            <Pagination Page="_productPage" TotalPages="@_productTotalPages" Loading="@_loadingProducts"
+                                         PageChanged="OnProductPageChanged" />
                         </div>
                     }
                 </div>
@@ -147,26 +211,30 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0">Заказы</h6>
-                    <button class="btn btn-primary btn-sm" @onclick="() => _showOrderModal = true">
+                    <h6 class="fw-semibold mb-0"><i class="bi bi-cart-check me-1"></i>Заказы</h6>
+                    <button class="btn btn-primary btn-sm" @onclick="OpenOrderModal">
                         <i class="bi bi-plus-lg me-1"></i>Создать
                     </button>
                 </div>
                 <div class="card-body pt-0">
-                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                    <div class="d-flex gap-2 mb-2 flex-wrap align-items-center">
                         <SearchBar Value="@_orderSearch" ValueChanged="OnOrderSearchChanged"
                                    FilterValue="@_orderFilter" FilterValueChanged="OnOrderFilterChanged"
                                    Placeholder="Номер, email...">
-                            <option value="">Все</option>
+                            <option value="">Все статусы</option>
                             @foreach (var s in OrderStatuses)
                             {
                                 <option value="@s.Key">@s.Value</option>
                             }
                         </SearchBar>
-                        <input type="date" class="form-control form-control-sm" style="width:auto;"
-                               value="@_orderDateFrom" @onchange="OnOrderDateFromChanged" />
-                        <input type="date" class="form-control form-control-sm" style="width:auto;"
-                               value="@_orderDateTo" @onchange="OnOrderDateToChanged" />
+                        <div class="d-flex align-items-center gap-1">
+                            <small class="text-secondary">с</small>
+                            <input type="date" class="form-control form-control-sm" style="width:auto;"
+                                   value="@_orderDateFrom" @onchange="OnOrderDateFromChanged" />
+                            <small class="text-secondary">по</small>
+                            <input type="date" class="form-control form-control-sm" style="width:auto;"
+                                   value="@_orderDateTo" @onchange="OnOrderDateToChanged" />
+                        </div>
                     </div>
 
                     @if (Orders.Any(o => o.IsSelected))
@@ -174,7 +242,7 @@
                         <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
                             <span class="small text-secondary me-auto align-self-center">Выбрано: @Orders.Count(o => o.IsSelected)</span>
                             <select class="form-select form-select-sm" style="width:auto;"
-                                    @onchange="e => { if (int.TryParse(e.Value?.ToString(), out int s)) MassChangeOrderStatus((StatusOrder)s); }">
+                                    @onchange="async e => { if (int.TryParse(e.Value?.ToString(), out int s)) await MassChangeOrderStatus((StatusOrder)s); }">
                                 <option value="">Сменить статус на...</option>
                                 @foreach (var s in OrderStatuses)
                                 {
@@ -190,7 +258,17 @@
                     }
                     else if (!Orders.Any())
                     {
-                        <EmptyState />
+                        <div class="text-center py-4 text-secondary small">
+                            <i class="bi bi-cart fs-3 d-block mb-1"></i>
+                            @if (!string.IsNullOrEmpty(_orderSearch) || !string.IsNullOrEmpty(_orderFilter) || !string.IsNullOrEmpty(_orderDateFrom) || !string.IsNullOrEmpty(_orderDateTo))
+                            {
+                                <span>Заказы не найдены по заданным критериям</span>
+                            }
+                            else
+                            {
+                                <span>Заказов пока нет</span>
+                            }
+                        </div>
                     }
                     else
                     {
@@ -229,11 +307,11 @@
                                             <td>@o.Sum ₽</td>
                                             <td @onclick:stopPropagation="true">
                                                 <select class="form-select form-select-sm py-0"
-                                                        value="@o.Status"
+                                                        value="@((int)o.Status)"
                                                         @onchange="e => ChangeOrderStatus(o, (StatusOrder)int.Parse(e.Value!.ToString()!))">
                                                     @foreach (var s in OrderStatuses)
                                                     {
-                                                        <option value="@s.Key" selected="@(o.Status.ToString() == s.Key)">@s.Value</option>
+                                                        <option value="@s.Key" selected="@((int)o.Status).ToString() == s.Key">@s.Value</option>
                                                     }
                                                 </select>
                                             </td>
@@ -243,7 +321,13 @@
                                             <tr>
                                                 <td colspan="7" class="bg-light p-3">
                                                     <div class="small">
-                                                        <div class="fw-semibold mb-1">Состав заказа:</div>
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <div class="fw-semibold">Состав заказа:</div>
+                                                            <div class="d-flex gap-2 align-items-center">
+                                                                <span class="text-secondary"><i class="bi bi-calendar me-1"></i>@o.DateOfPurchase.ToString("dd.MM.yyyy HH:mm")</span>
+                                                                <span class="badge @(OrderBadge(o.Status))">@OrderStatuses[((int)o.Status).ToString()]</span>
+                                                            </div>
+                                                        </div>
                                                         @if (o.Items.Any())
                                                         {
                                                             @foreach (var item in o.Items)
@@ -271,9 +355,15 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">@_orderTotalCount заказ(ов)</small>
-                            <Pagination Page="_orderPage" TotalPages="@_orderTotalPages"
-                                         PageChanged="p => { _orderPage = p; _ = LoadOrders(); }" />
+                            <small class="text-secondary">
+                                @_orderTotalCount заказ(ов)
+                                @if (_totalRevenue > 0)
+                                {
+                                    <span class="ms-2 text-muted">· @_totalRevenue.ToString("N0") ₽</span>
+                                }
+                            </small>
+                            <Pagination Page="_orderPage" TotalPages="@_orderTotalPages" Loading="@_loadingOrders"
+                                         PageChanged="OnOrderPageChanged" />
                         </div>
                     }
                 </div>
@@ -286,7 +376,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0">Пользователи</h6>
+                    <h6 class="fw-semibold mb-0"><i class="bi bi-people me-1"></i>Пользователи</h6>
                     <button class="btn btn-primary btn-sm" @onclick="() => _showUserModal = true">
                         <i class="bi bi-plus-lg me-1"></i>Добавить
                     </button>
@@ -295,7 +385,7 @@
                     <SearchBar Value="@_userSearch" ValueChanged="OnUserSearchChanged"
                                FilterValue="@_userFilter" FilterValueChanged="OnUserFilterChanged"
                                Placeholder="Email...">
-                        <option value="">Все</option>
+                        <option value="">Все роли</option>
                         <option value="0">Студенты</option>
                         <option value="1">Админы</option>
                     </SearchBar>
@@ -306,7 +396,17 @@
                     }
                     else if (!Users.Any())
                     {
-                        <EmptyState />
+                        <div class="text-center py-4 text-secondary small">
+                            <i class="bi bi-people fs-3 d-block mb-1"></i>
+                            @if (!string.IsNullOrEmpty(_userSearch) || !string.IsNullOrEmpty(_userFilter))
+                            {
+                                <span>Пользователи не найдены по заданным критериям</span>
+                            }
+                            else
+                            {
+                                <span>Пользователей пока нет. Создайте первого пользователя</span>
+                            }
+                        </div>
                     }
                     else
                     {
@@ -314,20 +414,24 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
+                                        <th style="width:3rem;">ID</th>
                                         <th>Email</th>
-                                        <th>Баланс</th>
+                                        <th style="width:6rem;">Баланс</th>
                                         <th>Роль</th>
-                                        <th style="width:5rem;"></th>
+                                        <th style="width:6rem;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var u in Users)
                                     {
                                         <tr>
+                                            <td class="text-secondary small">#@u.Id</td>
                                             <td class="text-truncate" style="max-width:15rem;">@u.Email</td>
                                             <td>
-                                                <span style="cursor:pointer" @onclick="() => OpenEditUserModal(u)">
-                                                    @(u.Balance?.ToString() ?? "—")
+                                                <span class="editable-cell px-1 rounded" @onclick="() => OpenEditUserModal(u)"
+                                                      title="Нажмите для редактирования">
+                                                    @(u.Balance?.ToString("N0") ?? "0") ₽
+                                                    <i class="bi bi-pencil small text-primary ms-1"></i>
                                                 </span>
                                             </td>
                                             <td>
@@ -348,8 +452,8 @@
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <small class="text-secondary">@_userTotalCount пользовател(ей)</small>
-                            <Pagination Page="_userPage" TotalPages="@_userTotalPages"
-                                         PageChanged="p => { _userPage = p; _ = LoadUsers(); }" />
+                            <Pagination Page="_userPage" TotalPages="@_userTotalPages" Loading="@_loadingUsers"
+                                         PageChanged="OnUserPageChanged" />
                         </div>
                     }
                 </div>
@@ -357,72 +461,129 @@
         </div>
     </div>
 
-    <!-- ==================== УВЕДОМЛЕНИЯ ==================== -->
+    <!-- ==================== ФИЛИАЛЫ И УВЕДОМЛЕНИЯ + ИСТОРИЯ ==================== -->
     <div class="row g-3 mb-3">
-        <div class="col-lg-4 col-md-6">
+        <!-- Филиалы и уведомления -->
+        <div class="col-lg-5">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-bell me-1"></i>Уведомления</h6>
-                    <button class="btn btn-outline-primary btn-sm" @onclick="() => _showNotificationModal = true">
-                        <i class="bi bi-gear"></i>
-                    </button>
+                    <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>Филиалы и уведомления</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        @if (_notificationSettings.Any())
+                        {
+                            <small class="text-secondary">@_configuredFilials/@_notificationSettings.Count настроено</small>
+                        }
+                        <button class="btn btn-outline-primary btn-sm" @onclick="() => _showNotificationModal = true">
+                            <i class="bi bi-gear"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body pt-0">
                     @if (!_notificationSettings.Any())
                     {
-                        <small class="text-secondary">Не настроено</small>
+                        <div class="text-center py-3">
+                            <small class="text-secondary"><i class="bi bi-bell-slash me-1"></i>Не настроено</small>
+                        </div>
                     }
                     else
                     {
                         @foreach (var s in _notificationSettings)
                         {
-                            <div class="d-flex align-items-center gap-2 py-1 border-bottom small">
-                                <i class="bi bi-geo-alt text-primary"></i>
-                                <span class="fw-semibold">@s.Branch</span>
-                                <span class="text-secondary ms-auto">
-                                    @if (!string.IsNullOrEmpty(s.Email))
+                            <div class="d-flex align-items-start gap-2 py-2 border-bottom">
+                                <i class="bi bi-geo-alt text-primary mt-1"></i>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">@s.Branch</div>
+                                    @if (!string.IsNullOrEmpty(s.AdminEmails))
                                     {
-                                        <i class="bi bi-envelope me-1" title="Email"></i>
+                                        <div class="small text-secondary mt-1"><i class="bi bi-person me-1"></i>@s.AdminEmails</div>
                                     }
-                                    @if (!string.IsNullOrEmpty(s.TelegramChatId))
-                                    {
-                                        <i class="bi bi-telegram" title="Telegram"></i>
-                                    }
-                                </span>
+                                    <div class="d-flex gap-1 flex-wrap mt-1">
+                                        @if (!string.IsNullOrEmpty(s.Email))
+                                        {
+                                            <span class="badge bg-light text-dark border"><i class="bi bi-envelope me-1"></i>Email</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(s.TelegramChatId))
+                                        {
+                                            <span class="badge bg-light text-dark border"><i class="bi bi-telegram me-1"></i>Telegram</span>
+                                        }
+                                        @if (s.NotifyOnNewOrder)
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary">Заказы</span>
+                                        }
+                                        @if (s.NotifyOnStatusChange)
+                                        {
+                                            <span class="badge bg-info bg-opacity-10 text-info">Статус</span>
+                                        }
+                                        @if (s.NotifyOnLowStock)
+                                        {
+                                            <span class="badge bg-warning text-dark">Остаток ≤ @s.LowStockThreshold</span>
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         }
                     }
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- ==================== ИСТОРИЯ ДЕЙСТВИЙ ==================== -->
-    <div class="row g-3 mb-3">
-        <div class="col-12">
+        <!-- История действий -->
+        <div class="col-lg-7">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center"
                      style="cursor:pointer" @onclick="() => _showHistory = !_showHistory">
                     <h6 class="fw-semibold mb-0">
-                        <i class="bi bi-clock-history me-1"></i>История действий (@_actionHistory.Count)
+                        <i class="bi bi-clock-history me-1"></i>История действий
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1" style="font-size:0.7rem;">@_actionHistory.Count</span>
                     </h6>
-                    <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary"></i>
+                    <div class="d-flex align-items-center gap-2">
+                        @if (_actionHistory.Any())
+                        {
+                            <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                    @onchange="OnHistoryTypeFilterChanged" @onclick:stopPropagation="true">
+                                <option value="">Все типы</option>
+                                <option value="Создание">Создание</option>
+                                <option value="Изменение">Изменение</option>
+                                <option value="Удаление">Удаление</option>
+                            </select>
+                            <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                    @onchange="OnHistoryBranchFilterChanged" @onclick:stopPropagation="true">
+                                <option value="">Все филиалы</option>
+                                @foreach (var branch in _availableBranches)
+                                {
+                                    <option value="@branch">@branch</option>
+                                }
+                            </select>
+                        }
+                        <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary small"></i>
+                    </div>
                 </div>
                 @if (_showHistory)
                 {
-                    <div class="card-body pt-0" style="max-height:15rem;overflow-y:auto;">
-                        @if (!_actionHistory.Any())
+                    <div class="card-body pt-0" style="max-height:18rem;overflow-y:auto;">
+                        @if (!_filteredHistory.Any())
                         {
-                            <div class="text-center py-3 text-secondary small">Нет записей</div>
+                            <div class="text-center py-4">
+                                <i class="bi bi-clock-history fs-3 text-secondary d-block mb-1"></i>
+                                <small class="text-secondary">Нет записей</small>
+                            </div>
                         }
                         else
                         {
-                            @foreach (var a in _actionHistory)
+                            @foreach (var a in _filteredHistory)
                             {
-                                <div class="d-flex align-items-start gap-2 py-1 border-bottom">
-                                    <small class="text-secondary" style="min-width:3.75rem;">@a.CreatedAt.ToString("HH:mm:ss")</small>
-                                    <span class="badge @(ActionBadge(a.ActionType))" style="min-width:4rem;text-align:center;">@a.ActionType</span>
-                                    <small>@a.Details</small>
+                                <div class="d-flex align-items-start gap-2 py-2 border-bottom">
+                                    <div class="d-flex flex-column align-items-center" style="min-width:3.5rem;">
+                                        <small class="text-secondary">@a.CreatedAt.ToString("dd.MM")</small>
+                                        <small class="fw-semibold">@a.CreatedAt.ToString("HH:mm")</small>
+                                    </div>
+                                    <div class="mt-1" style="width:3px;min-height:2rem;background:ActionColor(a.ActionType);border-radius:2px;"></div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-1 mb-1">
+                                            <span class="badge @(ActionBadge(a.ActionType))" style="font-size:0.65rem;">@a.ActionType</span>
+                                        </div>
+                                        <small class="text-dark">@a.Details</small>
+                                    </div>
                                 </div>
                             }
                         }
@@ -465,20 +626,43 @@
                                 <input type="number" class="form-control" @bind="_formQuantity" min="0" />
                             </div>
                         </div>
+                        <div class="mt-3">
+                            <label class="form-label small fw-medium">URL изображения</label>
+                            <input type="text" class="form-control" @bind="_formImageUrl" placeholder="https://... или image.jpg" />
+                        </div>
+                        @if (_editingProduct != null)
+                        {
+                            <div class="mt-3">
+                                <label class="form-label small fw-medium">Фотографии товара</label>
+                                <div class="d-flex gap-2 flex-wrap mb-2">
+                                    @foreach (var img in _productImages)
+                                    {
+                                        <div class="position-relative" style="width:5rem;height:5rem;">
+                                            <img src="@img.Url" style="width:100%;height:100%;object-fit:cover;border-radius:0.375rem;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
+                                                 alt="Фото" />
+                                            <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1"
+                                                    style="background:rgba(0,0,0,.5);color:#fff;border-radius:50%;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                                    @onclick="() => DeleteProductImage(img)" title="Удалить">×</button>
+                                            @if (!img.IsPrimary)
+                                            {
+                                                <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1"
+                                                        style="background:rgba(13,110,253,.8);color:#fff;border-radius:50%;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                                        @onclick="() => SetPrimaryImage(img)" title="Сделать главной">★</button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <InputFile OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="form-control form-control-sm" />
+                            </div>
+                        }
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-secondary btn-sm" @onclick="CloseProductModal" disabled="@_saving">Отмена</button>
                         <button type="button" class="btn btn-primary btn-sm"
                                 disabled="@(_formName.Length == 0 || _saving)"
                                 @onclick="SaveProduct">
-                            @if (_saving)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1"></span>
-                            }
-                            else
-                            {
-                                <i class="bi bi-check-lg me-1"></i>
-                            }
+                            @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            else { <i class="bi bi-check-lg me-1"></i> }
                             Сохранить
                         </button>
                     </div>
@@ -504,7 +688,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Пароль <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" @bind="_newUserPassword" placeholder="Пароль" />
+                            <input type="password" class="form-control" @bind="_newUserPassword" placeholder="Минимум 6 символов" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Роль</label>
@@ -517,9 +701,11 @@
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showUserModal = false">Отмена</button>
                         <button type="button" class="btn btn-primary btn-sm"
-                                disabled="@(_newUserEmail.Length == 0 || _newUserPassword.Length == 0)"
+                                disabled="@(_newUserEmail.Length == 0 || _newUserPassword.Length == 0 || _creatingUser)"
                                 @onclick="CreateUser">
-                            <i class="bi bi-check-lg me-1"></i>Создать
+                            @if (_creatingUser) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            else { <i class="bi bi-check-lg me-1"></i> }
+                            Создать
                         </button>
                     </div>
                 </div>
@@ -538,13 +724,15 @@
                         <button type="button" class="btn-close" @onclick="() => _showEditUserModal = false"></button>
                     </div>
                     <div class="modal-body">
-                        <label class="form-label small fw-medium">Баланс</label>
+                        <label class="form-label small fw-medium">Баланс (₽)</label>
                         <input type="number" class="form-control" @bind="_editBalance" />
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showEditUserModal = false">Отмена</button>
-                        <button type="button" class="btn btn-primary btn-sm" @onclick="SaveUserBalance">
-                            <i class="bi bi-check-lg me-1"></i>Сохранить
+                        <button type="button" class="btn btn-primary btn-sm" @onclick="SaveUserBalance" disabled="@_savingBalance">
+                            @if (_savingBalance) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            else { <i class="bi bi-check-lg me-1"></i> }
+                            Сохранить
                         </button>
                     </div>
                 </div>
@@ -563,9 +751,22 @@
                         <button type="button" class="btn-close" @onclick="() => _showOrderModal = false"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-3">
+                        <div class="mb-3 autocomplete-wrap">
                             <label class="form-label small fw-medium">Email покупателя <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" @bind="_newOrderEmail" placeholder="user@example.com" />
+                            <input type="email" class="form-control" @bind="_newOrderEmail" @bind:after="OnOrderEmailInput"
+                                   placeholder="Начните вводить email..." autocomplete="off" />
+                            @if (_emailSuggestions.Any())
+                            {
+                                <div class="autocomplete-list">
+                                    @foreach (var u in _emailSuggestions)
+                                    {
+                                        <div class="autocomplete-item" @onclick="() => SelectOrderEmail(u.Email)">
+                                            <strong>@u.Email</strong>
+                                            <small class="text-secondary ms-1">(@u.Role)</small>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Товары</label>
@@ -574,7 +775,7 @@
                                 <div class="d-flex gap-2 mb-2 align-items-center">
                                     <select class="form-select form-select-sm" style="flex:1;" @bind="item.ProductId">
                                         <option value="0">Выберите товар</option>
-                                        @foreach (var p in _allProductsForOrder)
+                                        @foreach (var p in _allProductsForOrder.Where(p => p.Status == StatusProduct.InStock))
                                         {
                                             <option value="@p.Id">@p.Name (@p.Price ₽)</option>
                                         }
@@ -589,13 +790,24 @@
                                 <i class="bi bi-plus me-1"></i>Добавить позицию
                             </button>
                         </div>
+                        @if (_newOrderItems.Any(i => i.ProductId > 0))
+                        {
+                            <div class="border-top pt-2 small">
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Итого:</span>
+                                    <span>@_newOrderItems.Where(i => i.ProductId > 0).Sum(i => (_allProductsForOrder.FirstOrDefault(p => p.Id == i.ProductId)?.Price ?? 0) * i.Quantity) ₽</span>
+                                </div>
+                            </div>
+                        }
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showOrderModal = false">Отмена</button>
                         <button type="button" class="btn btn-primary btn-sm"
-                                disabled="@(_newOrderEmail.Length == 0 || !_newOrderItems.Any(i => i.ProductId > 0))"
+                                disabled="@(_newOrderEmail.Length == 0 || !_newOrderItems.Any(i => i.ProductId > 0) || _creatingOrder)"
                                 @onclick="CreateOrder">
-                            <i class="bi bi-check-lg me-1"></i>Создать
+                            @if (_creatingOrder) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            else { <i class="bi bi-check-lg me-1"></i> }
+                            Создать
                         </button>
                     </div>
                 </div>
@@ -606,8 +818,12 @@
     <!-- МОДАЛКА УВЕДОМЛЕНИЙ -->
     @if (_showNotificationModal)
     {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showNotificationModal = false">
-            <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
+             @onmousedown="() => _showNotificationModal = false">
+            <div class="modal-dialog modal-lg modal-dialog-centered"
+                 @onclick:stopPropagation="true"
+                 @onmousedown:stopPropagation="true"
+                 @onkeydown:stopPropagation="true">
                 <div class="modal-content rounded-3 shadow">
                     <div class="modal-header border-0 pb-0">
                         <h6 class="modal-title fw-semibold"><i class="bi bi-bell me-1"></i>Настройки уведомлений</h6>
@@ -623,13 +839,22 @@
                             <div class="border rounded-3 p-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>@s.Branch</h6>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteNotificationSettings(s)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm @(s.Id == 0 ? "btn-success" : "btn-outline-primary")" @onclick="() => SaveNotificationSettings(s)">
+                                            <i class="bi bi-check-lg me-1"></i>@(s.Id == 0 ? "Создать" : "Сохранить")
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteNotificationSettings(s)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="row g-2">
                                     <div class="col-12">
-                                        <label class="form-label small">Email</label>
+                                        <label class="form-label small">Название филиала</label>
+                                        <input type="text" class="form-control form-control-sm" @bind="s.Branch" placeholder="Москва, Казань..." />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small">Email для уведомлений</label>
                                         <input type="email" class="form-control form-control-sm" @bind="s.Email" placeholder="admin@example.com" />
                                     </div>
                                     <div class="col-6">
@@ -641,22 +866,23 @@
                                         <input type="text" class="form-control form-control-sm" @bind="s.TelegramChatId" placeholder="-100123..." />
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label small">Филиал</label>
-                                        <input type="text" class="form-control form-control-sm" @bind="s.Branch" placeholder="Москва, Казань..." />
+                                        <label class="form-label small">Email администраторов филиала</label>
+                                        <input type="text" class="form-control form-control-sm" @bind="s.AdminEmails" placeholder="admin1@example.com, admin2@example.com" />
+                                        <small class="text-secondary">Через запятую. Определяет, какие админы принадлежат этому филиалу.</small>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label small">Уведомлять о:</label>
-                                        <div class="form-check form-check-inline">
+                                        <label class="form-label small fw-medium">Уведомлять о:</label>
+                                        <div class="form-check">
                                             <input class="form-check-input" type="checkbox" @bind="s.NotifyOnNewOrder" />
                                             <label class="form-check-label small">Новых заказах</label>
                                         </div>
-                                        <div class="form-check form-check-inline">
+                                        <div class="form-check">
                                             <input class="form-check-input" type="checkbox" @bind="s.NotifyOnStatusChange" />
-                                            <label class="form-check-label small">Смене статуса</label>
+                                            <label class="form-check-label small">Смене статуса заказа</label>
                                         </div>
-                                        <div class="form-check form-check-inline">
+                                        <div class="form-check">
                                             <input class="form-check-input" type="checkbox" @bind="s.NotifyOnLowStock" />
-                                            <label class="form-check-label small">Малом остатке</label>
+                                            <label class="form-check-label small">Малом остатке на складе</label>
                                         </div>
                                     </div>
                                     @if (s.NotifyOnLowStock)
@@ -667,9 +893,6 @@
                                         </div>
                                     }
                                 </div>
-                                <button class="btn btn-sm btn-outline-primary mt-2" @onclick="() => SaveNotificationSettings(s)">
-                                    <i class="bi bi-check-lg me-1"></i>Сохранить
-                                </button>
                             </div>
                         }
                         <button class="btn btn-sm btn-outline-success" @onclick="AddNewNotificationSettings">
@@ -692,7 +915,7 @@
                         <p class="mb-3 fw-medium">@_confirmMessage</p>
                         <div class="d-flex gap-2 justify-content-center">
                             <button class="btn btn-secondary btn-sm px-3" @onclick="CancelConfirm">Отмена</button>
-                            <button class="btn btn-danger btn-sm px-3" @onclick="ExecuteConfirm">Удалить</button>
+                            <button class="btn btn-danger btn-sm px-3" @onclick="ExecuteConfirm">@_confirmButtonText</button>
                         </div>
                     </div>
                 </div>
@@ -705,9 +928,12 @@
     private List<ProductDto> Products = new();
     private List<OrderDto> Orders = new();
     private List<UserDto> Users = new();
+    private List<UserDto> _allUsersCache = new();
+    private List<UserDto> _emailSuggestions = new();
     private List<AdminActionDto> _actionHistory = new();
     private List<NotificationSettingsDto> _notificationSettings = new();
     private List<ProductDto> _allProductsForOrder = new();
+    private List<ProductImageDto> _productImages = new();
 
     private string? _notification;
     private string _notificationType = "success";
@@ -715,6 +941,9 @@
     private bool _loadingOrders = true;
     private bool _loadingUsers = true;
     private bool _saving;
+    private bool _creatingUser;
+    private bool _creatingOrder;
+    private bool _savingBalance;
 
     private int _productTotalCount, _orderTotalCount, _userTotalCount;
     private int _productPage, _orderPage, _userPage;
@@ -722,6 +951,14 @@
     private int _productTotalPages => Math.Max(1, (int)Math.Ceiling(_productTotalCount / (double)PageSize));
     private int _orderTotalPages => Math.Max(1, (int)Math.Ceiling(_orderTotalCount / (double)PageSize));
     private int _userTotalPages => Math.Max(1, (int)Math.Ceiling(_userTotalCount / (double)PageSize));
+
+    private DateTime? _lastUpdated;
+    private int _totalRevenue => Orders.Sum(o => (int)o.Sum);
+    private int _adminCount => Users.Count(u => u.Role == UserRole.Admin);
+    private int _lowStockCount => Products.Count(p => p.Status == StatusProduct.InStock && p.Quantity <= 5);
+    private string _lowStockSubtitle => _lowStockCount > 0 ? $"⚠ {_lowStockCount} с низким остатком" : "Все в наличии";
+    private int _configuredFilials => _notificationSettings.Count(s => !string.IsNullOrEmpty(s.Email) || !string.IsNullOrEmpty(s.TelegramChatId));
+    private int _totalStockValue => Products.Where(p => p.Status == StatusProduct.InStock).Sum(p => (int)p.Price * p.Quantity);
 
     private PeriodicTimer? _refreshTimer;
 
@@ -734,6 +971,10 @@
     private string _productSearch = "", _productFilter = "";
     private string _orderSearch = "", _orderFilter = "", _orderDateFrom = "", _orderDateTo = "";
     private string _userSearch = "", _userFilter = "";
+    private string _historyBranchFilter = "";
+    private string _historyTypeFilter = "";
+    private string _selectedBranch = "";
+    private List<string> _availableBranches = new();
 
     private CancellationTokenSource? _productSearchCts, _orderSearchCts, _userSearchCts;
 
@@ -802,6 +1043,10 @@
         await LoadUsers();
     }
 
+    private async Task OnProductPageChanged(int page) { _productPage = page; await LoadProducts(); }
+    private async Task OnOrderPageChanged(int page) { _orderPage = page; await LoadOrders(); }
+    private async Task OnUserPageChanged(int page) { _userPage = page; await LoadUsers(); }
+
     private bool IsAllProductsSelected => Products.Any() && Products.All(p => p.IsSelected);
     private bool IsProductPartialSelected => Products.Any(p => p.IsSelected) && !IsAllProductsSelected;
     private bool IsAllOrdersSelected => Orders.Any() && Orders.All(o => o.IsSelected);
@@ -817,7 +1062,7 @@
     private bool _showUserModal, _showEditUserModal, _showOrderModal, _showNotificationModal;
     private ProductDto? _editingProduct;
     private UserDto? _editingUser;
-    private string _formName = "", _formDescription = "", _confirmMessage = "";
+    private string _formName = "", _formDescription = "", _formImageUrl = "", _confirmMessage = "", _confirmButtonText = "Удалить";
     private short _formPrice, _formQuantity;
     private Func<Task>? _onConfirmAction;
 
@@ -860,6 +1105,7 @@
     private async Task LoadAllData()
     {
         await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers(), LoadNotificationSettings());
+        _lastUpdated = DateTime.Now;
     }
 
     private async Task LoadProducts()
@@ -867,7 +1113,10 @@
         try
         {
             _loadingProducts = Products.Count == 0;
-            var r = await Http.GetFromJsonAsync<PagedProductResponse>($"api/Product/paged?page={_productPage}&pageSize={PageSize}");
+            var url = $"api/Product/paged?page={_productPage}&pageSize={PageSize}";
+            if (!string.IsNullOrEmpty(_productSearch)) url += $"&search={Uri.EscapeDataString(_productSearch)}";
+            if (!string.IsNullOrEmpty(_productFilter)) url += $"&status={_productFilter}";
+            var r = await Http.GetFromJsonAsync<PagedProductResponse>(url);
             if (r != null) { Products = r.Items; _productTotalCount = r.TotalCount; }
         }
         catch (Exception ex) { ShowNotification($"Ошибка загрузки товаров: {ex.Message}", "danger"); }
@@ -879,7 +1128,12 @@
         try
         {
             _loadingOrders = Orders.Count == 0;
-            var r = await Http.GetFromJsonAsync<PagedOrderResponse>($"api/Order/paged?page={_orderPage}&pageSize={PageSize}");
+            var url = $"api/Order/paged?page={_orderPage}&pageSize={PageSize}";
+            if (!string.IsNullOrEmpty(_orderSearch)) url += $"&search={Uri.EscapeDataString(_orderSearch)}";
+            if (!string.IsNullOrEmpty(_orderFilter)) url += $"&status={_orderFilter}";
+            if (!string.IsNullOrEmpty(_orderDateFrom)) url += $"&dateFrom={_orderDateFrom}";
+            if (!string.IsNullOrEmpty(_orderDateTo)) url += $"&dateTo={_orderDateTo}";
+            var r = await Http.GetFromJsonAsync<PagedOrderResponse>(url);
             if (r != null) { Orders = r.Items; _orderTotalCount = r.TotalCount; }
         }
         catch (Exception ex) { ShowNotification($"Ошибка загрузки заказов: {ex.Message}", "danger"); }
@@ -891,25 +1145,85 @@
         try
         {
             _loadingUsers = Users.Count == 0;
-            var r = await Http.GetFromJsonAsync<PagedUserResponse>($"api/User/paged?page={_userPage}&pageSize={PageSize}");
+            var url = $"api/User/paged?page={_userPage}&pageSize={PageSize}";
+            if (!string.IsNullOrEmpty(_userSearch)) url += $"&search={Uri.EscapeDataString(_userSearch)}";
+            if (!string.IsNullOrEmpty(_userFilter)) url += $"&role={_userFilter}";
+            var r = await Http.GetFromJsonAsync<PagedUserResponse>(url);
             if (r != null) { Users = r.Items; _userTotalCount = r.TotalCount; }
         }
         catch (Exception ex) { ShowNotification($"Ошибка загрузки пользователей: {ex.Message}", "danger"); }
         finally { _loadingUsers = false; }
     }
 
+    private async Task LoadAllUsers()
+    {
+        try { _allUsersCache = await Http.GetFromJsonAsync<List<UserDto>>("api/User/all") ?? new(); }
+        catch { _allUsersCache = new(); }
+    }
+
+    private async Task LoadAllProducts()
+    {
+        try { _allProductsForOrder = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new(); }
+        catch { _allProductsForOrder = new(); }
+    }
+
     private async Task LoadHistory()
     {
-        try { _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=50") ?? new(); }
+        try
+        {
+            _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=100") ?? new();
+            _availableBranches = _actionHistory
+                .Select(a => a.Branch)
+                .Where(b => !string.IsNullOrEmpty(b))
+                .Distinct()
+                .OrderBy(b => b)
+                .ToList();
+        }
         catch { }
+    }
+
+    private void FilterHistory(string branch)
+    {
+        _historyBranchFilter = branch;
+    }
+
+    private void ClearHistoryFilter()
+    {
+        _historyBranchFilter = "";
+    }
+
+    private void OnHistoryTypeFilterChanged(ChangeEventArgs e)
+    {
+        _historyTypeFilter = e.Value?.ToString() ?? "";
+    }
+
+    private void OnHistoryBranchFilterChanged(ChangeEventArgs e)
+    {
+        _historyBranchFilter = e.Value?.ToString() ?? "";
+    }
+
+    private IEnumerable<AdminActionDto> _filteredHistory
+    {
+        get
+        {
+            var query = _actionHistory.AsEnumerable();
+            if (!string.IsNullOrEmpty(_historyTypeFilter))
+                query = query.Where(a => a.ActionType == _historyTypeFilter);
+            if (!string.IsNullOrEmpty(_historyBranchFilter))
+                query = query.Where(a => a.Branch == _historyBranchFilter);
+            return query;
+        }
     }
 
     private async Task LogAction(string type, string details)
     {
-        try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details }); }
+        var branch = _selectedBranch;
+        if (string.IsNullOrEmpty(branch) && _notificationSettings.Any())
+            branch = _notificationSettings.First().Branch;
+        try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch }); }
         catch { }
-        _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, CreatedAt = DateTime.Now });
-        if (_actionHistory.Count > 50) _actionHistory.RemoveAt(_actionHistory.Count - 1);
+        _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, Branch = branch ?? "", CreatedAt = DateTime.Now });
+        if (_actionHistory.Count > 100) _actionHistory.RemoveAt(_actionHistory.Count - 1);
         await InvokeAsync(StateHasChanged);
     }
 
@@ -919,8 +1233,8 @@
         _ = Task.Delay(4000).ContinueWith(_ => { if (_notification == message) _notification = null; InvokeAsync(StateHasChanged); });
     }
 
-    private void ShowConfirm(string message, Func<Task> action)
-    { _confirmMessage = message; _onConfirmAction = action; _showConfirmModal = true; }
+    private void ShowConfirm(string message, Func<Task> action, string buttonText = "Удалить")
+    { _confirmMessage = message; _onConfirmAction = action; _confirmButtonText = buttonText; _showConfirmModal = true; }
 
     private void CancelConfirm() { _showConfirmModal = false; _onConfirmAction = null; }
     private async Task ExecuteConfirm()
@@ -931,8 +1245,89 @@
         _editingProduct = product;
         _formName = product?.Name ?? ""; _formDescription = product?.Description ?? "";
         _formPrice = product?.Price ?? 0; _formQuantity = product?.Quantity ?? 0;
+        _formImageUrl = product?.ImageUrl ?? "";
+        _productImages = new();
         _showProductModal = true;
+        if (product != null) _ = LoadProductImages(product.Id);
     }
+
+    private async Task LoadProductImages(int productId)
+    {
+        try
+        {
+            _productImages = await Http.GetFromJsonAsync<List<ProductImageDto>>($"api/ProductImage/by-product?productId={productId}") ?? new();
+        }
+        catch { _productImages = new(); }
+    }
+
+    private async Task OnImageUpload(InputFileChangeEventArgs e)
+    {
+        if (_editingProduct == null) return;
+        var file = e.File;
+        if (file == null) return;
+
+        using var content = new MultipartFormDataContent();
+        var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        var fileContent = new StreamContent(stream);
+        content.Add(fileContent, "file", file.Name);
+        content.Add(new StringContent(_editingProduct.Id.ToString()), "productId");
+        content.Add(new StringContent((_productImages.Count == 0).ToString()), "isPrimary");
+
+        var r = await Http.PostAsync("api/ProductImage/upload", content);
+        if (r.IsSuccessStatusCode)
+        {
+            var result = await r.Content.ReadFromJsonAsync<UploadResult>();
+            if (result != null)
+            {
+                _productImages.Add(new ProductImageDto
+                {
+                    Id = result.Id,
+                    Url = result.Url,
+                    FileName = result.FileName,
+                    IsPrimary = result.IsPrimary,
+                    SortOrder = result.SortOrder
+                });
+                if (result.IsPrimary) _editingProduct.ImageUrl = result.Url;
+            }
+            ShowNotification("Изображение загружено");
+        }
+        else ShowNotification($"Ошибка загрузки: {await r.Content.ReadAsStringAsync()}", "danger");
+    }
+
+    private async Task SetPrimaryImage(ProductImageDto img)
+    {
+        var r = await Http.PostAsJsonAsync($"api/ProductImage/set-primary?imageId={img.Id}", new { });
+        if (r.IsSuccessStatusCode && _editingProduct != null)
+        {
+            foreach (var i in _productImages) i.IsPrimary = i.Id == img.Id;
+            _editingProduct.ImageUrl = img.Url;
+            ShowNotification("Главное изображение изменено");
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteProductImage(ProductImageDto img)
+    {
+        var r = await Http.DeleteAsync($"api/ProductImage?id={img.Id}");
+        if (r.IsSuccessStatusCode && _editingProduct != null)
+        {
+            _productImages.Remove(img);
+            if (img.IsPrimary && _productImages.Any())
+            {
+                var newPrimary = _productImages.First();
+                newPrimary.IsPrimary = true;
+                _editingProduct.ImageUrl = newPrimary.Url;
+            }
+            else if (!_productImages.Any())
+            {
+                _editingProduct.ImageUrl = null;
+            }
+            ShowNotification("Изображение удалено");
+            StateHasChanged();
+        }
+    }
+
+    private class UploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
 
     private void CloseProductModal() => _showProductModal = false;
 
@@ -962,6 +1357,7 @@
                 {
                     (_editingProduct.Name, _editingProduct.Description, _editingProduct.Price, _editingProduct.Quantity)
                         = (_formName, _formDescription, _formPrice, _formQuantity);
+                    _editingProduct.ImageUrl = _formImageUrl;
                     await LogAction("Изменение", $"Товар #{_editingProduct.Id} «{_formName}»");
                     ShowNotification("Товар обновлён");
                     CloseProductModal();
@@ -1070,23 +1466,54 @@
         StateHasChanged();
     }
 
+    private async Task OpenOrderModal()
+    {
+        _showOrderModal = true;
+        _newOrderEmail = "";
+        _newOrderItems = new List<OrderItemForm> { new() };
+        _emailSuggestions = new();
+        await LoadAllUsers();
+        await LoadAllProducts();
+    }
+
+    private void OnOrderEmailInput()
+    {
+        if (_newOrderEmail.Length < 2) { _emailSuggestions = new(); return; }
+        _emailSuggestions = _allUsersCache
+            .Where(u => u.Email.Contains(_newOrderEmail, StringComparison.OrdinalIgnoreCase))
+            .Take(5)
+            .ToList();
+    }
+
+    private void SelectOrderEmail(string email)
+    {
+        _newOrderEmail = email;
+        _emailSuggestions = new();
+    }
+
     private async Task CreateUser()
     {
-        var body = new { Email = _newUserEmail, Password = _newUserPassword };
-        var url = _newUserRole == "Admin" ? "api/User/create-admin" : "api/User/create-student";
-        var r = await Http.PostAsJsonAsync(url, body);
-        if (r.IsSuccessStatusCode)
+        _creatingUser = true;
+        try
         {
-            var user = await r.Content.ReadFromJsonAsync<UserDto>();
-            if (user != null) Users.Add(user);
-            _userTotalCount++;
-            await LogAction("Создание", $"Пользователь «{_newUserEmail}» ({_newUserRole})");
-            ShowNotification("Пользователь создан");
-            _showUserModal = false;
-            _newUserEmail = ""; _newUserPassword = ""; _newUserRole = "Student";
-            StateHasChanged();
+            var body = new { Email = _newUserEmail, Password = _newUserPassword };
+            var url = _newUserRole == "Admin" ? "api/User/create-admin" : "api/User/create-student";
+            var r = await Http.PostAsJsonAsync(url, body);
+            if (r.IsSuccessStatusCode)
+            {
+                var user = await r.Content.ReadFromJsonAsync<UserDto>();
+                if (user != null) Users.Add(user);
+                _userTotalCount++;
+                await LogAction("Создание", $"Пользователь «{_newUserEmail}» ({_newUserRole})");
+                ShowNotification("Пользователь создан");
+                _showUserModal = false;
+                _newUserEmail = ""; _newUserPassword = ""; _newUserRole = "Student";
+                StateHasChanged();
+            }
+            else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
         }
-        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
+        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
+        finally { _creatingUser = false; }
     }
 
     private void OpenEditUserModal(UserDto user)
@@ -1099,15 +1526,22 @@
     private async Task SaveUserBalance()
     {
         if (_editingUser == null) return;
-        var r = await Http.PutAsJsonAsync($"api/User?id={_editingUser.Id}", new { Balance = _editBalance });
-        if (r.IsSuccessStatusCode)
+        _savingBalance = true;
+        try
         {
-            _editingUser.Balance = _editBalance;
-            await LogAction("Изменение", $"Баланс «{_editingUser.Email}» = {_editBalance}");
-            ShowNotification("Баланс обновлён");
-            _showEditUserModal = false;
-            StateHasChanged();
+            var r = await Http.PutAsJsonAsync($"api/User?id={_editingUser.Id}", new { Balance = _editBalance });
+            if (r.IsSuccessStatusCode)
+            {
+                _editingUser.Balance = _editBalance;
+                await LogAction("Изменение", $"Баланс «{_editingUser.Email}» = {_editBalance}");
+                ShowNotification("Баланс обновлён");
+                _showEditUserModal = false;
+                StateHasChanged();
+            }
+            else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
         }
+        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
+        finally { _savingBalance = false; }
     }
 
     private async Task DeleteUser(UserDto user)
@@ -1121,19 +1555,39 @@
 
     private async Task CreateOrder()
     {
-        var items = _newOrderItems.Where(i => i.ProductId > 0).Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList();
-        var body = new { CustomerEmail = _newOrderEmail, Items = items };
-        var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
-        if (r.IsSuccessStatusCode)
+        _creatingOrder = true;
+        try
         {
-            await LogAction("Создание", $"Заказ для «{_newOrderEmail}» ({items.Count} поз.)");
-            ShowNotification("Заказ создан");
-            _showOrderModal = false;
-            _newOrderEmail = ""; _newOrderItems.Clear();
-            _orderPage = 0;
-            await LoadOrders();
+            var items = _newOrderItems
+                .Where(i => i.ProductId > 0)
+                .Select(i => new { ProductId = i.ProductId, Quantity = (int)i.Quantity })
+                .ToList();
+
+            if (!items.Any())
+            {
+                ShowNotification("Добавьте хотя бы один товар", "warning");
+                return;
+            }
+
+            var body = new { CustomerEmail = _newOrderEmail, Items = items };
+            var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
+            if (r.IsSuccessStatusCode)
+            {
+                await LogAction("Создание", $"Заказ для «{_newOrderEmail}» ({items.Count} поз.)");
+                ShowNotification("Заказ создан");
+                _showOrderModal = false;
+                _newOrderEmail = ""; _newOrderItems.Clear();
+                _orderPage = 0;
+                await LoadOrders();
+            }
+            else
+            {
+                var error = await r.Content.ReadAsStringAsync();
+                ShowNotification($"Ошибка: {error}", "danger");
+            }
         }
-        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
+        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
+        finally { _creatingOrder = false; }
     }
 
     private async Task LoadNotificationSettings()
@@ -1149,22 +1603,33 @@
 
     private async Task SaveNotificationSettings(NotificationSettingsDto settings)
     {
-        var body = new { settings.Email, settings.TelegramBotToken, settings.TelegramChatId, settings.Branch, settings.NotifyOnNewOrder, settings.NotifyOnStatusChange, settings.NotifyOnLowStock, settings.LowStockThreshold };
-        if (settings.Id == 0)
+        var body = new { settings.Email, settings.TelegramBotToken, settings.TelegramChatId, settings.Branch, settings.AdminEmails, settings.NotifyOnNewOrder, settings.NotifyOnStatusChange, settings.NotifyOnLowStock, settings.LowStockThreshold };
+        try
         {
-            var r = await Http.PostAsJsonAsync("api/NotificationSettings", body);
-            if (r.IsSuccessStatusCode)
+            if (settings.Id == 0)
             {
-                var created = await r.Content.ReadFromJsonAsync<NotificationSettingsDto>();
-                if (created != null) { settings.Id = created.Id; }
-                ShowNotification($"Настройка «{settings.Branch}» создана");
+                var r = await Http.PostAsJsonAsync("api/NotificationSettings", body);
+                if (r.IsSuccessStatusCode)
+                {
+                    var created = await r.Content.ReadFromJsonAsync<NotificationSettingsDto>();
+                    if (created != null) { settings.Id = created.Id; }
+                    ShowNotification($"Настройка «{settings.Branch}» создана");
+                    StateHasChanged();
+                }
+                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
+            }
+            else
+            {
+                var r = await Http.PutAsJsonAsync($"api/NotificationSettings?id={settings.Id}", body);
+                if (r.IsSuccessStatusCode)
+                {
+                    ShowNotification($"Настройка «{settings.Branch}» обновлена");
+                    StateHasChanged();
+                }
+                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
             }
         }
-        else
-        {
-            var r = await Http.PutAsJsonAsync($"api/NotificationSettings?id={settings.Id}", body);
-            if (r.IsSuccessStatusCode) ShowNotification($"Настройка «{settings.Branch}» обновлена");
-        }
+        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
     }
 
     private async Task DeleteNotificationSettings(NotificationSettingsDto settings)
@@ -1191,9 +1656,19 @@
         _ => "Скоро в продаже"
     };
     private static string ActionBadge(string t) => t switch { "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary" };
+    private static string ActionColor(string t) => t switch { "Создание" => "#198754", "Удаление" => "#dc3545", "Изменение" => "#0d6efd", _ => "#6c757d" };
+    private static string OrderBadge(StatusOrder s) => s switch
+    {
+        StatusOrder.Pending => "bg-secondary",
+        StatusOrder.AwaitingPayment => "bg-warning text-dark",
+        StatusOrder.Paid => "bg-info",
+        StatusOrder.Manufactured => "bg-primary",
+        StatusOrder.Completed => "bg-success",
+        _ => "bg-secondary"
+    };
 
     private class PagedProductResponse { public List<ProductDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
     private class PagedOrderResponse { public List<OrderDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
     private class PagedUserResponse { public List<UserDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
-    private class NotificationSettingsDto { public int Id { get; set; } public string Email { get; set; } = ""; public string TelegramBotToken { get; set; } = ""; public string TelegramChatId { get; set; } = ""; public string Branch { get; set; } = ""; public bool NotifyOnNewOrder { get; set; } public bool NotifyOnStatusChange { get; set; } public bool NotifyOnLowStock { get; set; } public int LowStockThreshold { get; set; } }
+    private class NotificationSettingsDto { public int Id { get; set; } public string Email { get; set; } = ""; public string TelegramBotToken { get; set; } = ""; public string TelegramChatId { get; set; } = ""; public string Branch { get; set; } = ""; public string AdminEmails { get; set; } = ""; public bool NotifyOnNewOrder { get; set; } public bool NotifyOnStatusChange { get; set; } public bool NotifyOnLowStock { get; set; } public int LowStockThreshold { get; set; } }
 }

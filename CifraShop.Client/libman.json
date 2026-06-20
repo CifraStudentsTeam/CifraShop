@@ -5,6 +5,15 @@
     {
       "library": "bootstrap@5.3.8",
       "destination": "wwwroot/bootstrap/"
+    },
+    {
+      "library": "bootstrap-icons@1.11.3",
+      "destination": "wwwroot/bootstrap-icons/",
+      "files": [
+        "font/bootstrap-icons.min.css",
+        "font/fonts/bootstrap-icons.woff",
+        "font/fonts/bootstrap-icons.woff2"
+      ]
     }
   ]
 }

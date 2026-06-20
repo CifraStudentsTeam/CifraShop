@@ -22,14 +22,14 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<User>> GetAllUsers()
             => _repository.GetAllUsers();
 
-        public async Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize)
+        public async Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null)
         {
             if (page < 0)
                 throw new ArgumentException("Номер страницы не может быть отрицательным");
             if (pageSize <= 0)
                 throw new ArgumentException("Размер страницы должен быть больше 0");
 
-            var (items, total) = await _repository.GetAllUsersPaged(page, pageSize);
+            var (items, total) = await _repository.GetAllUsersPaged(page, pageSize, search, role);
             return new PagedResponse<User> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
         }
 

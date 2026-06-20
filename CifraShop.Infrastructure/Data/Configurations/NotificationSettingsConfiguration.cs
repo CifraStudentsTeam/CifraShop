@@ -16,19 +16,23 @@ namespace CifraShop.Infrastructure.Data.Configurations
             builder.Property(n => n.Email)
                    .HasColumnName("Email")
                    .HasMaxLength(100)
-                   .IsRequired();
+                   .IsRequired(false);
             builder.Property(n => n.TelegramBotToken)
                    .HasColumnName("TelegramBotToken")
                    .HasMaxLength(100)
-                   .IsRequired();
+                   .IsRequired(false);
             builder.Property(n => n.TelegramChatId)
                    .HasColumnName("TelegramChatId")
                    .HasMaxLength(50)
-                   .IsRequired();
+                   .IsRequired(false);
             builder.Property(n => n.Branch)
                    .HasColumnName("Branch")
                    .HasMaxLength(50)
                    .IsRequired();
+            builder.Property(n => n.AdminEmails)
+                   .HasColumnName("AdminEmails")
+                   .HasMaxLength(500)
+                   .IsRequired(false);
             builder.Property(n => n.NotifyOnNewOrder)
                    .HasColumnName("NotifyOnNewOrder")
                    .IsRequired();

@@ -22,12 +22,6 @@ namespace CifraShop.Application.Services.Implementations
 
         public async Task<NotificationSettings> Create(string email, string telegramBotToken, string telegramChatId, string branch, bool notifyOnNewOrder, bool notifyOnStatusChange, bool notifyOnLowStock, int lowStockThreshold)
         {
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email обязателен");
-            if (string.IsNullOrWhiteSpace(telegramBotToken))
-                throw new ArgumentException("Telegram-токен обязателен");
-            if (string.IsNullOrWhiteSpace(telegramChatId))
-                throw new ArgumentException("Telegram Chat ID обязателен");
             if (string.IsNullOrWhiteSpace(branch))
                 throw new ArgumentException("Филиал обязателен");
             if (lowStockThreshold < 0)
@@ -39,9 +33,9 @@ namespace CifraShop.Application.Services.Implementations
 
             var settings = new NotificationSettings
             {
-                Email = email,
-                TelegramBotToken = telegramBotToken,
-                TelegramChatId = telegramChatId,
+                Email = email ?? string.Empty,
+                TelegramBotToken = telegramBotToken ?? string.Empty,
+                TelegramChatId = telegramChatId ?? string.Empty,
                 Branch = branch,
                 NotifyOnNewOrder = notifyOnNewOrder,
                 NotifyOnStatusChange = notifyOnStatusChange,

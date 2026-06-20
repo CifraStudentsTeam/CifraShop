@@ -19,20 +19,34 @@ namespace CifraShop.API.Controllers
             _productService = productService;
         }
 
+        private ProductResponse ToResponseWithUrl(Domain.Entities.Product p)
+        {
+            var resp = p.ToResponse();
+            if (!string.IsNullOrEmpty(resp.ImageUrl) && !resp.ImageUrl.StartsWith("http"))
+            {
+                resp.ImageUrl = Url.Action("GetFile", "ProductImage", new { fileName = resp.ImageUrl })!;
+            }
+            return resp;
+        }
+
         [HttpGet("all")]
         public async Task<ActionResult<List<ProductResponse>>> GetAllProducts()
         {
             var products = await _productService.GetAllProducts();
-            return Ok(products.Select(p => p.ToResponse()).ToList());
+            return Ok(products.Select(p => ToResponseWithUrl(p)).ToList());
         }
 
         [HttpGet("paged")]
-        public async Task<ActionResult<PagedResponse<ProductResponse>>> GetPaged([FromQuery] int page = 0, [FromQuery] int pageSize = 8)
+        public async Task<ActionResult<PagedResponse<ProductResponse>>> GetPaged(
+            [FromQuery] int page = 0,
+            [FromQuery] int pageSize = 8,
+            [FromQuery] string? search = null,
+            [FromQuery] StatusProduct? status = null)
         {
-            var paged = await _productService.GetProductsPaged(page, pageSize);
+            var paged = await _productService.GetProductsPaged(page, pageSize, search, status);
             return Ok(new PagedResponse<ProductResponse>
             {
-                Items = paged.Items.Select(p => p.ToResponse()).ToList(),
+                Items = paged.Items.Select(p => ToResponseWithUrl(p)).ToList(),
                 Page = paged.Page,
                 PageSize = paged.PageSize,
                 TotalCount = paged.TotalCount
@@ -44,42 +58,42 @@ namespace CifraShop.API.Controllers
         {
             var product = await _productService.GetProductById(id);
             if (product == null) return NotFound($"Товар с id {id} не найден");
-            return Ok(product.ToResponse());
+            return Ok(ToResponseWithUrl(product));
         }
 
         [HttpGet("by-name")]
         public async Task<ActionResult<List<ProductResponse>>> GetProductsByName([FromQuery] string name)
         {
             var products = await _productService.GetProductsByName(name);
-            return Ok(products.Select(p => p.ToResponse()).ToList());
+            return Ok(products.Select(p => ToResponseWithUrl(p)).ToList());
         }
 
         [HttpGet("by-price")]
         public async Task<ActionResult<List<ProductResponse>>> GetProductsByPrice([FromQuery] short price)
         {
             var products = await _productService.GetProductsByPrice(price);
-            return Ok(products.Select(p => p.ToResponse()).ToList());
+            return Ok(products.Select(p => ToResponseWithUrl(p)).ToList());
         }
 
         [HttpGet("by-quantity")]
         public async Task<ActionResult<List<ProductResponse>>> GetProductsByQuantity([FromQuery] short quantity)
         {
             var products = await _productService.GetProductsByQuantity(quantity);
-            return Ok(products.Select(p => p.ToResponse()).ToList());
+            return Ok(products.Select(p => ToResponseWithUrl(p)).ToList());
         }
 
         [HttpGet("by-status")]
         public async Task<ActionResult<List<ProductResponse>>> GetProductsByStatus(StatusProduct statusProduct)
         {
             var products = await _productService.GetProductsByStatus(statusProduct);
-            return Ok(products.Select(p => p.ToResponse()).ToList());
+            return Ok(products.Select(p => ToResponseWithUrl(p)).ToList());
         }
 
         [HttpPost("create-product")]
         public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
         {
             var product = await _productService.CreateProduct(request.Name, request.Description, request.Price, request.Quantity);
-            return Ok(product.ToResponse());
+            return Ok(ToResponseWithUrl(product));
         }
 
         [HttpPut("update-product")]

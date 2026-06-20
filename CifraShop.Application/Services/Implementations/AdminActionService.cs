@@ -11,14 +11,14 @@ namespace CifraShop.Application.Services.Implementations
         public AdminActionService(IAdminActionRepository repository)
             => _repository = repository;
 
-        public Task<List<AdminAction>> GetLastActions(int count)
+        public Task<List<AdminAction>> GetLastActions(int count, string? branch = null)
         {
             if (count <= 0)
                 throw new ArgumentException("Количество действий должно быть больше 0");
-            return _repository.GetLastActions(count);
+            return _repository.GetLastActions(count, branch);
         }
 
-        public async Task AddAction(string type, string details)
+        public async Task AddAction(string type, string details, string branch)
         {
             if (string.IsNullOrWhiteSpace(type))
                 throw new ArgumentException("Тип действия обязателен");
@@ -29,6 +29,7 @@ namespace CifraShop.Application.Services.Implementations
             {
                 ActionType = type,
                 Details = details,
+                Branch = branch ?? string.Empty,
                 CreatedAt = DateTime.UtcNow
             };
             await _repository.AddAction(action);

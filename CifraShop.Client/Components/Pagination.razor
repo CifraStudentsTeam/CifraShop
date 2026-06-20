@@ -2,7 +2,7 @@
 {
     <ul class="pagination pagination-sm mb-0">
         <li class="page-item @(Page == 0 ? "disabled" : "")">
-            <button class="page-link" @onclick="Prev" disabled="@(Page == 0)">
+            <button class="page-link" @onclick="Prev" disabled="@(Page == 0 || Loading)">
                 <i class="bi bi-chevron-left"></i>
             </button>
         </li>
@@ -10,20 +10,25 @@
         {
             var idx = i;
             <li class="page-item @(idx == Page ? "active" : "")">
-                <button class="page-link" @onclick="() => PageChanged.InvokeAsync(idx)">@(idx + 1)</button>
+                <button class="page-link" @onclick="() => PageChanged.InvokeAsync(idx)" disabled="@(Loading)">@(idx + 1)</button>
             </li>
         }
         <li class="page-item @(Page >= TotalPages - 1 ? "disabled" : "")">
-            <button class="page-link" @onclick="Next" disabled="@(Page >= TotalPages - 1)">
+            <button class="page-link" @onclick="Next" disabled="@(Page >= TotalPages - 1 || Loading)">
                 <i class="bi bi-chevron-right"></i>
             </button>
         </li>
     </ul>
+    @if (Loading)
+    {
+        <small class="text-secondary ms-2"><span class="spinner-border spinner-border-sm"></span></small>
+    }
 }
 
 @code {
     [Parameter] public int Page { get; set; }
     [Parameter] public int TotalPages { get; set; }
+    [Parameter] public bool Loading { get; set; }
     [Parameter] public EventCallback<int> PageChanged { get; set; }
 
     private async Task Prev() => await PageChanged.InvokeAsync(Page - 1);

@@ -1,12 +1,13 @@
 using CifraShop.Contracts.Responses.Common;
 using CifraShop.Domain.Entities;
+using CifraShop.Domain.Enums;
 
 namespace CifraShop.Application.Services.Interfaces
 {
     public interface IUserService
     {
         Task<List<User>> GetAllUsers();
-        Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize);
+        Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null);
         Task<List<User>> GetAllAdmins();
         Task<List<User>> GetAllStudents();
         Task<User?> GetUserById(int id);

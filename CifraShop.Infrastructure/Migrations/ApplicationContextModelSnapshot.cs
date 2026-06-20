@@ -37,6 +37,14 @@ namespace CifraShop.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("ActionType");
 
+                    b.Property<string>("Branch")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("")
+                        .HasColumnName("Branch");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("CreatedAt");
@@ -61,6 +69,11 @@ namespace CifraShop.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AdminEmails")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("AdminEmails");
+
                     b.Property<string>("Branch")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -68,7 +81,6 @@ namespace CifraShop.Infrastructure.Migrations
                         .HasColumnName("Branch");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("Email");
@@ -90,13 +102,11 @@ namespace CifraShop.Infrastructure.Migrations
                         .HasColumnName("NotifyOnStatusChange");
 
                     b.Property<string>("TelegramBotToken")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("TelegramBotToken");
 
                     b.Property<string>("TelegramChatId")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("TelegramChatId");
@@ -251,8 +261,36 @@ namespace CifraShop.Infrastructure.Migrations
                             Name = "USB-флешка 32GB",
                             Price = (short)450,
                             Quantity = (short)0,
-                            Status = "ComingSoon"
+                            Status = "OutOfStock"
                         });
+                });
+
+            modelBuilder.Entity("CifraShop.Domain.Entities.ProductImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImages");
                 });
 
             modelBuilder.Entity("CifraShop.Domain.Entities.User", b =>
@@ -267,6 +305,11 @@ namespace CifraShop.Infrastructure.Migrations
                     b.Property<short?>("Balance")
                         .HasColumnType("smallint")
                         .HasColumnName("Balance");
+
+                    b.Property<string>("Branch")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Branch");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -337,6 +380,17 @@ namespace CifraShop.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("CifraShop.Domain.Entities.ProductImage", b =>
+                {
+                    b.HasOne("CifraShop.Domain.Entities.Product", "Product")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("CifraShop.Domain.Entities.Order", b =>
                 {
                     b.Navigation("OrderItems");
@@ -344,6 +398,8 @@ namespace CifraShop.Infrastructure.Migrations
 
             modelBuilder.Entity("CifraShop.Domain.Entities.Product", b =>
                 {
+                    b.Navigation("Images");
+
                     b.Navigation("OrderItems");
                 });
 

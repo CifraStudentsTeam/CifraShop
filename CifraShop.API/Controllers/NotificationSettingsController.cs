@@ -44,6 +44,8 @@ namespace CifraShop.API.Controllers
                 request.Email, request.TelegramBotToken, request.TelegramChatId,
                 request.Branch, request.NotifyOnNewOrder, request.NotifyOnStatusChange,
                 request.NotifyOnLowStock, request.LowStockThreshold);
+            settings.AdminEmails = request.AdminEmails;
+            await _service.Update(settings);
             return Ok(MapToResponse(settings));
         }
 
@@ -57,6 +59,7 @@ namespace CifraShop.API.Controllers
             settings.TelegramBotToken = request.TelegramBotToken;
             settings.TelegramChatId = request.TelegramChatId;
             settings.Branch = request.Branch;
+            settings.AdminEmails = request.AdminEmails;
             settings.NotifyOnNewOrder = request.NotifyOnNewOrder;
             settings.NotifyOnStatusChange = request.NotifyOnStatusChange;
             settings.NotifyOnLowStock = request.NotifyOnLowStock;
@@ -82,6 +85,7 @@ namespace CifraShop.API.Controllers
             TelegramBotToken = s.TelegramBotToken,
             TelegramChatId = s.TelegramChatId,
             Branch = s.Branch,
+            AdminEmails = s.AdminEmails,
             NotifyOnNewOrder = s.NotifyOnNewOrder,
             NotifyOnStatusChange = s.NotifyOnStatusChange,
             NotifyOnLowStock = s.NotifyOnLowStock,

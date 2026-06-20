@@ -6,7 +6,7 @@ namespace CifraShop.Domain.Repositories
     public interface IOrderRepository
     {
         Task<List<Order>> GetAll();
-        Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize);
+        Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusOrder? status = null, DateTime? dateFrom = null, DateTime? dateTo = null);
         Task<Order?> GetOrderById(int id);
         Task<List<Order>> GetOrdersByCustomerEmail(string email);
         Task<List<Order>> GetOrdersBySum(short sum);

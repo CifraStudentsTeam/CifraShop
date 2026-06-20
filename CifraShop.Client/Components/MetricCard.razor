@@ -1,9 +1,13 @@
-<div class="col-md-4">
+<div class="col-sm-6 col-md-3">
     <div class="card border-0 shadow-sm rounded-3 h-100">
         <div class="card-body py-3 px-3 d-flex justify-content-between align-items-center">
             <div>
                 <div class="text-secondary small">@Title</div>
                 <div class="fs-3 fw-bold mb-0">@Count</div>
+                @if (!string.IsNullOrEmpty(Subtitle))
+                {
+                    <div class="text-secondary" style="font-size:0.7rem;">@Subtitle</div>
+                }
             </div>
             <div class="bg-@Color bg-opacity-10 rounded-3 p-2">
                 <i class="bi bi-@Icon text-@Color fs-4"></i>
@@ -15,6 +19,7 @@
 @code {
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public int Count { get; set; }
+    [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "";
     [Parameter] public string Color { get; set; } = "primary";
 }

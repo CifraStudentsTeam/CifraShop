@@ -15,9 +15,22 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<Order>> GetAll()
             => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).ToListAsync();
 
-        public async Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize)
+        public async Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusOrder? status = null, DateTime? dateFrom = null, DateTime? dateTo = null)
         {
-            var query = _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer);
+            var query = _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(o => o.Customer.Email.Contains(search) || o.Id.ToString().Contains(search));
+
+            if (status.HasValue)
+                query = query.Where(o => o.Status == status.Value);
+
+            if (dateFrom.HasValue)
+                query = query.Where(o => o.DateOfPurchase >= dateFrom.Value);
+
+            if (dateTo.HasValue)
+                query = query.Where(o => o.DateOfPurchase <= dateTo.Value.AddDays(1));
+
             var total = await query.CountAsync();
             var items = await query.Skip(page * pageSize).Take(pageSize).ToListAsync();
             return (items, total);
@@ -80,7 +93,10 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
                 await _context.SaveChangesAsync();
 
                 foreach (var item in items)
+                {
+                    item.OrderId = order.Id;
                     await _context.OrderItems.AddAsync(item);
+                }
 
                 foreach (var (productId, quantity) in stockUpdates)
                 {

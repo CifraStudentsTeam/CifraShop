@@ -21,6 +21,7 @@ builder.Services.AddScoped<IOrderRepository, OrderRepositoryEfCore>();
 builder.Services.AddScoped<IProductRepository, ProductRepositoryEfCore>();
 builder.Services.AddScoped<IUserRepository, UserRepositoryEfCore>();
 builder.Services.AddScoped<IAdminActionRepository, AdminActionRepositoryEfCore>();
+builder.Services.AddScoped<IProductImageRepository, ProductImageRepositoryEfCore>();
 builder.Services.AddScoped<IOrderItemService, OrderItemService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IProductService, ProductService>();

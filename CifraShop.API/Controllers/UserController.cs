@@ -5,6 +5,8 @@ using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.User;
 using Microsoft.AspNetCore.Mvc;
 
+using CifraShop.Domain.Enums;
+
 namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
@@ -24,9 +26,13 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("paged")]
-        public async Task<ActionResult<PagedResponse<UserResponse>>> GetPaged([FromQuery] int page = 0, [FromQuery] int pageSize = 8)
+        public async Task<ActionResult<PagedResponse<UserResponse>>> GetPaged(
+            [FromQuery] int page = 0,
+            [FromQuery] int pageSize = 8,
+            [FromQuery] string? search = null,
+            [FromQuery] UserRole? role = null)
         {
-            var paged = await _userService.GetUsersPaged(page, pageSize);
+            var paged = await _userService.GetUsersPaged(page, pageSize, search, role);
             return Ok(new PagedResponse<UserResponse>
             {
                 Items = paged.Items.Select(u => u.ToResponse()).ToList(),
@@ -95,6 +101,7 @@ namespace CifraShop.API.Controllers
 
             if (request.Email != null) user.Email = request.Email;
             if (request.Password != null) user.Password = request.Password;
+            if (request.Balance.HasValue) user.Balance = request.Balance.Value;
 
             await _userService.UpdateUser(user);
             return NoContent();

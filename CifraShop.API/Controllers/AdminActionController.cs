@@ -15,14 +15,15 @@ namespace CifraShop.API.Controllers
             => _service = service;
 
         [HttpGet("last")]
-        public async Task<ActionResult<List<AdminActionResponse>>> GetLast([FromQuery] int count = 50)
+        public async Task<ActionResult<List<AdminActionResponse>>> GetLast([FromQuery] int count = 50, [FromQuery] string? branch = null)
         {
-            var actions = await _service.GetLastActions(count);
+            var actions = await _service.GetLastActions(count, branch);
             var result = actions.Select(a => new AdminActionResponse
             {
                 Id = a.Id,
                 ActionType = a.ActionType,
                 Details = a.Details,
+                Branch = a.Branch,
                 CreatedAt = a.CreatedAt
             }).ToList();
             return Ok(result);
@@ -31,7 +32,7 @@ namespace CifraShop.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAdminActionRequest request)
         {
-            await _service.AddAction(request.ActionType, request.Details);
+            await _service.AddAction(request.ActionType, request.Details, request.Branch);
             return Ok();
         }
     }

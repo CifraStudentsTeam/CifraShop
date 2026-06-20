@@ -24,6 +24,11 @@ namespace CifraShop.Infrastructure.Data.Configurations
             builder.Property(a => a.CreatedAt)
                    .HasColumnName("CreatedAt")
                    .IsRequired();
+            builder.Property(a => a.Branch)
+                   .HasColumnName("Branch")
+                   .HasMaxLength(50)
+                   .IsRequired()
+                   .HasDefaultValue(string.Empty);
         }
     }
 }

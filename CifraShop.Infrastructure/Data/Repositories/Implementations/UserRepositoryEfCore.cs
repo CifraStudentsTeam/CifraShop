@@ -15,9 +15,16 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<User>> GetAllUsers()
             => await _context.Users.ToListAsync();
 
-        public async Task<(List<User> Items, int TotalCount)> GetAllUsersPaged(int page, int pageSize)
+        public async Task<(List<User> Items, int TotalCount)> GetAllUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null)
         {
             var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(u => u.Email.Contains(search));
+
+            if (role.HasValue)
+                query = query.Where(u => u.Role == role.Value);
+
             var total = await query.CountAsync();
             var items = await query.Skip(page * pageSize).Take(pageSize).ToListAsync();
             return (items, total);

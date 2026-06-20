@@ -29,6 +29,10 @@ namespace CifraShop.Infrastructure.Data.Configurations
                    .HasColumnName("UserRole")
                    .HasConversion<string>()
                    .IsRequired();
+            builder.Property(u => u.Branch)
+                   .HasColumnName("Branch")
+                   .HasMaxLength(50)
+                   .IsRequired(false);
 
             builder.HasMany(u => u.Orders)
                    .WithOne(o => o.Customer)

@@ -9,6 +9,7 @@ public class ProductDto
     public short Price { get; set; }
     public short Quantity { get; set; }
     public StatusProduct Status { get; set; }
+    public string? ImageUrl { get; set; }
     public bool IsSelected { get; set; }
 }
 
@@ -43,6 +44,7 @@ public class UserDto
     public string Email { get; set; } = "";
     public short? Balance { get; set; }
     public UserRole Role { get; set; }
+    public string? Branch { get; set; }
 }
 
 /// <summary>Модель действия администратора</summary>
@@ -51,5 +53,16 @@ public class AdminActionDto
     public int Id { get; set; }
     public string ActionType { get; set; } = "";
     public string Details { get; set; } = "";
+    public string Branch { get; set; } = "";
     public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>Модель изображения товара</summary>
+public class ProductImageDto
+{
+    public int Id { get; set; }
+    public string Url { get; set; } = "";
+    public string FileName { get; set; } = "";
+    public bool IsPrimary { get; set; }
+    public int SortOrder { get; set; }
 }

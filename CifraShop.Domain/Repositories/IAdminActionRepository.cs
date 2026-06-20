@@ -4,7 +4,7 @@ namespace CifraShop.Domain.Repositories
 {
     public interface IAdminActionRepository
     {
-        Task<List<AdminAction>> GetLastActions(int count);
+        Task<List<AdminAction>> GetLastActions(int count, string? branch = null);
         Task AddAction(AdminAction action);
     }
 }

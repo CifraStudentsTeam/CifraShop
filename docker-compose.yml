@@ -10,17 +10,5 @@ services:
     volumes:
       - sqlserver-data:/var/opt/mssql
 
-  api:
-    build:
-      context: .
-      dockerfile: CifraShop.API/Dockerfile
-    ports:
-      - "8086:8086"
-    environment:
-      ConnectionStrings__DefaultConnection: "Server=db;Database=CifraShopDb;User Id=sa;Password=Your_strong_Password123;TrustServerCertificate=True;"
-      ASPNETCORE_URLS: "http://+:8086"
-    depends_on:
-      - db
-
 volumes:
   sqlserver-data:
