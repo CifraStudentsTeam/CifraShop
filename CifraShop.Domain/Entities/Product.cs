@@ -7,8 +7,8 @@ namespace CifraShop.Domain.Entities
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public short Price { get; set; }
-        public short Quantity { get; set; }
+        public int Price { get; set; }
+        public int Quantity { get; set; }
         public StatusProduct Status { get; set; }
         public string? ImageUrl { get; set; }
         public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();

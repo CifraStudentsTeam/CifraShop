@@ -33,16 +33,16 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<Product>> GetProductsByName(string name)
             => _repository.GetProductsByName(name);
 
-        public Task<List<Product>> GetProductsByPrice(short price)
+        public Task<List<Product>> GetProductsByPrice(int price)
             => _repository.GetProductsByPrice(price);
 
-        public Task<List<Product>> GetProductsByQuantity(short quantity)
+        public Task<List<Product>> GetProductsByQuantity(int quantity)
             => _repository.GetProductsByQuantity(quantity);
 
         public Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct)
             => _repository.GetProductsByStatus(statusProduct);
 
-        public async Task<Product> CreateProduct(string name, string description, short price, short quantity)
+        public async Task<Product> CreateProduct(string name, string description, int price, int quantity)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Название товара обязательно");
@@ -72,10 +72,6 @@ namespace CifraShop.Application.Services.Implementations
                 throw new ArgumentException("Название товара обязательно");
             if (productToUpdate.Quantity < 0)
                 throw new ArgumentException("Количество товара не может быть отрицательным");
-
-            productToUpdate.Status = productToUpdate.Quantity == 0
-                ? StatusProduct.OutOfStock
-                : StatusProduct.InStock;
 
             await _repository.UpdateProduct(productToUpdate);
         }

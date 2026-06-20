@@ -49,7 +49,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<Order>> GetOrdersByStatus(StatusOrder order)
             => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Where(x => x.Status == order).ToListAsync();
 
-        public async Task<List<Order>> GetOrdersBySum(short sum)
+        public async Task<List<Order>> GetOrdersBySum(int sum)
             => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Where(x => x.Sum == sum).ToListAsync();
 
         public async Task<List<Order>> GetOrdersByDateRange(DateTime from, DateTime to)
@@ -84,7 +84,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<Order> CreateOrderInTransaction(
             Order order,
             List<OrderItem> items,
-            List<(int ProductId, short Quantity)> stockUpdates)
+            List<(int ProductId, int Quantity)> stockUpdates)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try

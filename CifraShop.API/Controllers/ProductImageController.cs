@@ -1,6 +1,8 @@
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Repositories;
+using CifraShop.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CifraShop.API.Controllers
 {
@@ -10,6 +12,7 @@ namespace CifraShop.API.Controllers
     {
         private readonly IProductImageRepository _imageRepository;
         private readonly IProductRepository _productRepository;
+        private readonly ApplicationContext _context;
         private readonly IWebHostEnvironment _env;
 
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -20,10 +23,12 @@ namespace CifraShop.API.Controllers
         public ProductImageController(
             IProductImageRepository imageRepository,
             IProductRepository productRepository,
+            ApplicationContext context,
             IWebHostEnvironment env)
         {
             _imageRepository = imageRepository;
             _productRepository = productRepository;
+            _context = context;
             _env = env;
         }
 
@@ -85,28 +90,42 @@ namespace CifraShop.API.Controllers
             var fileName = $"{productId}_{DateTime.UtcNow:yyyyMMddHHmmssfff}{ext}";
             var filePath = Path.Combine(uploadsDir, fileName);
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            ProductImage image;
+            try
             {
-                await file.CopyToAsync(stream);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                var count = await _imageRepository.GetCountByProductId(productId);
+
+                image = new ProductImage
+                {
+                    ProductId = productId,
+                    FileName = fileName,
+                    IsPrimary = isPrimary || count == 0,
+                    SortOrder = count
+                };
+
+                await _imageRepository.Add(image);
+
+                if (image.IsPrimary)
+                {
+                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                    product.ImageUrl = $"{baseUrl}{Url.Action(nameof(GetFile), new { fileName })}";
+                    await _productRepository.UpdateProduct(product);
+                }
+
+                await transaction.CommitAsync();
             }
-
-            var count = await _imageRepository.GetCountByProductId(productId);
-
-            var image = new ProductImage
+            catch
             {
-                ProductId = productId,
-                FileName = fileName,
-                IsPrimary = isPrimary || count == 0,
-                SortOrder = count
-            };
-
-            await _imageRepository.Add(image);
-
-            if (image.IsPrimary)
-            {
-                var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                product.ImageUrl = $"{baseUrl}{Url.Action(nameof(GetFile), new { fileName })}";
-                await _productRepository.UpdateProduct(product);
+                await transaction.RollbackAsync();
+                if (System.IO.File.Exists(filePath))
+                    System.IO.File.Delete(filePath);
+                throw;
             }
 
             var fullUrl = $"{Request.Scheme}://{Request.Host}{Url.Action(nameof(GetFile), new { fileName })}";

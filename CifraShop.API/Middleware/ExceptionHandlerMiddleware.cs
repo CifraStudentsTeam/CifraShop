@@ -7,11 +7,13 @@ namespace CifraShop.API.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlerMiddleware> _logger;
+        private readonly IHostEnvironment _env;
 
-        public ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionHandlerMiddleware> logger)
+        public ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionHandlerMiddleware> logger, IHostEnvironment env)
         {
             _next = next;
             _logger = logger;
+            _env = env;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -23,11 +25,11 @@ namespace CifraShop.API.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Необработанное исключение: {Message}", ex.Message);
-                await HandleExceptionAsync(context, ex);
+                await HandleExceptionAsync(context, ex, _env);
             }
         }
 
-        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static async Task HandleExceptionAsync(HttpContext context, Exception exception, IHostEnvironment env)
         {
             context.Response.ContentType = "application/json";
 
@@ -43,7 +45,9 @@ namespace CifraShop.API.Middleware
 
             context.Response.StatusCode = (int)statusCode;
 
-            var response = new { error = message };
+            object response = env.IsDevelopment()
+                ? new { error = message, stackTrace = exception.StackTrace }
+                : new { error = message };
             await context.Response.WriteAsync(JsonSerializer.Serialize(response));
         }
     }

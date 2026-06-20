@@ -6,7 +6,7 @@ namespace CifraShop.Contracts.Responses.User
     {
         public int Id { get; set; }
         public string Email { get; set; } = string.Empty;
-        public short? Balance { get; set; }
+        public int? Balance { get; set; }
         public UserRole Role { get; set; }
         public string? Branch { get; set; }
     }

@@ -4,6 +4,6 @@ namespace CifraShop.Contracts.Requests.Users
     {
         public string? Email { get; set; }
         public string? Password { get; set; }
-        public short? Balance { get; set; }
+        public int? Balance { get; set; }
     }
 }

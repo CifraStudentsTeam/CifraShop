@@ -9,8 +9,8 @@ namespace CifraShop.Domain.Repositories
         Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusProduct? status = null);
         Task<Product?> GetProductById(int id);
         Task<List<Product>> GetProductsByName(string name);
-        Task<List<Product>> GetProductsByPrice(short price);
-        Task<List<Product>> GetProductsByQuantity(short quantity);
+        Task<List<Product>> GetProductsByPrice(int price);
+        Task<List<Product>> GetProductsByQuantity(int quantity);
         Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct);
         Task AddProduct(Product productToAdd);
         Task UpdateProduct(Product productToUpdate);

@@ -127,8 +127,18 @@ namespace CifraShop.API.Controllers
             if (request.ProductIds == null || !request.ProductIds.Any())
                 return BadRequest("Список id пуст");
 
-            await _productService.DeleteRange(request.ProductIds);
-            return Ok(new { deleted = request.ProductIds.Count });
+            var existingIds = new List<int>();
+            foreach (var id in request.ProductIds)
+            {
+                var product = await _productService.GetProductById(id);
+                if (product != null) existingIds.Add(id);
+            }
+
+            if (!existingIds.Any())
+                return NotFound("Ни один из указанных товаров не найден");
+
+            await _productService.DeleteRange(existingIds);
+            return Ok(new { deleted = existingIds.Count, notFound = request.ProductIds.Count - existingIds.Count });
         }
     }
 }

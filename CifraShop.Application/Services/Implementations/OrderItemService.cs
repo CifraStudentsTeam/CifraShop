@@ -27,7 +27,7 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<OrderItem>> GetOrderItemsByOrderId(int orderId)
             => _repository.GetOrderItemsByOrderId(orderId);
 
-        public async Task<OrderItem> CreateOrderItem(int orderId, int productId, short quantity)
+        public async Task<OrderItem> CreateOrderItem(int orderId, int productId, int quantity)
         {
             if (quantity <= 0)
                 throw new ArgumentException("Количество должно быть больше 0");
@@ -70,7 +70,19 @@ namespace CifraShop.Application.Services.Implementations
             return _repository.UpdateOrderItem(orderItemToUpdate);
         }
 
-        public Task DeleteOrderItem(OrderItem orderItemToDelete)
-            => _repository.DeleteOrderItem(orderItemToDelete);
+        public async Task DeleteOrderItem(OrderItem orderItemToDelete)
+        {
+            var product = await _productRepository.GetProductById(orderItemToDelete.ProductId);
+            if (product != null)
+            {
+                product.Quantity += orderItemToDelete.Quantity;
+                product.Status = product.Quantity > 0
+                    ? StatusProduct.InStock
+                    : StatusProduct.OutOfStock;
+                await _productRepository.UpdateProduct(product);
+            }
+
+            await _repository.DeleteOrderItem(orderItemToDelete);
+        }
     }
 }

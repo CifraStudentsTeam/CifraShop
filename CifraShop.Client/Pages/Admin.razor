@@ -119,9 +119,15 @@
                                                    indeterminate="@(IsProductPartialSelected)"
                                                    @onchange="ToggleSelectAllProducts" />
                                         </th>
-                                        <th>Товар</th>
-                                        <th style="width:4rem;">Цена</th>
-                                        <th style="width:5rem;">Склад</th>
+                                        <th style="cursor:pointer" @onclick="@(() => ToggleProductSort("name"))">
+                                            Товар <i class="bi @SortIcon("name", _productSortField, _productSortAsc) small"></i>
+                                        </th>
+                                        <th style="width:4rem;cursor:pointer" @onclick="@(() => ToggleProductSort("price"))">
+                                            Цена <i class="bi @SortIcon("price", _productSortField, _productSortAsc) small"></i>
+                                        </th>
+                                        <th style="width:5rem;cursor:pointer" @onclick="@(() => ToggleProductSort("quantity"))">
+                                            Склад <i class="bi @SortIcon("quantity", _productSortField, _productSortAsc) small"></i>
+                                        </th>
                                         <th style="width:6rem;">Статус</th>
                                         <th style="width:4rem;"></th>
                                     </tr>
@@ -172,7 +178,7 @@
                                                 <span class="badge @(StatusBadge(p.Status))"
                                                       style="cursor:pointer"
                                                       @onclick="() => ToggleProductStatus(p)"
-                                                      title="Нажмите для смены статуса">
+                                                      title="@(StatusTooltip(p.Status))">
                                                     @StatusText(p.Status)
                                                 </span>
                                             </td>
@@ -192,13 +198,22 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">
-                                @_productTotalCount товар(ов)
-                                @if (_totalStockValue > 0)
-                                {
-                                    <span class="ms-2 text-muted">· @_totalStockValue.ToString("N0") ₽ на складе</span>
-                                }
-                            </small>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-secondary">
+                                    @_productTotalCount товар(ов)
+                                    @if (_totalStockValue > 0)
+                                    {
+                                        <span class="ms-2 text-muted">· @_totalStockValue.ToString("N0") ₽ на складе</span>
+                                    }
+                                </small>
+                                <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                        value="@_pageSize" @onchange="OnPageSizeChanged">
+                                    <option value="5">5</option>
+                                    <option value="8">8</option>
+                                    <option value="16">16</option>
+                                    <option value="32">32</option>
+                                </select>
+                            </div>
                             <Pagination Page="_productPage" TotalPages="@_productTotalPages" Loading="@_loadingProducts"
                                          PageChanged="OnProductPageChanged" />
                         </div>
@@ -282,11 +297,17 @@
                                                    indeterminate="@(IsOrderPartialSelected)"
                                                    @onchange="ToggleSelectAllOrders" />
                                         </th>
-                                        <th>№</th>
+                                        <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("id"))">
+                                            № <i class="bi @SortIcon("id", _orderSortField, _orderSortAsc) small"></i>
+                                        </th>
                                         <th>Покупатель</th>
                                         <th>Состав</th>
-                                        <th>Дата</th>
-                                        <th>Сумма</th>
+                                        <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("date"))">
+                                            Дата <i class="bi @SortIcon("date", _orderSortField, _orderSortAsc) small"></i>
+                                        </th>
+                                        <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("sum"))">
+                                            Сумма <i class="bi @SortIcon("sum", _orderSortField, _orderSortAsc) small"></i>
+                                        </th>
                                         <th>Статус</th>
                                     </tr>
                                 </thead>
@@ -355,13 +376,22 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">
-                                @_orderTotalCount заказ(ов)
-                                @if (_totalRevenue > 0)
-                                {
-                                    <span class="ms-2 text-muted">· @_totalRevenue.ToString("N0") ₽</span>
-                                }
-                            </small>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-secondary">
+                                    @_orderTotalCount заказ(ов)
+                                    @if (_totalRevenue > 0)
+                                    {
+                                        <span class="ms-2 text-muted">· @_totalRevenue.ToString("N0") ₽</span>
+                                    }
+                                </small>
+                                <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                        value="@_pageSize" @onchange="OnPageSizeChanged">
+                                    <option value="5">5</option>
+                                    <option value="8">8</option>
+                                    <option value="16">16</option>
+                                    <option value="32">32</option>
+                                </select>
+                            </div>
                             <Pagination Page="_orderPage" TotalPages="@_orderTotalPages" Loading="@_loadingOrders"
                                          PageChanged="OnOrderPageChanged" />
                         </div>
@@ -414,9 +444,15 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:3rem;">ID</th>
-                                        <th>Email</th>
-                                        <th style="width:6rem;">Баланс</th>
+                                        <th style="width:3rem;cursor:pointer" @onclick="@(() => ToggleUserSort("id"))">
+                                            ID <i class="bi @SortIcon("id", _userSortField, _userSortAsc) small"></i>
+                                        </th>
+                                        <th style="cursor:pointer" @onclick="@(() => ToggleUserSort("email"))">
+                                            Email <i class="bi @SortIcon("email", _userSortField, _userSortAsc) small"></i>
+                                        </th>
+                                        <th style="width:6rem;cursor:pointer" @onclick="@(() => ToggleUserSort("balance"))">
+                                            Баланс <i class="bi @SortIcon("balance", _userSortField, _userSortAsc) small"></i>
+                                        </th>
                                         <th>Роль</th>
                                         <th style="width:6rem;"></th>
                                     </tr>
@@ -451,7 +487,16 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-secondary">@_userTotalCount пользовател(ей)</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-secondary">@_userTotalCount пользовател(ей)</small>
+                                <select class="form-select form-select-sm" style="width:auto;font-size:0.75rem;"
+                                        value="@_pageSize" @onchange="OnPageSizeChanged">
+                                    <option value="5">5</option>
+                                    <option value="8">8</option>
+                                    <option value="16">16</option>
+                                    <option value="32">32</option>
+                                </select>
+                            </div>
                             <Pagination Page="_userPage" TotalPages="@_userTotalPages" Loading="@_loadingUsers"
                                          PageChanged="OnUserPageChanged" />
                         </div>
@@ -610,25 +655,25 @@
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Название <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @(_formName.Length > 0 ? "is-valid" : "")"
-                                   @bind="_formName" placeholder="Введите название" />
+                                   @bind="_formName" placeholder="Введите название" disabled="@_saving" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-medium">Описание</label>
-                            <textarea class="form-control" rows="2" @bind="_formDescription" placeholder="Краткое описание товара"></textarea>
+                            <textarea class="form-control" rows="2" @bind="_formDescription" placeholder="Краткое описание товара" disabled="@_saving"></textarea>
                         </div>
                         <div class="row g-3">
                             <div class="col-6">
                                 <label class="form-label small fw-medium">Цена (₽)</label>
-                                <input type="number" class="form-control" @bind="_formPrice" min="0" />
+                                <input type="number" class="form-control" @bind="_formPrice" min="1" disabled="@_saving" />
                             </div>
                             <div class="col-6">
                                 <label class="form-label small fw-medium">Количество</label>
-                                <input type="number" class="form-control" @bind="_formQuantity" min="0" />
+                                <input type="number" class="form-control" @bind="_formQuantity" min="0" disabled="@_saving" />
                             </div>
                         </div>
                         <div class="mt-3">
                             <label class="form-label small fw-medium">URL изображения</label>
-                            <input type="text" class="form-control" @bind="_formImageUrl" placeholder="https://... или image.jpg" />
+                            <input type="text" class="form-control" @bind="_formImageUrl" placeholder="https://... или image.jpg" disabled="@_saving" />
                         </div>
                         @if (_editingProduct != null)
                         {
@@ -725,7 +770,7 @@
                     </div>
                     <div class="modal-body">
                         <label class="form-label small fw-medium">Баланс (₽)</label>
-                        <input type="number" class="form-control" @bind="_editBalance" />
+                        <input type="number" class="form-control" @bind="_editBalance" min="0" />
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showEditUserModal = false">Отмена</button>
@@ -947,18 +992,17 @@
 
     private int _productTotalCount, _orderTotalCount, _userTotalCount;
     private int _productPage, _orderPage, _userPage;
-    private const int PageSize = 8;
-    private int _productTotalPages => Math.Max(1, (int)Math.Ceiling(_productTotalCount / (double)PageSize));
-    private int _orderTotalPages => Math.Max(1, (int)Math.Ceiling(_orderTotalCount / (double)PageSize));
-    private int _userTotalPages => Math.Max(1, (int)Math.Ceiling(_userTotalCount / (double)PageSize));
+    private int _productTotalPages => Math.Max(1, (int)Math.Ceiling(_productTotalCount / (double)_pageSize));
+    private int _orderTotalPages => Math.Max(1, (int)Math.Ceiling(_orderTotalCount / (double)_pageSize));
+    private int _userTotalPages => Math.Max(1, (int)Math.Ceiling(_userTotalCount / (double)_pageSize));
 
     private DateTime? _lastUpdated;
-    private int _totalRevenue => Orders.Sum(o => (int)o.Sum);
+    private int _totalRevenue;
     private int _adminCount => Users.Count(u => u.Role == UserRole.Admin);
-    private int _lowStockCount => Products.Count(p => p.Status == StatusProduct.InStock && p.Quantity <= 5);
+    private int _lowStockCount;
     private string _lowStockSubtitle => _lowStockCount > 0 ? $"⚠ {_lowStockCount} с низким остатком" : "Все в наличии";
     private int _configuredFilials => _notificationSettings.Count(s => !string.IsNullOrEmpty(s.Email) || !string.IsNullOrEmpty(s.TelegramChatId));
-    private int _totalStockValue => Products.Where(p => p.Status == StatusProduct.InStock).Sum(p => (int)p.Price * p.Quantity);
+    private int _totalStockValue;
 
     private PeriodicTimer? _refreshTimer;
 
@@ -976,6 +1020,14 @@
     private string _selectedBranch = "";
     private List<string> _availableBranches = new();
 
+    private string _productSortField = "";
+    private bool _productSortAsc = true;
+    private string _orderSortField = "";
+    private bool _orderSortAsc = true;
+    private string _userSortField = "";
+    private bool _userSortAsc = true;
+    private int _pageSize = 8;
+
     private CancellationTokenSource? _productSearchCts, _orderSearchCts, _userSearchCts;
 
     private async Task OnProductSearchChanged(string value)
@@ -983,6 +1035,7 @@
         _productSearch = value;
         _productPage = 0;
         _productSearchCts?.Cancel();
+        _productSearchCts?.Dispose();
         _productSearchCts = new CancellationTokenSource();
         try { await Task.Delay(300, _productSearchCts.Token); } catch (TaskCanceledException) { return; }
         await LoadProducts();
@@ -1000,6 +1053,7 @@
         _orderSearch = value;
         _orderPage = 0;
         _orderSearchCts?.Cancel();
+        _orderSearchCts?.Dispose();
         _orderSearchCts = new CancellationTokenSource();
         try { await Task.Delay(300, _orderSearchCts.Token); } catch (TaskCanceledException) { return; }
         await LoadOrders();
@@ -1031,6 +1085,7 @@
         _userSearch = value;
         _userPage = 0;
         _userSearchCts?.Cancel();
+        _userSearchCts?.Dispose();
         _userSearchCts = new CancellationTokenSource();
         try { await Task.Delay(300, _userSearchCts.Token); } catch (TaskCanceledException) { return; }
         await LoadUsers();
@@ -1046,6 +1101,63 @@
     private async Task OnProductPageChanged(int page) { _productPage = page; await LoadProducts(); }
     private async Task OnOrderPageChanged(int page) { _orderPage = page; await LoadOrders(); }
     private async Task OnUserPageChanged(int page) { _userPage = page; await LoadUsers(); }
+
+    private void ToggleProductSort(string field)
+    {
+        if (_productSortField == field) _productSortAsc = !_productSortAsc;
+        else { _productSortField = field; _productSortAsc = true; }
+        Products = field switch
+        {
+            "name" => _productSortAsc ? Products.OrderBy(p => p.Name).ToList() : Products.OrderByDescending(p => p.Name).ToList(),
+            "price" => _productSortAsc ? Products.OrderBy(p => p.Price).ToList() : Products.OrderByDescending(p => p.Price).ToList(),
+            "quantity" => _productSortAsc ? Products.OrderBy(p => p.Quantity).ToList() : Products.OrderByDescending(p => p.Quantity).ToList(),
+            _ => Products
+        };
+        StateHasChanged();
+    }
+
+    private void ToggleOrderSort(string field)
+    {
+        if (_orderSortField == field) _orderSortAsc = !_orderSortAsc;
+        else { _orderSortField = field; _orderSortAsc = true; }
+        Orders = field switch
+        {
+            "id" => _orderSortAsc ? Orders.OrderBy(o => o.Id).ToList() : Orders.OrderByDescending(o => o.Id).ToList(),
+            "date" => _orderSortAsc ? Orders.OrderBy(o => o.DateOfPurchase).ToList() : Orders.OrderByDescending(o => o.DateOfPurchase).ToList(),
+            "sum" => _orderSortAsc ? Orders.OrderBy(o => o.Sum).ToList() : Orders.OrderByDescending(o => o.Sum).ToList(),
+            _ => Orders
+        };
+        StateHasChanged();
+    }
+
+    private void ToggleUserSort(string field)
+    {
+        if (_userSortField == field) _userSortAsc = !_userSortAsc;
+        else { _userSortField = field; _userSortAsc = true; }
+        Users = field switch
+        {
+            "id" => _userSortAsc ? Users.OrderBy(u => u.Id).ToList() : Users.OrderByDescending(u => u.Id).ToList(),
+            "email" => _userSortAsc ? Users.OrderBy(u => u.Email).ToList() : Users.OrderByDescending(u => u.Email).ToList(),
+            "balance" => _userSortAsc ? Users.OrderBy(u => u.Balance ?? 0).ToList() : Users.OrderByDescending(u => u.Balance ?? 0).ToList(),
+            _ => Users
+        };
+        StateHasChanged();
+    }
+
+    private string SortIcon(string field, string sortField, bool sortAsc) =>
+        field == sortField ? (sortAsc ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up";
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int size) && size > 0)
+        {
+            _pageSize = size;
+            _productPage = 0;
+            _orderPage = 0;
+            _userPage = 0;
+            await LoadAllData();
+        }
+    }
 
     private bool IsAllProductsSelected => Products.Any() && Products.All(p => p.IsSelected);
     private bool IsProductPartialSelected => Products.Any(p => p.IsSelected) && !IsAllProductsSelected;
@@ -1063,18 +1175,18 @@
     private ProductDto? _editingProduct;
     private UserDto? _editingUser;
     private string _formName = "", _formDescription = "", _formImageUrl = "", _confirmMessage = "", _confirmButtonText = "Удалить";
-    private short _formPrice, _formQuantity;
+    private int _formPrice, _formQuantity;
     private Func<Task>? _onConfirmAction;
 
     private string _newUserEmail = "", _newUserPassword = "", _newUserRole = "Student";
-    private short _editBalance;
+    private int _editBalance;
     private string _newOrderEmail = "";
     private List<OrderItemForm> _newOrderItems = new();
 
     private class OrderItemForm
     {
         public int ProductId { get; set; }
-        public short Quantity { get; set; } = 1;
+        public int Quantity { get; set; } = 1;
     }
 
     protected override async Task OnInitializedAsync()
@@ -1104,8 +1216,21 @@
 
     private async Task LoadAllData()
     {
-        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers(), LoadNotificationSettings());
+        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers(), LoadNotificationSettings(), LoadMetrics());
         _lastUpdated = DateTime.Now;
+    }
+
+    private async Task LoadMetrics()
+    {
+        try
+        {
+            var allProducts = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new();
+            var allOrders = await Http.GetFromJsonAsync<List<OrderDto>>("api/Order/all") ?? new();
+            _totalRevenue = allOrders.Sum(o => o.Sum);
+            _lowStockCount = allProducts.Count(p => p.Status == StatusProduct.InStock && p.Quantity <= 5);
+            _totalStockValue = allProducts.Where(p => p.Status == StatusProduct.InStock).Sum(p => p.Price * p.Quantity);
+        }
+        catch { }
     }
 
     private async Task LoadProducts()
@@ -1113,7 +1238,7 @@
         try
         {
             _loadingProducts = Products.Count == 0;
-            var url = $"api/Product/paged?page={_productPage}&pageSize={PageSize}";
+            var url = $"api/Product/paged?page={_productPage}&pageSize={_pageSize}";
             if (!string.IsNullOrEmpty(_productSearch)) url += $"&search={Uri.EscapeDataString(_productSearch)}";
             if (!string.IsNullOrEmpty(_productFilter)) url += $"&status={_productFilter}";
             var r = await Http.GetFromJsonAsync<PagedProductResponse>(url);
@@ -1128,7 +1253,7 @@
         try
         {
             _loadingOrders = Orders.Count == 0;
-            var url = $"api/Order/paged?page={_orderPage}&pageSize={PageSize}";
+            var url = $"api/Order/paged?page={_orderPage}&pageSize={_pageSize}";
             if (!string.IsNullOrEmpty(_orderSearch)) url += $"&search={Uri.EscapeDataString(_orderSearch)}";
             if (!string.IsNullOrEmpty(_orderFilter)) url += $"&status={_orderFilter}";
             if (!string.IsNullOrEmpty(_orderDateFrom)) url += $"&dateFrom={_orderDateFrom}";
@@ -1145,7 +1270,7 @@
         try
         {
             _loadingUsers = Users.Count == 0;
-            var url = $"api/User/paged?page={_userPage}&pageSize={PageSize}";
+            var url = $"api/User/paged?page={_userPage}&pageSize={_pageSize}";
             if (!string.IsNullOrEmpty(_userSearch)) url += $"&search={Uri.EscapeDataString(_userSearch)}";
             if (!string.IsNullOrEmpty(_userFilter)) url += $"&role={_userFilter}";
             var r = await Http.GetFromJsonAsync<PagedUserResponse>(url);
@@ -1372,7 +1497,7 @@
     private async Task OnQuantityChanged(ProductDto product, ChangeEventArgs e)
     {
         var oldQuantity = product.Quantity;
-        if (short.TryParse(e.Value?.ToString(), out short q) && product.Quantity != q)
+        if (int.TryParse(e.Value?.ToString(), out int q) && product.Quantity != q)
         {
             var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Quantity = q });
             if (r.IsSuccessStatusCode)
@@ -1419,7 +1544,7 @@
             var r = await Http.PostAsJsonAsync("api/Product/batch-delete", new { ProductIds = ids });
             if (r.IsSuccessStatusCode)
             {
-                foreach (var p in sel) Products.Remove(p);
+                foreach (var p in sel.ToList()) Products.Remove(p);
                 _productTotalCount -= sel.Count;
                 await LogAction("Удаление", $"{sel.Count} товар(ов)");
                 ShowNotification($"Удалено: {sel.Count} товар(ов)");
@@ -1654,6 +1779,12 @@
         StatusProduct.InStock => "В наличии",
         StatusProduct.OutOfStock => "Нет в наличии",
         _ => "Скоро в продаже"
+    };
+    private static string StatusTooltip(StatusProduct s) => s switch
+    {
+        StatusProduct.InStock => "Товар в наличии. Нажмите, чтобы пометить «Нет в наличии»",
+        StatusProduct.OutOfStock => "Товар отсутствует. Нажмите, чтобы пометить «Скоро в продаже»",
+        _ => "Скоро в продаже. Нажмите, чтобы пометить «В наличии»"
     };
     private static string ActionBadge(string t) => t switch { "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary" };
     private static string ActionColor(string t) => t switch { "Создание" => "#198754", "Удаление" => "#dc3545", "Изменение" => "#0d6efd", _ => "#6c757d" };

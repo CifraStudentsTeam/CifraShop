@@ -9,7 +9,7 @@ namespace CifraShop.Domain.Repositories
         Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusOrder? status = null, DateTime? dateFrom = null, DateTime? dateTo = null);
         Task<Order?> GetOrderById(int id);
         Task<List<Order>> GetOrdersByCustomerEmail(string email);
-        Task<List<Order>> GetOrdersBySum(short sum);
+        Task<List<Order>> GetOrdersBySum(int sum);
         Task<List<Order>> GetOrdersByStatus(StatusOrder order);
         Task<List<Order>> GetOrdersByDateRange(DateTime from, DateTime to);
         Task AddOrder(Order orderToAdd);
@@ -19,6 +19,6 @@ namespace CifraShop.Domain.Repositories
         Task<Order> CreateOrderInTransaction(
             Order order,
             List<OrderItem> items,
-            List<(int ProductId, short Quantity)> stockUpdates);
+            List<(int ProductId, int Quantity)> stockUpdates);
     }
 }

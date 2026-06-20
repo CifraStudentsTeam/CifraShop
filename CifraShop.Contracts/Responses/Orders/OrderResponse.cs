@@ -10,7 +10,7 @@ namespace CifraShop.Contracts.Responses.Orders
     {
         public int Id { get; set; }
         public StatusOrder Status { get; set; }
-        public short Sum { get; set; }
+        public int Sum { get; set; }
         public DateTime DateOfPurchase { get; set; }
         public string CustomerEmail { get; set; } = string.Empty;
         public int CustomerId {  get; set; }

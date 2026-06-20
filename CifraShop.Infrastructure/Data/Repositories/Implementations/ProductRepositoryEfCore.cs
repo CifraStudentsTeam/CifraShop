@@ -33,10 +33,10 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<Product>> GetProductsByName(string name)
             => await _context.Products.Where(x => x.Name == name).ToListAsync();
 
-        public async Task<List<Product>> GetProductsByPrice(short price)
+        public async Task<List<Product>> GetProductsByPrice(int price)
             => await _context.Products.Where(x => x.Price == price).ToListAsync();
 
-        public async Task<List<Product>> GetProductsByQuantity(short quantity)
+        public async Task<List<Product>> GetProductsByQuantity(int quantity)
             => await _context.Products.Where(x => x.Quantity == quantity).ToListAsync();
 
         public async Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct)

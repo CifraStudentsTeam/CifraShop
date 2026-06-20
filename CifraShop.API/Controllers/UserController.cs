@@ -72,13 +72,6 @@ namespace CifraShop.API.Controllers
             return Ok(user.ToResponse());
         }
 
-        [HttpPost("create-user")]
-        public async Task<ActionResult<UserResponse>> CreateUser([FromBody] CreateUserRequest request)
-        {
-            var user = await _userService.CreateUser(request.Email, request.Password, "Student");
-            return Ok(user.ToResponse());
-        }
-
         [HttpPost("create-admin")]
         public async Task<ActionResult<UserResponse>> CreateAdmin([FromBody] CreateUserRequest request)
         {

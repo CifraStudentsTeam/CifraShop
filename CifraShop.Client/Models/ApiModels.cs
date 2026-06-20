@@ -6,8 +6,8 @@ public class ProductDto
     public int Id { get; set; }
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
-    public short Price { get; set; }
-    public short Quantity { get; set; }
+    public int Price { get; set; }
+    public int Quantity { get; set; }
     public StatusProduct Status { get; set; }
     public string? ImageUrl { get; set; }
     public bool IsSelected { get; set; }
@@ -19,8 +19,8 @@ public class OrderItemDto
     public int Id { get; set; }
     public int ProductId { get; set; }
     public string ProductName { get; set; } = "";
-    public short Price { get; set; }
-    public short Quantity { get; set; }
+    public int Price { get; set; }
+    public int Quantity { get; set; }
     public int Total => Price * Quantity;
 }
 
@@ -30,7 +30,7 @@ public class OrderDto
     public int Id { get; set; }
     public StatusOrder Status { get; set; }
     public bool IsSelected { get; set; }
-    public short Sum { get; set; }
+    public int Sum { get; set; }
     public DateTime DateOfPurchase { get; set; }
     public string CustomerEmail { get; set; } = "";
     public int CustomerId { get; set; }
@@ -42,7 +42,7 @@ public class UserDto
 {
     public int Id { get; set; }
     public string Email { get; set; } = "";
-    public short? Balance { get; set; }
+    public int? Balance { get; set; }
     public UserRole Role { get; set; }
     public string? Branch { get; set; }
 }

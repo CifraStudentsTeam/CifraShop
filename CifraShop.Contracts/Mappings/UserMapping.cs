@@ -12,7 +12,8 @@ namespace CifraShop.Contracts.Mappings
                 Id = user.Id,
                 Email = user.Email,
                 Balance = user.Balance,
-                Role = user.Role
+                Role = user.Role,
+                Branch = user.Branch
             };
         }
     }

@@ -5,8 +5,8 @@ namespace CifraShop.Contracts.Responses.OrderItem
         public int Id { get; set; }
         public int ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
-        public short Price { get; set; }
-        public short Quantity { get; set; }
-        public int Total => (int)Price * Quantity;
+        public int Price { get; set; }
+        public int Quantity { get; set; }
+        public int Total => Price * Quantity;
     }
 }

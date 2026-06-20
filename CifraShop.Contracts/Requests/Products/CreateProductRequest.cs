@@ -12,10 +12,10 @@ namespace CifraShop.Contracts.Requests.Products
         [MaxLength(100, ErrorMessage = "Описание не может превышать 100 символов")]
         public string Description { get; set; } = string.Empty;
 
-        [Range(1, short.MaxValue, ErrorMessage = "Цена должна быть больше 0")]
-        public short Price { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Цена должна быть больше 0")]
+        public int Price { get; set; }
 
-        [Range(0, short.MaxValue, ErrorMessage = "Количество не может быть отрицательным")]
-        public short Quantity { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "Количество не может быть отрицательным")]
+        public int Quantity { get; set; }
     }
 }

@@ -6,7 +6,7 @@ namespace CifraShop.Application.Services.Interfaces
     {
         Task<List<OrderItem>> GetOrderItemsByOrderId(int orderId);
         Task<OrderItem?> GetOrderItemById(int orderItemId);
-        Task<OrderItem> CreateOrderItem(int orderId, int productId, short quantity);
+        Task<OrderItem> CreateOrderItem(int orderId, int productId, int quantity);
         Task UpdateOrderItem(OrderItem orderItemToUpdate);
         Task DeleteOrderItem(OrderItem orderItemToDelete);
     }

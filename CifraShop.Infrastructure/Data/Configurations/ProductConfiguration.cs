@@ -34,56 +34,13 @@ namespace CifraShop.Infrastructure.Data.Configurations
                    .IsRequired();
             builder.Property(p => p.ImageUrl)
                    .HasColumnName("ImageUrl")
-                   .HasMaxLength(100)
+                   .HasMaxLength(500)
                    .IsRequired(false);
 
             builder.HasMany(p => p.OrderItems)
                    .WithOne(oi => oi.Product)
                    .HasForeignKey(oi => oi.ProductId)
                    .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasData(
-                new Product
-                {
-                    Id = 1,
-                    Name = "Блокнот A5",
-                    Description = "Линейный блонкот на 60 листов",
-                    Price = 250,
-                    Quantity = 50,
-                    Status = StatusProduct.InStock,
-                    ImageUrl = "notebook_a5.jpg"
-                },
-                new Product
-                {
-                    Id = 2,
-                    Name = "Ручка шариковая",
-                    Description = "Шариковая ручка синего цвета",
-                    Price = 35,
-                    Quantity = 200,
-                    Status = StatusProduct.InStock,
-                    ImageUrl = "pen_blue.jpg"
-                },
-                new Product
-                {
-                    Id = 3,
-                    Name = "Портфель студента",
-                    Description = "Вместительный порфель для документов",
-                    Price = 1200,
-                    Quantity = 15,
-                    Status = StatusProduct.InStock,
-                    ImageUrl = "portfolio.jpg"
-                },
-                new Product
-                {
-                    Id = 4,
-                    Name = "USB-флешка 32GB",
-                    Description = "USB-флешка для хранения данных",
-                    Price = 450,
-                    Quantity = 0,
-                    Status = StatusProduct.OutOfStock,
-                    ImageUrl = "usb_32gb.jpg"
-                }
-            );
         }
     }
 }

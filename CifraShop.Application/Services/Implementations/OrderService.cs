@@ -48,13 +48,13 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<Order>> GetOrdersByStatus(StatusOrder status)
             => _repository.GetOrdersByStatus(status);
 
-        public Task<List<Order>> GetOrdersBySum(short sum)
+        public Task<List<Order>> GetOrdersBySum(int sum)
             => _repository.GetOrdersBySum(sum);
 
         public Task<List<Order>> GetOrdersByDateRange(DateTime from, DateTime to)
             => _repository.GetOrdersByDateRange(from, to);
 
-        public async Task<Order> CreateOrder(string customerEmail, List<(int ProductId, short Quantity)> items)
+        public async Task<Order> CreateOrder(string customerEmail, List<(int ProductId, int Quantity)> items)
         {
             if (string.IsNullOrWhiteSpace(customerEmail))
                 throw new ArgumentException("Email пользователя обязателен");
@@ -71,7 +71,7 @@ namespace CifraShop.Application.Services.Implementations
                 throw new KeyNotFoundException($"Пользователь с email {customerEmail} не найден");
 
             var orderItems = new List<OrderItem>();
-            var stockUpdates = new List<(int ProductId, short Quantity)>();
+            var stockUpdates = new List<(int ProductId, int Quantity)>();
             int totalSum = 0;
 
             foreach (var (productId, quantity) in items)
@@ -98,13 +98,10 @@ namespace CifraShop.Application.Services.Implementations
                 stockUpdates.Add((productId, quantity));
             }
 
-            if (totalSum > short.MaxValue)
-                throw new OverflowException($"Сумма заказа ({totalSum}) превышает максимально допустимое значение");
-
             var order = new Order
             {
                 Status = StatusOrder.Pending,
-                Sum = (short)totalSum,
+                Sum = totalSum,
                 DateOfPurchase = DateTime.UtcNow,
                 CustomerId = user.Id
             };
@@ -116,10 +113,6 @@ namespace CifraShop.Application.Services.Implementations
         {
             if (orderToUpdate == null)
                 throw new ArgumentNullException(nameof(orderToUpdate));
-
-            var existing = await _repository.GetOrderById(orderToUpdate.Id);
-            if (existing == null)
-                throw new KeyNotFoundException($"Заказ с id {orderToUpdate.Id} не найден");
 
             await _repository.UpdateOrder(orderToUpdate);
         }
