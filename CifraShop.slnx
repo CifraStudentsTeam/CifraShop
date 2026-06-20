@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="CifraShop.API/CifraShop.API.csproj" />
+  <Project Path="CifraShop.Application/CifraShop.Application.csproj" />
+  <Project Path="CifraShop.Client/CifraShop.Client.csproj" />
+  <Project Path="CifraShop.Contracts/CifraShop.Contracts.csproj" />
+  <Project Path="CifraShop.Domain/CifraShop.Domain.csproj" />
+  <Project Path="CifraShop.Infrastructure/CifraShop.Infrastructure.csproj" />
+  <Project Path="CifraShop.Tests/CifraShop.Tests.csproj" />
+</Solution>

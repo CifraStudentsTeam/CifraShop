@@ -1,0 +1,19 @@
+﻿using CifraShop.Domain.Enums;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace CifraShop.Domain.Entities
+{
+    public class Order
+    {
+        public int Id { get; set; }
+        public StatusOrder Status { get; set; }
+        public short Sum { get; set; }
+        public DateTime DateOfPurchase { get; set; }
+        public string CustomerLogin { get; set; }
+        public int CustomerId { get; set; }
+        public User Customer { get; set; }
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    }
+}
