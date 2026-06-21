@@ -499,7 +499,7 @@ volumes:
         }
 
         // Проверяем: уже запущен?
-        var running = await RunCmdAsync("docker", "compose ps --format '{{.Status}}'");
+        var running = await RunCmdAsync("docker", "compose ps db --format '{{.Status}}'");
         if (running != null && running.Contains("Up"))
         {
             Ok("SQL Server уже запущен");
@@ -507,7 +507,7 @@ volumes:
         }
 
         // Контейнер есть, но остановлен — просто поднимаем
-        var allStatus = await RunCmdAsync("docker", "compose ps -a --format '{{.Status}}'");
+        var allStatus = await RunCmdAsync("docker", "compose ps -a db --format '{{.Status}}'");
         if (!string.IsNullOrWhiteSpace(allStatus) && allStatus.Trim().Length > 0)
         {
             Log("    Запуск существующего контейнера...");
