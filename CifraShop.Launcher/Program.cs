@@ -100,7 +100,7 @@ var rootDir = FindProjectRoot();
 if (rootDir == null)
 {
     Console.ForegroundColor = ConsoleColor.Red;
-    Console.WriteLine("  ✗ Не удалось найти корень проекта (CifraShop.slnx).");
+    Console.WriteLine("  [-] Не удалось найти корень проекта (CifraShop.slnx).");
     Console.WriteLine("    Убедитесь, что лаунчер запущен из папки решения.");
     Console.ResetColor();
     Console.ReadKey(true);
@@ -389,9 +389,9 @@ volumes:
         Console.WriteLine("└" + new string('─', W) + "┘");
         Console.ResetColor();
         Console.WriteLine();
-        var mode = _quickMode ? " •  ⚡ быстрый режим" : "";
-        if (_skipDocker) mode += " •  🐳 без Docker";
-        Log($"  {Path.GetFileName(_rootDir)}{mode}  •  {DateTime.Now:HH:mm:ss dd.MM.yyyy}");
+        var mode = _quickMode ? " * быстрый режим" : "";
+        if (_skipDocker) mode += " * без Docker";
+        Log($"  {Path.GetFileName(_rootDir)}{mode}  |  {DateTime.Now:HH:mm:ss dd.MM.yyyy}");
         Log($"  Флаги: --quick --skip-docker --port-api N --port-client N --status --version --reset");
         Console.WriteLine();
     }
@@ -949,8 +949,8 @@ volumes:
         for (int i = 0; i < timeoutSec * 2; i++)
         {
             await Task.Delay(500);
-            if (await CheckApiHealthAsync($"https://localhost:{_apiPort}/health")) return true;
-            if (await CheckApiHealthAsync($"http://localhost:{_apiPort}/health")) return true;
+            if (await CheckApiHealthAsync($"https://localhost:{_apiPort}/")) return true;
+            if (await CheckApiHealthAsync($"http://localhost:{_apiPort}/")) return true;
             if (i > 0 && i % 4 == 0)
                 await AnimateWait("    Проверка API", i, timeoutSec * 2);
         }
@@ -1048,7 +1048,7 @@ volumes:
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.WriteLine("┌" + new string('─', W) + "┐");
-        Console.WriteLine("│" + Center("🚀  ВСЁ ГОТОВО К РАБОТЕ  🚀") + "│");
+        Console.WriteLine("│" + Center("ВСЁ ГОТОВО К РАБОТЕ") + "│");
         Console.WriteLine("├" + new string('─', W) + "┤");
         Console.ResetColor();
 
@@ -1097,7 +1097,7 @@ volumes:
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.Write("│ ");
         Console.ForegroundColor = ok ? ConsoleColor.Green : ConsoleColor.Red;
-        Console.Write(ok ? "  ✓ " : "  ✗ ");
+        Console.Write(ok ? "  [+] " : "  [-] ");
         Console.ForegroundColor = ConsoleColor.White;
         Console.Write($"{name,-8}");
         Console.ForegroundColor = ConsoleColor.Gray;
@@ -1201,8 +1201,8 @@ volumes:
 
         // Краткий статус сервисов — сразу видно, что работает
         Console.ForegroundColor = ConsoleColor.DarkGray;
-        var apiStatus = _apiProcess is { HasExited: false } || _apiInDocker ? " ●" : " ○";
-        var clientStatus = _clientProcess is { HasExited: false } ? " ●" : " ○";
+        var apiStatus = _apiProcess is { HasExited: false } || _apiInDocker ? " [ON]" : " [OFF]";
+        var clientStatus = _clientProcess is { HasExited: false } ? " [ON]" : " [OFF]";
         Console.WriteLine($"    API: {_apiPort}{apiStatus}   Клиент: {_clientPort}{clientStatus}");
         Console.ResetColor();
         Console.WriteLine();
@@ -1647,10 +1647,10 @@ volumes:
         await Task.CompletedTask;
     }
 
-    private static void Ok(string msg)      { WriteColored("    ✓ ", ConsoleColor.Green, ConsoleColor.Gray, msg); }
-    private static void Created(string msg) { WriteColored("    ✦ ", ConsoleColor.DarkCyan, ConsoleColor.Gray, msg); }
-    private static void Warn(string msg)    { WriteColored("    ⚠ ", ConsoleColor.DarkYellow, ConsoleColor.Gray, msg); }
-    private static void Fail(string msg)    { WriteColored("    ✗ ", ConsoleColor.Red, ConsoleColor.Gray, msg); }
+    private static void Ok(string msg)      { WriteColored("    [+] ", ConsoleColor.Green, ConsoleColor.Gray, msg); }
+    private static void Created(string msg) { WriteColored("    [~] ", ConsoleColor.DarkCyan, ConsoleColor.Gray, msg); }
+    private static void Warn(string msg)    { WriteColored("    [!] ", ConsoleColor.DarkYellow, ConsoleColor.Gray, msg); }
+    private static void Fail(string msg)    { WriteColored("    [-] ", ConsoleColor.Red, ConsoleColor.Gray, msg); }
 
     private static void Log(string msg)
     {
@@ -1696,7 +1696,7 @@ volumes:
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.Write("│ ");
         Console.ForegroundColor = ok ? ConsoleColor.Green : ConsoleColor.Red;
-        Console.Write(ok ? " ● " : " ○ ");
+        Console.Write(ok ? " [ON] " : " [OFF] ");
         Console.ForegroundColor = ConsoleColor.White;
         Console.Write(name.PadRight(10));
         Console.ForegroundColor = ConsoleColor.Gray;

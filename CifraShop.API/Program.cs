@@ -61,8 +61,6 @@ app.UseStaticFiles();
 
 app.UseCors("ClientCORS");
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
-
 app.MapControllers();
 
 app.Run();
