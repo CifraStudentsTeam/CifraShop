@@ -46,13 +46,42 @@ Console.OutputEncoding = Encoding.UTF8;
 Console.InputEncoding = Encoding.UTF8;
 
 // ── Парсинг аргументов ──────────────────────────────────────────
-// Отделяем аргументы dotnet run (--project ...) от наших (--quick)
 var myArgs = args;
 var dashDashIdx = Array.IndexOf(args, "--");
 if (dashDashIdx >= 0 && dashDashIdx + 1 < args.Length)
     myArgs = args[(dashDashIdx + 1)..];
 
 var quickMode = myArgs.Contains("--quick", StringComparer.OrdinalIgnoreCase);
+var skipDocker = myArgs.Contains("--skip-docker", StringComparer.OrdinalIgnoreCase);
+var showStatus = myArgs.Contains("--status", StringComparer.OrdinalIgnoreCase);
+var showVersion = myArgs.Contains("--version", StringComparer.OrdinalIgnoreCase);
+var resetAll = myArgs.Contains("--reset", StringComparer.OrdinalIgnoreCase);
+var customApiPort = int.TryParse(GetArgValue(myArgs, "--port-api"), out var ap) ? ap : (int?)null;
+var customClientPort = int.TryParse(GetArgValue(myArgs, "--port-client"), out var cp) ? cp : (int?)null;
+
+if (showVersion)
+{
+    Console.WriteLine("CifraShop Launcher v1.0.0");
+    return;
+}
+
+if (showStatus)
+{
+    var statusRoot = FindProjectRoot();
+    if (statusRoot == null) { Console.WriteLine("Корень проекта не найден."); return; }
+    var statusLauncher = new ProjectLauncher(statusRoot, true);
+    await statusLauncher.ShowStatusAsync();
+    return;
+}
+
+if (resetAll)
+{
+    var resetRoot = FindProjectRoot();
+    if (resetRoot == null) { Console.WriteLine("Корень проекта не найден."); return; }
+    var resetLauncher = new ProjectLauncher(resetRoot, false);
+    await resetLauncher.ResetAsync();
+    return;
+}
 
 // ── Защита от двойного запуска ──────────────────────────────────
 // Именованный Mutex: если другой экземпляр лаунчера уже работает — выходим
@@ -78,16 +107,16 @@ if (rootDir == null)
     return;
 }
 
-var launcher = new ProjectLauncher(rootDir, quickMode);
+var launcher = new ProjectLauncher(rootDir, quickMode, skipDocker, customApiPort, customClientPort);
 
 // ── Обработка Ctrl+C: корректная остановка всех дочерних процессов ──
 Console.CancelKeyPress += (_, e) =>
 {
-    e.Cancel = true; // Предотвращаем немедленное завершение
+    e.Cancel = true;
     Console.ForegroundColor = ConsoleColor.Yellow;
     Console.WriteLine("\n  Завершение работы...");
     Console.ResetColor();
-    launcher.Cleanup();
+    launcher.Dispose();
     Environment.Exit(0);
 };
 
@@ -111,53 +140,47 @@ static string? FindProjectRoot()
     return null;
 }
 
+static string? GetArgValue(string[] args, string flag)
+{
+    var idx = Array.IndexOf(args, flag);
+    if (idx >= 0 && idx + 1 < args.Length) return args[idx + 1];
+    return null;
+}
+
 /// <summary>
 /// Главный класс лаунчера. Управляет всем жизненным циклом:
 /// проверка → конфигурация → БД → миграции → API → клиент → мониторинг.
 /// </summary>
-public class ProjectLauncher
+public class ProjectLauncher : IDisposable
 {
-    // ════════════════════════════════════════════════════════════════
-    // ПОЛЯ И КОНСТАНТЫ
-    // ════════════════════════════════════════════════════════════════
-
-    /// <summary>Корневая директория решения (содержит CifraShop.slnx)</summary>
     private readonly string _rootDir;
-
-    /// <summary>Быстрый режим: пропускает уже выполненные фазы (БД запущена, миграции применены)</summary>
     private readonly bool _quickMode;
+    private readonly bool _skipDocker;
+    private readonly int? _customApiPort;
+    private readonly int? _customClientPort;
 
-    /// <summary>
-    /// HTTP-клиент для health-check API.
-    /// Сертификаты НЕ проверяются — Docker-контейнер использует self-signed сертификат.
-    /// </summary>
     private readonly HttpClient _httpClient = new(
         new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true })
     { Timeout = TimeSpan.FromSeconds(5) };
 
-    // ── Процессы ──────────────────────────────────────────────────
-    private Process? _apiProcess;     // Локальный процесс API (null если API в Docker)
-    private Process? _clientProcess;  // Процесс Blazor-клиента
+    private Process? _apiProcess;
+    private Process? _clientProcess;
 
-    // ── Логи процессов ────────────────────────────────────────────
-    // Буферы хранят stdout/stderr каждого процесса.
-    // Потокобезопасны: доступ через lock.
     private readonly StringBuilder _apiLogBuffer = new();
     private readonly StringBuilder _clientLogBuffer = new();
     private readonly object _apiLogLock = new();
     private readonly object _clientLogLock = new();
-    private const int MaxLogBufferSize = 80_000; // Максимум символов в буфере (~80KB)
+    private const int MaxLogBufferSize = 80_000;
 
-    // ── Мониторинг и авто-рестарт ─────────────────────────────────
     private readonly ConcurrentDictionary<string, int> _restartCounts = new();
     private CancellationTokenSource? _monitorCts;
-    private const int MaxRestarts = 3; // Макс. авто-перезапусков подряд
+    private const int MaxRestarts = 3;
 
-    // ── Состояние ─────────────────────────────────────────────────
-    private bool _dockerAvailable = true;  // Docker доступен и запущен
-    private bool _apiInDocker = false;     // API работает в Docker-контейнере
-    private int _apiPort = 5000;           // Порт API (читается из launchSettings)
-    private int _clientPort = 5001;        // Порт клиента (читается из launchSettings)
+    private bool _dockerAvailable = true;
+    private bool _apiInDocker = false;
+    private int _apiPort = 5000;
+    private int _clientPort = 5001;
+    private string? _dockerComposeContent;
 
     /// <summary>
     /// Шаблон docker-compose.yml для автосоздания.
@@ -200,10 +223,13 @@ volumes:
     // ТОЧКА ВХОДА
     // ════════════════════════════════════════════════════════════════
 
-    public ProjectLauncher(string rootDir, bool quickMode = false)
+    public ProjectLauncher(string rootDir, bool quickMode = false, bool skipDocker = false, int? customApiPort = null, int? customClientPort = null)
     {
         _rootDir = rootDir;
         _quickMode = quickMode;
+        _skipDocker = skipDocker;
+        _customApiPort = customApiPort;
+        _customClientPort = customClientPort;
     }
 
     /// <summary>
@@ -216,6 +242,9 @@ volumes:
         Console.Clear();
         PrintBanner();
         ReadPortsFromConfig();
+        if (_customApiPort.HasValue) _apiPort = _customApiPort.Value;
+        if (_customClientPort.HasValue) _clientPort = _customClientPort.Value;
+        if (_skipDocker) _dockerAvailable = false;
         await RunPhaseAsync(1, "Проверка зависимостей", EnsurePrerequisitesAsync);
         await RunPhaseAsync(2, "Настройка конфигурации", EnsureConfigAsync);
 
@@ -236,10 +265,31 @@ volumes:
         await RunMenuAsync();
     }
 
-    /// <summary>
-    /// Публичный метод очистки: останавливает все дочерние процессы.
-    /// Вызывается из обработчика Ctrl+C и при завершении.
-    /// </summary>
+    public async Task ResetAsync()
+    {
+        Console.Clear();
+        PrintBanner();
+        Log("  Сброс всех данных...");
+        Console.WriteLine();
+
+        StopMonitoring();
+        StopProc(_apiProcess); _apiProcess = null;
+        StopProc(_clientProcess); _clientProcess = null;
+
+        if (_dockerAvailable)
+        {
+            Log("  Остановка Docker контейнеров...");
+            await RunDockerComposeAsync("down -v");
+            Log("  Очистка образов...");
+            await RunCmdAsync("docker", "image prune -f");
+            Ok("Docker ресурсы очищены");
+        }
+
+        Log("  Удаление .last-docker-build маркера...");
+        try { File.Delete(Path.Combine(_rootDir, ".last-docker-build")); } catch { }
+        Ok("Сброс завершён. Запустите лаунчер заново для полной инициализации.");
+    }
+
     public void Cleanup()
     {
         StopMonitoring();
@@ -247,10 +297,13 @@ volumes:
         StopProc(_clientProcess); _clientProcess = null;
     }
 
-    /// <summary>
-    /// Проверяет, применены ли миграции (БД доступна и таблица __EFMigrationsHistory существует).
-    /// Используется в быстром режиме для пропуска фазы миграций.
-    /// </summary>
+    public void Dispose()
+    {
+        Cleanup();
+        _httpClient?.Dispose();
+        _monitorCts?.Dispose();
+    }
+
     private static async Task<bool> IsDbReadyAsync()
     {
         try
@@ -295,6 +348,7 @@ volumes:
     /// <summary>
     /// Универсальный метод: извлекает первый порт из launchSettings.json.
     /// Работает с любым количеством профилей — берёт первый найденный localhost-порт.
+    /// Поддерживает applicationUrl как строку и как JSON-массив.
     /// </summary>
     private static int? ReadPortFromLaunchSettings(string path)
     {
@@ -305,8 +359,13 @@ volumes:
         {
             if (prop.Value.TryGetProperty("applicationUrl", out var url))
             {
-                var urlStr = url.GetString() ?? "";
-                if (urlStr.Contains("localhost"))
+                string? urlStr = null;
+                if (url.ValueKind == JsonValueKind.String)
+                    urlStr = url.GetString();
+                else if (url.ValueKind == JsonValueKind.Array)
+                    urlStr = url.EnumerateArray().FirstOrDefault().GetString();
+
+                if (urlStr != null && urlStr.Contains("localhost"))
                 {
                     var portStr = urlStr.Split(':').Last().TrimEnd('/');
                     if (int.TryParse(portStr, out var port) && port > 0)
@@ -331,7 +390,9 @@ volumes:
         Console.ResetColor();
         Console.WriteLine();
         var mode = _quickMode ? " •  ⚡ быстрый режим" : "";
-        Log($"  📁 {Path.GetFileName(_rootDir)}{mode}  •  {DateTime.Now:HH:mm:ss dd.MM.yyyy}");
+        if (_skipDocker) mode += " •  🐳 без Docker";
+        Log($"  {Path.GetFileName(_rootDir)}{mode}  •  {DateTime.Now:HH:mm:ss dd.MM.yyyy}");
+        Log($"  Флаги: --quick --skip-docker --port-api N --port-client N --status --version --reset");
         Console.WriteLine();
     }
 
@@ -435,6 +496,7 @@ volumes:
         if (!File.Exists(composePath))
         {
             await File.WriteAllTextAsync(composePath, DockerComposeContent);
+            _dockerComposeContent = DockerComposeContent;
             Created("docker-compose.yml создан из шаблона");
         }
         else
@@ -511,20 +573,21 @@ volumes:
         if (!string.IsNullOrWhiteSpace(allStatus) && allStatus.Trim().Length > 0)
         {
             Log("    Запуск существующего контейнера...");
-            await RunDockerComposeAsync("up -d db");
+            var startResult = await RunDockerComposeAsync("up -d db");
+            if (startResult == null) { Warn("Не удалось запустить контейнер SQL Server"); return; }
         }
         else
         {
-            // Контейнера нет — скачиваем образ и создаём
             Log("    Скачивание образа SQL Server...");
-            try { await RunDockerComposeAsync("pull db"); }
-            catch
+            var pullResult = await RunDockerComposeAsync("pull db");
+            if (pullResult == null)
             {
                 Warn("Не удалось скачать образ. Проверьте подключение к интернету.");
                 return;
             }
             Log("    Создание контейнера...");
-            await RunDockerComposeAsync("up -d db");
+            var createResult = await RunDockerComposeAsync("up -d db");
+            if (createResult == null) { Warn("Не удалось создать контейнер SQL Server"); return; }
         }
 
         // Ожидание готовности SQL Server (порт 1433)
@@ -563,7 +626,9 @@ volumes:
         if (efList != null && !efList.Contains("dotnet-ef"))
         {
             Log("    Установка dotnet-ef...");
-            await RunCmdAsync("dotnet", "tool install --global dotnet-ef --version 10.0.*");
+            var installResult = await RunCmdAsync("dotnet", "tool install --global dotnet-ef --version 10.0.*");
+            if (installResult == null)
+                Warn("Не удалось установить dotnet-ef. Миграции могут потребовать ручной установки.");
         }
 
         for (int attempt = 1; attempt <= 3; attempt++)
@@ -606,10 +671,12 @@ volumes:
                 if (addExitCode == 0)
                 {
                     Log("    Применение новой миграции...");
-                    await RunCmdAsync("dotnet",
+                    var (updateOutput, updateExitCode) = await RunCmdWithOutputAsync("dotnet",
                         $"ef database update --project \"{infraDir}\" --startup-project \"{apiDir}\"");
+                    if (updateExitCode == 0) { Ok("БД синхронизирована (авто-миграция)"); }
+                    else { Warn("Миграция создана, но применение не удалось:"); Log($"    {updateOutput}"); }
                 }
-                Ok("БД синхронизирована (авто-миграция)");
+                else { Warn("Не удалось создать миграцию:"); Log($"    {addOutput}"); }
                 return;
             }
 
@@ -638,7 +705,6 @@ volumes:
     {
         if (_dockerAvailable)
         {
-            _apiInDocker = true;
             Log("    Сборка Docker образа API...");
             var composePath = Path.Combine(_rootDir, "docker-compose.yml");
             var (buildOutput, buildExitCode) = await RunCmdWithOutputAsync("docker", $"compose -f \"{composePath}\" build api");
@@ -646,6 +712,7 @@ volumes:
             {
                 Ok("Docker образ собран");
                 UpdateDockerBuildTimestamp();
+                _apiInDocker = true;
                 Log("    Запуск API контейнера...");
                 await RunDockerComposeAsync("up -d api");
                 for (int i = 0; i < 40; i++)
@@ -882,8 +949,8 @@ volumes:
         for (int i = 0; i < timeoutSec * 2; i++)
         {
             await Task.Delay(500);
-            if (await CheckApiHealthAsync($"https://localhost:{_apiPort}/")) return true;
-            if (await CheckApiHealthAsync($"http://localhost:{_apiPort}/")) return true;
+            if (await CheckApiHealthAsync($"https://localhost:{_apiPort}/health")) return true;
+            if (await CheckApiHealthAsync($"http://localhost:{_apiPort}/health")) return true;
             if (i > 0 && i % 4 == 0)
                 await AnimateWait("    Проверка API", i, timeoutSec * 2);
         }
@@ -1092,6 +1159,10 @@ volumes:
                     Console.WriteLine("\n  До свидания!\n");
                     Console.ResetColor();
                     return;
+
+                default:
+                    Warn("Неизвестная команда. Используйте 0-9.");
+                    break;
             }
         }
     }
@@ -1187,6 +1258,7 @@ volumes:
 
         _restartCounts.TryRemove("api_docker", out _);
         Log("  Пересборка Docker образа API...");
+        _dockerComposeContent = null;
         await RunDockerComposeAsync("stop api");
         await KillPortAsync(_apiPort);
         var composePath = Path.Combine(_rootDir, "docker-compose.yml");
@@ -1300,7 +1372,7 @@ volumes:
         _restartCounts.Clear();
     }
 
-    private async Task ShowStatusAsync()
+    internal async Task ShowStatusAsync()
     {
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.DarkCyan;
@@ -1480,7 +1552,7 @@ volumes:
     /// <summary>
     /// Обёртка над RunCmdAsync для docker compose команд.
     /// Автоматически подставляет путь к docker-compose.yml (для работы из любой директории).
-    /// Перед запуском проверяет валидность YAML-файла (наличие ключа 'services').
+    /// Содержимое файла кешируется для избежания лишних чтений.
     /// </summary>
     private async Task<string?> RunDockerComposeAsync(string args)
     {
@@ -1491,9 +1563,8 @@ volumes:
             return null;
         }
 
-        // Быстрая проверка: файл должен содержать ключ 'services'
-        var content = File.ReadAllText(composePath);
-        if (!content.Contains("services:", StringComparison.OrdinalIgnoreCase))
+        _dockerComposeContent ??= File.ReadAllText(composePath);
+        if (!_dockerComposeContent.Contains("services:", StringComparison.OrdinalIgnoreCase))
         {
             Warn("docker-compose.yml не содержит секцию 'services'. Проверьте файл.");
             return null;
@@ -1510,31 +1581,44 @@ volumes:
     }
 
     /// <summary>
-    /// Принудительное освобождение порта: находит процесс по порту через netstat и убивает его.
-    /// После убийства ждёт до 2 сек пока порт освободится.
-    /// Работает только на Windows (netstat -ano). На других ОС — no-op.
+    /// Принудительное освобождение порта: находит процесс по порту и убивает его.
+    /// Windows: netstat -ano. Linux/Mac: lsof -ti:PORT.
     /// </summary>
     private static async Task KillPortAsync(int port)
     {
-        if (!OperatingSystem.IsWindows()) return;
         try
         {
-            var result = await RunCmdAsync("netstat", "-ano");
-            if (result == null) return;
-            foreach (var line in result.Split('\n'))
+            if (OperatingSystem.IsWindows())
             {
-                if (line.Contains($":{port}") && line.Contains("LISTENING"))
+                var result = await RunCmdAsync("netstat", "-ano");
+                if (result == null) return;
+                foreach (var line in result.Split('\n'))
                 {
-                    var parts = line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length > 0 && int.TryParse(parts[^1], out var pid))
+                    if (line.Contains($":{port}") && line.Contains("LISTENING"))
                     {
-                        try
+                        var parts = line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0 && int.TryParse(parts[^1], out var pid))
                         {
-                            var proc = Process.GetProcessById(pid);
-                            proc.Kill(entireProcessTree: true);
-                            proc.WaitForExit(2000);
+                            try
+                            {
+                                var proc = Process.GetProcessById(pid);
+                                proc.Kill(entireProcessTree: true);
+                                proc.WaitForExit(2000);
+                            }
+                            catch { }
                         }
-                        catch { }
+                    }
+                }
+            }
+            else
+            {
+                var result = await RunCmdAsync("lsof", $"-ti:{port}");
+                if (string.IsNullOrWhiteSpace(result)) return;
+                foreach (var pidStr in result.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (int.TryParse(pidStr.Trim(), out var pid))
+                    {
+                        try { Process.GetProcessById(pid).Kill(); } catch { }
                     }
                 }
             }
@@ -1626,12 +1710,32 @@ volumes:
         Console.ResetColor();
     }
 
+    /// <summary>
+    /// Центрирует строку в рамке шириной W. Учитывает emoji (2 позиции) через SymbolInfo.
+    /// </summary>
     private static string Center(string s)
     {
-        var pad = W - s.Length;
+        var displayWidth = GetDisplayWidth(s);
+        var pad = W - displayWidth;
         if (pad <= 0) return s;
         var left = pad / 2;
         return new string(' ', left) + s + new string(' ', pad - left);
+    }
+
+    /// <summary>Вычисляет отображаемую ширину строки с учётом emoji (2 позиции).</summary>
+    private static int GetDisplayWidth(string s)
+    {
+        int width = 0;
+        var enumerator = System.Globalization.StringInfo.GetTextElementEnumerator(s);
+        while (enumerator.MoveNext())
+        {
+            var element = enumerator.GetTextElement();
+            if (element.Length > 1 && char.IsHighSurrogate(element[0]))
+                width += 2; // emoji = 2 позиции
+            else
+                width += element.Length;
+        }
+        return width;
     }
 
     private static void PadLine(int width)
