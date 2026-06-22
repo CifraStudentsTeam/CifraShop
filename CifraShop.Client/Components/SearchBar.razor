@@ -24,14 +24,17 @@
 
     private string _lastValue = "";
 
+    protected override void OnParametersSet()
+    {
+        if (Value != _lastValue)
+            _lastValue = Value ?? "";
+    }
+
     private async Task OnInput(ChangeEventArgs e)
     {
         var val = e.Value?.ToString() ?? "";
-        if (val != _lastValue)
-        {
-            _lastValue = val;
-            await ValueChanged.InvokeAsync(val);
-        }
+        _lastValue = val;
+        await ValueChanged.InvokeAsync(val);
     }
 
     private async Task OnChange(ChangeEventArgs e)

@@ -85,5 +85,12 @@ namespace CifraShop.Application.Services.Implementations
                 throw new ArgumentException("Список id не может быть пустым");
             return _repository.DeleteRange(ids);
         }
+
+        public async Task UpdateStatusRange(List<int> ids, StatusProduct newStatus)
+        {
+            if (ids == null || ids.Count == 0)
+                throw new ArgumentException("Список id не может быть пустым");
+            await _repository.UpdateStatusRange(ids, newStatus);
+        }
     }
 }

@@ -2,6 +2,7 @@
 @using System.Net.Http.Json
 @implements IDisposable
 @inject HttpClient Http
+@inject NavigationManager Nav
 
 <PageTitle>Админ-панель — CifraShop</PageTitle>
 
@@ -10,7 +11,7 @@
     .editable-cell:hover { border-bottom-color: #0d6efd; }
 </style>
 
-<div class="container-fluid px-3 py-2">
+<div class="container-fluid px-3 py-2" @onkeydown="HandleKeyDown">
 
     <!-- УВЕДОМЛЕНИЕ (Toast) -->
     @if (!string.IsNullOrEmpty(_notification))
@@ -110,10 +111,16 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width:2.25rem">
-                                            <input type="checkbox" class="form-check-input"
-                                                   checked="@(IsAllProductsSelected)"
-                                                   indeterminate="@(IsProductPartialSelected)"
-                                                   @onchange="ToggleSelectAllProducts" />
+                                            <div class="d-flex align-items-center gap-1">
+                                                <input type="checkbox" class="form-check-input"
+                                                       checked="@(IsAllProductsSelected)"
+                                                       indeterminate="@(IsProductPartialSelected)"
+                                                       @onchange="ToggleSelectAllProducts" />
+                                                @if (Products.Any(p => p.IsSelected))
+                                                {
+                                                    <span class="badge bg-primary" style="font-size:0.6rem;">@Products.Count(p => p.IsSelected)</span>
+                                                }
+                                            </div>
                                         </th>
                                         <th style="cursor:pointer" @onclick="@(() => ToggleProductSort("name"))">
                                             Товар <i class="bi @SortIcon("name", _productSortField, _productSortAsc) small"></i>
@@ -139,19 +146,19 @@
                                                 <div class="d-flex align-items-center gap-2">
                                                     @if (!string.IsNullOrEmpty(p.ImageUrl))
                                                     {
-                                                        <img src="@p.ImageUrl" alt="@p.Name"
-                                                             style="width:2rem;height:2rem;object-fit:cover;border-radius:0.375rem;" />
+                                                             <img src="@p.ImageUrl" alt="@p.Name"
+                                                             class="rounded-1" style="width:2rem;height:2rem;object-fit:cover;" />
                                                     }
                                                     else
                                                     {
-                                                        <div class="bg-light rounded d-flex align-items-center justify-content-center"
-                                                             style="width:2rem;height:2rem;">
+                                                         <div class="bg-light rounded-1 d-flex align-items-center justify-content-center"
+                                                              style="width:2rem;height:2rem;">
                                                             <i class="bi bi-image text-secondary small"></i>
                                                         </div>
                                                     }
                                                     <div>
-                                                        <div class="fw-semibold text-truncate" style="max-width:10rem;">
-                                                            @p.Name
+                                                        <div class="fw-semibold text-truncate" style="max-width:10rem;" title="@p.Name">
+                                                            @((MarkupString)HighlightText(p.Name, _productSearch))
                                                             @if (isLowStock)
                                                             {
                                                                 <i class="bi bi-exclamation-triangle text-warning ms-1" title="Низкий остаток"></i>
@@ -159,7 +166,7 @@
                                                         </div>
                                                         @if (!string.IsNullOrEmpty(p.Description))
                                                         {
-                                                            <small class="text-secondary text-truncate d-block" style="max-width:10rem;">@p.Description</small>
+                                                            <small class="text-secondary text-truncate d-block" style="max-width:10rem;">@((MarkupString)HighlightText(p.Description, _productSearch))</small>
                                                         }
                                                     </div>
                                                 </div>
@@ -203,7 +210,7 @@
                                     }
                                 </small>
                                 <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                        value="@_pageSize" @onchange="OnPageSizeChanged">
+                                        value="@_productPageSize" @onchange="OnProductPageSizeChanged">
                                     <option value="5">5</option>
                                     <option value="8">8</option>
                                     <option value="16">16</option>
@@ -288,10 +295,16 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width:2.25rem">
-                                            <input type="checkbox" class="form-check-input"
-                                                   checked="@(IsAllOrdersSelected)"
-                                                   indeterminate="@(IsOrderPartialSelected)"
-                                                   @onchange="ToggleSelectAllOrders" />
+                                            <div class="d-flex align-items-center gap-1">
+                                                <input type="checkbox" class="form-check-input"
+                                                       checked="@(IsAllOrdersSelected)"
+                                                       indeterminate="@(IsOrderPartialSelected)"
+                                                       @onchange="ToggleSelectAllOrders" />
+                                                @if (Orders.Any(o => o.IsSelected))
+                                                {
+                                                    <span class="badge bg-primary" style="font-size:0.6rem;">@Orders.Count(o => o.IsSelected)</span>
+                                                }
+                                            </div>
                                         </th>
                                         <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("id"))">
                                             № <i class="bi @SortIcon("id", _orderSortField, _orderSortAsc) small"></i>
@@ -318,8 +331,8 @@
                                                 <input type="checkbox" class="form-check-input" @bind="o.IsSelected" />
                                             </td>
                                             <td class="fw-semibold">#@o.Id</td>
-                                            <td class="text-truncate" style="max-width:7.5rem;">@o.CustomerEmail</td>
-                                            <td><small class="text-truncate d-block" style="max-width:9rem;">@items</small></td>
+                                            <td class="text-truncate" style="max-width:7.5rem;" title="@o.CustomerEmail">@((MarkupString)HighlightText(o.CustomerEmail, _orderSearch))</td>
+                                            <td><small class="text-truncate d-block" style="max-width:9rem;" title="@items">@((MarkupString)HighlightText(items, _orderSearch))</small></td>
                                             <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
                                             <td>@o.Sum ₽</td>
                                             <td @onclick:stopPropagation="true">
@@ -335,7 +348,7 @@
                                         </tr>
                                         @if (isExpanded)
                                         {
-                                            <tr>
+                                        <tr>
                                                 <td colspan="7" class="bg-light p-3">
                                                     <div class="small">
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -381,7 +394,7 @@
                                     }
                                 </small>
                                 <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                        value="@_pageSize" @onchange="OnPageSizeChanged">
+                                        value="@_orderPageSize" @onchange="OnOrderPageSizeChanged">
                                     <option value="5">5</option>
                                     <option value="8">8</option>
                                     <option value="16">16</option>
@@ -458,7 +471,7 @@
                                     {
                                         <tr>
                                             <td class="text-secondary small">#@u.Id</td>
-                                            <td class="text-truncate" style="max-width:15rem;">@u.Email</td>
+                                            <td class="text-truncate" style="max-width:15rem;" title="@u.Email">@((MarkupString)HighlightText(u.Email, _userSearch))</td>
                                             <td>
                                                 <span class="px-1 rounded border-bottom border-secondary" style="cursor:pointer" @onclick="() => OpenEditUserModal(u)"
                                                       title="Нажмите для редактирования">
@@ -486,7 +499,7 @@
                             <div class="d-flex align-items-center gap-2">
                                 <small class="text-secondary">@_userTotalCount пользовател(ей)</small>
                                 <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                        value="@_pageSize" @onchange="OnPageSizeChanged">
+                                        value="@_userPageSize" @onchange="OnUserPageSizeChanged">
                                     <option value="5">5</option>
                                     <option value="8">8</option>
                                     <option value="16">16</option>
@@ -660,11 +673,11 @@
                         <div class="row g-3">
                             <div class="col-6">
                                 <label class="form-label small fw-medium">Цена (₽)</label>
-                                <input type="number" class="form-control" @bind="_formPrice" min="1" disabled="@_saving" />
+                                <input type="number" class="form-control" @bind="_formPrice" min="1" step="1" disabled="@_saving" />
                             </div>
                             <div class="col-6">
                                 <label class="form-label small fw-medium">Количество</label>
-                                <input type="number" class="form-control" @bind="_formQuantity" min="0" disabled="@_saving" />
+                                <input type="number" class="form-control" @bind="_formQuantity" min="0" step="1" disabled="@_saving" />
                             </div>
                         </div>
                         <div class="mt-3">
@@ -679,21 +692,27 @@
                                     @foreach (var img in _productImages)
                                     {
                                         <div class="position-relative" style="width:5rem;height:5rem;">
-                                            <img src="@img.Url" style="width:100%;height:100%;object-fit:cover;border-radius:0.375rem;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
+                                            <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
                                                  alt="Фото" />
-                                            <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1"
-                                                    style="background:rgba(0,0,0,.5);color:#fff;border-radius:50%;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                            <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
+                                                    style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
                                                     @onclick="() => DeleteProductImage(img)" title="Удалить">×</button>
                                             @if (!img.IsPrimary)
                                             {
-                                                <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1"
-                                                        style="background:rgba(13,110,253,.8);color:#fff;border-radius:50%;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                                <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
+                                                        style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
                                                         @onclick="() => SetPrimaryImage(img)" title="Сделать главной">★</button>
                                             }
                                         </div>
                                     }
                                 </div>
-                                <InputFile OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="form-control form-control-sm" />
+                                <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
+                                       style="cursor:pointer;" for="imageFileInput">
+                                    <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
+                                    <small class="text-secondary">Нажмите для выбора изображения</small>
+                                    <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
+                                </label>
+                                <InputFile id="imageFileInput" OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
                             </div>
                         }
                     </div>
@@ -988,13 +1007,13 @@
 
     private int _productTotalCount, _orderTotalCount, _userTotalCount;
     private int _productPage, _orderPage, _userPage;
-    private int _productTotalPages => Math.Max(1, (int)Math.Ceiling(_productTotalCount / (double)_pageSize));
-    private int _orderTotalPages => Math.Max(1, (int)Math.Ceiling(_orderTotalCount / (double)_pageSize));
-    private int _userTotalPages => Math.Max(1, (int)Math.Ceiling(_userTotalCount / (double)_pageSize));
+    private int _productTotalPages => Math.Max(1, (int)Math.Ceiling(_productTotalCount / (double)_productPageSize));
+    private int _orderTotalPages => Math.Max(1, (int)Math.Ceiling(_orderTotalCount / (double)_orderPageSize));
+    private int _userTotalPages => Math.Max(1, (int)Math.Ceiling(_userTotalCount / (double)_userPageSize));
 
     private DateTime? _lastUpdated;
     private int _totalRevenue;
-    private int _adminCount => Users.Count(u => u.Role == UserRole.Admin);
+    private int _adminCount;
     private int _lowStockCount;
     private string _lowStockSubtitle => _lowStockCount > 0 ? $"⚠ {_lowStockCount} с низким остатком" : "Все в наличии";
     private int _configuredFilials => _notificationSettings.Count(s => !string.IsNullOrEmpty(s.Email) || !string.IsNullOrEmpty(s.TelegramChatId));
@@ -1022,14 +1041,17 @@
     private bool _orderSortAsc = true;
     private string _userSortField = "";
     private bool _userSortAsc = true;
-    private int _pageSize = 8;
+    private int _productPageSize = 8;
+    private int _orderPageSize = 8;
+    private int _userPageSize = 8;
 
-    private CancellationTokenSource? _productSearchCts, _orderSearchCts, _userSearchCts;
+    private CancellationTokenSource? _productSearchCts, _orderSearchCts, _userSearchCts, _notificationCts;
 
     private async Task OnProductSearchChanged(string value)
     {
         _productSearch = value;
         _productPage = 0;
+        UpdateUrlFilters();
         _productSearchCts?.Cancel();
         _productSearchCts?.Dispose();
         _productSearchCts = new CancellationTokenSource();
@@ -1041,6 +1063,7 @@
     {
         _productFilter = value;
         _productPage = 0;
+        UpdateUrlFilters();
         await LoadProducts();
     }
 
@@ -1048,6 +1071,7 @@
     {
         _orderSearch = value;
         _orderPage = 0;
+        UpdateUrlFilters();
         _orderSearchCts?.Cancel();
         _orderSearchCts?.Dispose();
         _orderSearchCts = new CancellationTokenSource();
@@ -1059,6 +1083,7 @@
     {
         _orderFilter = value;
         _orderPage = 0;
+        UpdateUrlFilters();
         await LoadOrders();
     }
 
@@ -1066,6 +1091,7 @@
     {
         _orderDateFrom = e.Value?.ToString() ?? "";
         _orderPage = 0;
+        UpdateUrlFilters();
         await LoadOrders();
     }
 
@@ -1073,6 +1099,7 @@
     {
         _orderDateTo = e.Value?.ToString() ?? "";
         _orderPage = 0;
+        UpdateUrlFilters();
         await LoadOrders();
     }
 
@@ -1080,6 +1107,7 @@
     {
         _userSearch = value;
         _userPage = 0;
+        UpdateUrlFilters();
         _userSearchCts?.Cancel();
         _userSearchCts?.Dispose();
         _userSearchCts = new CancellationTokenSource();
@@ -1091,6 +1119,7 @@
     {
         _userFilter = value;
         _userPage = 0;
+        UpdateUrlFilters();
         await LoadUsers();
     }
 
@@ -1143,16 +1172,20 @@
     private string SortIcon(string field, string sortField, bool sortAsc) =>
         field == sortField ? (sortAsc ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up";
 
-    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    private async Task OnProductPageSizeChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out int size) && size > 0)
-        {
-            _pageSize = size;
-            _productPage = 0;
-            _orderPage = 0;
-            _userPage = 0;
-            await LoadAllData();
-        }
+        { _productPageSize = size; _productPage = 0; await LoadProducts(); }
+    }
+    private async Task OnOrderPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int size) && size > 0)
+        { _orderPageSize = size; _orderPage = 0; await LoadOrders(); }
+    }
+    private async Task OnUserPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int size) && size > 0)
+        { _userPageSize = size; _userPage = 0; await LoadUsers(); }
     }
 
     private bool IsAllProductsSelected => Products.Any() && Products.All(p => p.IsSelected);
@@ -1187,6 +1220,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        RestoreFiltersFromUrl();
         await LoadAllData();
         await LoadHistory();
         _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(30));
@@ -1197,22 +1231,23 @@
     {
         while (_refreshTimer is not null && await _refreshTimer.WaitForNextTickAsync())
         {
-            await LoadAllData();
-            await InvokeAsync(StateHasChanged);
+            try { await LoadAllData(); await InvokeAsync(StateHasChanged); }
+            catch { }
         }
     }
 
     public void Dispose()
     {
         _refreshTimer?.Dispose();
-        _productSearchCts?.Dispose();
-        _orderSearchCts?.Dispose();
-        _userSearchCts?.Dispose();
+        _productSearchCts?.Cancel(); _productSearchCts?.Dispose();
+        _orderSearchCts?.Cancel(); _orderSearchCts?.Dispose();
+        _userSearchCts?.Cancel(); _userSearchCts?.Dispose();
+        _notificationCts?.Cancel(); _notificationCts?.Dispose();
     }
 
     private async Task LoadAllData()
     {
-        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers(), LoadNotificationSettings(), LoadMetrics());
+        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers(), LoadNotificationSettings(), LoadMetrics(), LoadUsersMetrics());
         _lastUpdated = DateTime.Now;
     }
 
@@ -1229,12 +1264,22 @@
         catch { }
     }
 
+    private async Task LoadUsersMetrics()
+    {
+        try
+        {
+            await LoadAllUsers();
+            _adminCount = _allUsersCache.Count(u => u.Role == UserRole.Admin);
+        }
+        catch { }
+    }
+
     private async Task LoadProducts()
     {
         try
         {
             _loadingProducts = Products.Count == 0;
-            var url = $"api/Product/paged?page={_productPage}&pageSize={_pageSize}";
+            var url = $"api/Product/paged?page={_productPage}&pageSize={_productPageSize}";
             if (!string.IsNullOrEmpty(_productSearch)) url += $"&search={Uri.EscapeDataString(_productSearch)}";
             if (!string.IsNullOrEmpty(_productFilter)) url += $"&status={_productFilter}";
             var r = await Http.GetFromJsonAsync<PagedProductResponse>(url);
@@ -1248,8 +1293,9 @@
     {
         try
         {
+            _expandedOrderId = null;
             _loadingOrders = Orders.Count == 0;
-            var url = $"api/Order/paged?page={_orderPage}&pageSize={_pageSize}";
+            var url = $"api/Order/paged?page={_orderPage}&pageSize={_orderPageSize}";
             if (!string.IsNullOrEmpty(_orderSearch)) url += $"&search={Uri.EscapeDataString(_orderSearch)}";
             if (!string.IsNullOrEmpty(_orderFilter)) url += $"&status={_orderFilter}";
             if (!string.IsNullOrEmpty(_orderDateFrom)) url += $"&dateFrom={_orderDateFrom}";
@@ -1266,7 +1312,7 @@
         try
         {
             _loadingUsers = Users.Count == 0;
-            var url = $"api/User/paged?page={_userPage}&pageSize={_pageSize}";
+            var url = $"api/User/paged?page={_userPage}&pageSize={_userPageSize}";
             if (!string.IsNullOrEmpty(_userSearch)) url += $"&search={Uri.EscapeDataString(_userSearch)}";
             if (!string.IsNullOrEmpty(_userFilter)) url += $"&role={_userFilter}";
             var r = await Http.GetFromJsonAsync<PagedUserResponse>(url);
@@ -1316,11 +1362,13 @@
     private void OnHistoryTypeFilterChanged(ChangeEventArgs e)
     {
         _historyTypeFilter = e.Value?.ToString() ?? "";
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnHistoryBranchFilterChanged(ChangeEventArgs e)
     {
         _historyBranchFilter = e.Value?.ToString() ?? "";
+        InvokeAsync(StateHasChanged);
     }
 
     private IEnumerable<AdminActionDto> _filteredHistory
@@ -1350,8 +1398,16 @@
 
     private void ShowNotification(string message, string type = "success")
     {
+        _notificationCts?.Cancel();
+        _notificationCts?.Dispose();
         _notification = message; _notificationType = type;
-        _ = Task.Delay(4000).ContinueWith(_ => { if (_notification == message) _notification = null; InvokeAsync(StateHasChanged); });
+        _notificationCts = new CancellationTokenSource();
+        var token = _notificationCts.Token;
+        _ = Task.Delay(4000, token).ContinueWith(_ =>
+        {
+            if (!token.IsCancellationRequested && _notification == message)
+            { _notification = null; InvokeAsync(StateHasChanged); }
+        }, token);
     }
 
     private void ShowConfirm(string message, Func<Task> action, string buttonText = "Удалить")
@@ -1379,6 +1435,47 @@
             _productImages = await Http.GetFromJsonAsync<List<ProductImageDto>>($"api/ProductImage/by-product?productId={productId}") ?? new();
         }
         catch { _productImages = new(); }
+    }
+
+    private void RestoreFiltersFromUrl()
+    {
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        _productSearch = query["ps"] ?? "";
+        _productFilter = query["pf"] ?? "";
+        _orderSearch = query["os"] ?? "";
+        _orderFilter = query["of"] ?? "";
+        _orderDateFrom = query["odf"] ?? "";
+        _orderDateTo = query["odt"] ?? "";
+        _userSearch = query["us"] ?? "";
+        _userFilter = query["uf"] ?? "";
+    }
+
+    private void UpdateUrlFilters()
+    {
+        var query = new Dictionary<string, string?>();
+        if (!string.IsNullOrEmpty(_productSearch)) query["ps"] = _productSearch;
+        if (!string.IsNullOrEmpty(_productFilter)) query["pf"] = _productFilter;
+        if (!string.IsNullOrEmpty(_orderSearch)) query["os"] = _orderSearch;
+        if (!string.IsNullOrEmpty(_orderFilter)) query["of"] = _orderFilter;
+        if (!string.IsNullOrEmpty(_orderDateFrom)) query["odf"] = _orderDateFrom;
+        if (!string.IsNullOrEmpty(_orderDateTo)) query["odt"] = _orderDateTo;
+        if (!string.IsNullOrEmpty(_userSearch)) query["us"] = _userSearch;
+        if (!string.IsNullOrEmpty(_userFilter)) query["uf"] = _userFilter;
+        var qs = string.Join("&", query.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value ?? "")}"));
+        var baseUri = Nav.Uri.Split('?')[0];
+        Nav.NavigateTo(string.IsNullOrEmpty(qs) ? baseUri : $"{baseUri}?{qs}", forceLoad: false, replace: true);
+    }
+
+    private string HighlightText(string text, string searchTerm)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(searchTerm))
+            return System.Net.WebUtility.HtmlEncode(text ?? "");
+        var encoded = System.Net.WebUtility.HtmlEncode(text);
+        var encodedSearch = System.Net.WebUtility.HtmlEncode(searchTerm);
+        var idx = encoded.IndexOf(encodedSearch, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return encoded;
+        return encoded[..idx] + "<strong class=\"text-decoration-underline\">" + encoded[idx..(idx + encodedSearch.Length)] + "</strong>" + encoded[(idx + encodedSearch.Length)..];
     }
 
     private async Task OnImageUpload(InputFileChangeEventArgs e)
@@ -1450,24 +1547,26 @@
 
     private class UploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
 
-    private void CloseProductModal() => _showProductModal = false;
+    private void CloseProductModal() { _showProductModal = false; _saving = false; }
 
     private async Task SaveProduct()
     {
         _saving = true;
         try
         {
-            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity };
+            if (_formPrice < 1) { ShowNotification("Цена должна быть не менее 1 ₽", "warning"); return; }
+            if (_formQuantity < 0) { ShowNotification("Количество не может быть отрицательным", "warning"); return; }
+            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity, ImageUrl = _formImageUrl };
             if (_editingProduct == null)
             {
                 var r = await Http.PostAsJsonAsync("api/Product/create-product", body);
                 if (r.IsSuccessStatusCode)
                 {
-                    var c = await r.Content.ReadFromJsonAsync<ProductDto>();
-                    if (c != null) Products.Add(c);
                     await LogAction("Создание", $"Товар «{_formName}»");
                     ShowNotification("Товар создан");
                     CloseProductModal();
+                    _productPage = 0;
+                    await LoadProducts();
                 }
                 else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
             }
@@ -1520,6 +1619,7 @@
         };
         var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = (int)newStatus });
         if (r.IsSuccessStatusCode) { product.Status = newStatus; await LogAction("Изменение", $"«{product.Name}»: {StatusText(newStatus)}"); ShowNotification($"«{product.Name}»: {StatusText(newStatus)}"); }
+        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
     }
 
     private void DeleteProduct(ProductDto product)
@@ -1527,7 +1627,7 @@
         ShowConfirm($"Удалить «{product.Name}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/Product/delete-product?id={product.Id}");
-            if (r.IsSuccessStatusCode) { Products.Remove(product); _productTotalCount--; await LogAction("Удаление", $"Товар «{product.Name}»"); ShowNotification("Товар удалён"); StateHasChanged(); }
+            if (r.IsSuccessStatusCode) { Products.Remove(product); await LogAction("Удаление", $"Товар «{product.Name}»"); ShowNotification("Товар удалён"); await LoadProducts(); StateHasChanged(); }
         });
     }
 
@@ -1540,10 +1640,9 @@
             var r = await Http.PostAsJsonAsync("api/Product/batch-delete", new { ProductIds = ids });
             if (r.IsSuccessStatusCode)
             {
-                foreach (var p in sel.ToList()) Products.Remove(p);
-                _productTotalCount -= sel.Count;
                 await LogAction("Удаление", $"{sel.Count} товар(ов)");
                 ShowNotification($"Удалено: {sel.Count} товар(ов)");
+                await LoadProducts();
                 StateHasChanged();
             }
         });
@@ -1555,13 +1654,16 @@
     private async Task SetSelectedProductStatus(StatusProduct status)
     {
         var sel = Products.Where(p => p.IsSelected).ToList();
-        foreach (var product in sel)
+        if (!sel.Any()) { ShowNotification("Выберите товары для изменения", "warning"); return; }
+        var ids = sel.Select(p => p.Id).ToList();
+        var r = await Http.PostAsJsonAsync("api/Product/batch-update-status", new { ProductIds = ids, NewStatus = (int)status });
+        if (r.IsSuccessStatusCode)
         {
-            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = (int)status });
-            if (r.IsSuccessStatusCode) product.Status = status;
+            foreach (var p in sel) p.Status = status;
+            await LogAction("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}");
+            ShowNotification($"Обновлено: {sel.Count} товар(ов)");
         }
-        await LogAction("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}");
-        ShowNotification($"Обновлено: {sel.Count} товар(ов)");
+        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
         StateHasChanged();
     }
 
@@ -1574,16 +1676,22 @@
             await LogAction("Изменение", $"Заказ #{order.Id}: статус = {OrderStatuses[((int)newStatus).ToString()]}");
             ShowNotification($"Заказ #{order.Id}: статус изменён");
         }
+        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
     }
 
     private async Task MassChangeOrderStatus(StatusOrder newStatus)
     {
         var sel = Orders.Where(o => o.IsSelected).ToList();
+        if (!sel.Any()) { ShowNotification("Выберите заказы для изменения", "warning"); return; }
         var ids = sel.Select(o => o.Id).ToList();
         var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = (int)newStatus });
-        if (r.IsSuccessStatusCode) foreach (var o in sel) o.Status = newStatus;
-        await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[((int)newStatus).ToString()]}");
-        ShowNotification($"Обновлено: {sel.Count} заказ(ов)");
+        if (r.IsSuccessStatusCode)
+        {
+            foreach (var o in sel) o.Status = newStatus;
+            await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[((int)newStatus).ToString()]}");
+            ShowNotification($"Обновлено: {sel.Count} заказ(ов)");
+        }
+        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
         StateHasChanged();
     }
 
@@ -1622,13 +1730,12 @@
             var r = await Http.PostAsJsonAsync(url, body);
             if (r.IsSuccessStatusCode)
             {
-                var user = await r.Content.ReadFromJsonAsync<UserDto>();
-                if (user != null) Users.Add(user);
-                _userTotalCount++;
                 await LogAction("Создание", $"Пользователь «{_newUserEmail}» ({_newUserRole})");
                 ShowNotification("Пользователь создан");
                 _showUserModal = false;
                 _newUserEmail = ""; _newUserPassword = ""; _newUserRole = "Student";
+                _userPage = 0;
+                await LoadUsers();
                 StateHasChanged();
             }
             else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
@@ -1670,7 +1777,7 @@
         ShowConfirm($"Удалить «{user.Email}»?", async () =>
         {
             var r = await Http.DeleteAsync($"api/User?id={user.Id}");
-            if (r.IsSuccessStatusCode) { Users.Remove(user); _userTotalCount--; await LogAction("Удаление", $"Пользователь «{user.Email}»"); ShowNotification($"Пользователь «{user.Email}» удалён"); StateHasChanged(); }
+            if (r.IsSuccessStatusCode) { await LogAction("Удаление", $"Пользователь «{user.Email}»"); ShowNotification($"Пользователь «{user.Email}» удалён"); await LoadUsers(); StateHasChanged(); }
         });
     }
 
@@ -1784,6 +1891,19 @@
     };
     private static string ActionBadge(string t) => t switch { "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary" };
     private static string ActionColor(string t) => t switch { "Создание" => "#198754", "Удаление" => "#dc3545", "Изменение" => "#0d6efd", _ => "#6c757d" };
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            if (_showConfirmModal) CancelConfirm();
+            else if (_showProductModal) CloseProductModal();
+            else if (_showUserModal) _showUserModal = false;
+            else if (_showEditUserModal) _showEditUserModal = false;
+            else if (_showOrderModal) _showOrderModal = false;
+            else if (_showNotificationModal) _showNotificationModal = false;
+        }
+    }
     private static string OrderBadge(StatusOrder s) => s switch
     {
         StatusOrder.Pending => "bg-secondary",

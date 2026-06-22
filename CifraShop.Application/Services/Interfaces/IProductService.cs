@@ -17,5 +17,6 @@ namespace CifraShop.Application.Services.Interfaces
         Task UpdateProduct(Product productToUpdate);
         Task DeleteProduct(Product productToDelete);
         Task DeleteRange(List<int> ids);
+        Task UpdateStatusRange(List<int> ids, StatusProduct newStatus);
     }
 }

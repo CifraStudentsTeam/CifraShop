@@ -140,5 +140,15 @@ namespace CifraShop.API.Controllers
             await _productService.DeleteRange(existingIds);
             return Ok(new { deleted = existingIds.Count, notFound = request.ProductIds.Count - existingIds.Count });
         }
+
+        [HttpPost("batch-update-status")]
+        public async Task<IActionResult> BatchUpdateStatus([FromBody] BatchUpdateProductStatusRequest request)
+        {
+            if (request.ProductIds == null || !request.ProductIds.Any())
+                return BadRequest("Список id пуст");
+
+            await _productService.UpdateStatusRange(request.ProductIds, request.NewStatus);
+            return Ok(new { updated = request.ProductIds.Count });
+        }
     }
 }

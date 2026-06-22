@@ -569,24 +569,41 @@ volumes:
         for (int attempt = 1; attempt <= 3; attempt++)
         {
             Log($"    Применение миграций (попытка {attempt}/3)...");
-            var result = await RunCmdAsync("dotnet",
+            var (output, exitCode) = await RunCmdWithOutputAsync("dotnet",
                 $"ef database update --project \"{infraDir}\" --startup-project \"{apiDir}\"");
 
-            if (result == null)
+            if (exitCode != 0)
             {
+                var result = output ?? "";
+                if (result.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
+                    result.Contains("connect", StringComparison.OrdinalIgnoreCase) ||
+                    result.Contains("timeout", StringComparison.OrdinalIgnoreCase))
+                {
+                    Warn($"    SQL Server ещё не готов (попытка {attempt}/3)...");
+                    if (attempt < 3) await Task.Delay(5000);
+                    continue;
+                }
+
                 if (attempt < 3) { Warn($"    Попытка {attempt} не удалась, повтор через 5 сек..."); await Task.Delay(5000); continue; }
-                Warn("Не удалось применить миграции после 3 попыток.");
+                Warn("Не удалось применить миграции:");
+                if (!string.IsNullOrWhiteSpace(result))
+                    foreach (var line in result.Split('\n'))
+                        if (line.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                            line.Contains("Error"))
+                            Log($"    {line.Trim()}");
                 return;
             }
 
-            if (result.Contains("Done")) { Ok("БД обновлена"); return; }
+            var resultText = output ?? "";
 
-            if (result.Contains("PendingModelChanges"))
+            if (resultText.Contains("Done")) { Ok("БД обновлена"); return; }
+
+            if (resultText.Contains("PendingModelChanges"))
             {
                 Log("    Есть несохранённые изменения модели. Создаю миграцию...");
-                var addResult = await RunCmdAsync("dotnet",
+                var (addOutput, addExitCode) = await RunCmdWithOutputAsync("dotnet",
                     $"ef migrations add AutoSync --project \"{infraDir}\" --startup-project \"{apiDir}\"");
-                if (addResult != null)
+                if (addExitCode == 0)
                 {
                     Log("    Применение новой миграции...");
                     await RunCmdAsync("dotnet",
@@ -596,21 +613,13 @@ volumes:
                 return;
             }
 
-            if (result.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
-                result.Contains("connect", StringComparison.OrdinalIgnoreCase) ||
-                result.Contains("timeout", StringComparison.OrdinalIgnoreCase))
-            {
-                Warn($"    SQL Server ещё не готов (попытка {attempt}/3)...");
-                if (attempt < 3) await Task.Delay(5000);
-                continue;
-            }
-
-            // Другая ошибка — показываем и выходим
+            // Неожиданный вывод при успешном exit code — показываем и выходим
             Warn("Не удалось применить миграции:");
-            foreach (var line in result.Split('\n'))
-                if (line.Contains("error", StringComparison.OrdinalIgnoreCase) ||
-                    line.Contains("Error"))
-                    Log($"    {line.Trim()}");
+            if (!string.IsNullOrWhiteSpace(resultText))
+                foreach (var line in resultText.Split('\n'))
+                    if (line.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                        line.Contains("Error"))
+                        Log($"    {line.Trim()}");
             return;
         }
     }
@@ -631,8 +640,9 @@ volumes:
         {
             _apiInDocker = true;
             Log("    Сборка Docker образа API...");
-            var buildResult = await RunDockerComposeAsync("build api");
-            if (buildResult != null && !buildResult.Contains("error", StringComparison.OrdinalIgnoreCase))
+            var composePath = Path.Combine(_rootDir, "docker-compose.yml");
+            var (buildOutput, buildExitCode) = await RunCmdWithOutputAsync("docker", $"compose -f \"{composePath}\" build api");
+            if (buildExitCode == 0)
             {
                 Ok("Docker образ собран");
                 UpdateDockerBuildTimestamp();
@@ -1026,10 +1036,7 @@ volumes:
         Console.ForegroundColor = ConsoleColor.Gray;
         Console.Write(detail);
         Console.ResetColor();
-        PadLine(W - 2 - 4 - 8 - detail.Length);
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("│");
-        Console.ResetColor();
+        PadLine(W - 1 - 4 - 8 - detail.Length);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -1182,8 +1189,9 @@ volumes:
         Log("  Пересборка Docker образа API...");
         await RunDockerComposeAsync("stop api");
         await KillPortAsync(_apiPort);
-        var buildResult = await RunDockerComposeAsync("build api");
-        if (buildResult != null && !buildResult.Contains("error", StringComparison.OrdinalIgnoreCase))
+        var composePath = Path.Combine(_rootDir, "docker-compose.yml");
+        var (_, buildExitCode) = await RunCmdWithOutputAsync("docker", $"compose -f \"{composePath}\" build api");
+        if (buildExitCode == 0)
         {
             Ok("Образ пересобран");
             UpdateDockerBuildTimestamp();
@@ -1408,8 +1416,9 @@ volumes:
 
     /// <summary>
     /// Универсальный запуск внешней команды. Перенаправляет stdout+stderr.
-    /// Возвращает stdout при успехе (exit code 0), или stdout+stderr при ошибке.
-    /// Возвращает null при исключении (команда не найдена и т.д.).
+    /// Возвращает stdout при успехе (exit code 0).
+    /// Возвращает null при ошибке (non-zero exit code) или исключении (команда не найдена и т.д.).
+    /// Потоки stdout/stderr читаются параллельно во избежание deadlock.
     /// </summary>
     private static async Task<string?> RunCmdAsync(string cmd, string args)
     {
@@ -1427,12 +1436,45 @@ volumes:
                 }
             };
             p.Start();
-            var output = await p.StandardOutput.ReadToEndAsync();
-            var error = await p.StandardError.ReadToEndAsync();
+            var outputTask = p.StandardOutput.ReadToEndAsync();
+            var errorTask = p.StandardError.ReadToEndAsync();
             await p.WaitForExitAsync();
-            return p.ExitCode == 0 ? output : output + "\n" + error;
+            var output = await outputTask;
+            var error = await errorTask;
+            return p.ExitCode == 0 ? output : null;
         }
         catch { return null; }
+    }
+
+    /// <summary>
+    /// Запуск внешней команды с возвратом stdout+stderr независимо от кода возврата.
+    /// Используется когда нужен вывод ошибок (docker build, dotnet ef и т.д.).
+    /// Потоки stdout/stderr читаются параллельно во избежание deadlock.
+    /// </summary>
+    private static async Task<(string? Output, int ExitCode)> RunCmdWithOutputAsync(string cmd, string args)
+    {
+        try
+        {
+            using var p = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = cmd, Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            p.Start();
+            var outputTask = p.StandardOutput.ReadToEndAsync();
+            var errorTask = p.StandardError.ReadToEndAsync();
+            await p.WaitForExitAsync();
+            var output = await outputTask;
+            var error = await errorTask;
+            return (output + "\n" + error, p.ExitCode);
+        }
+        catch { return (null, -1); }
     }
 
     /// <summary>
@@ -1469,6 +1511,7 @@ volumes:
 
     /// <summary>
     /// Принудительное освобождение порта: находит процесс по порту через netstat и убивает его.
+    /// После убийства ждёт до 2 сек пока порт освободится.
     /// Работает только на Windows (netstat -ano). На других ОС — no-op.
     /// </summary>
     private static async Task KillPortAsync(int port)
@@ -1485,7 +1528,13 @@ volumes:
                     var parts = line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length > 0 && int.TryParse(parts[^1], out var pid))
                     {
-                        try { Process.GetProcessById(pid).Kill(); } catch { }
+                        try
+                        {
+                            var proc = Process.GetProcessById(pid);
+                            proc.Kill(entireProcessTree: true);
+                            proc.WaitForExit(2000);
+                        }
+                        catch { }
                     }
                 }
             }

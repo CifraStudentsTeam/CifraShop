@@ -68,5 +68,11 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             var products = _context.Products.Where(p => ids.Contains(p.Id));
             await products.ExecuteDeleteAsync();
         }
+
+        public async Task UpdateStatusRange(List<int> ids, StatusProduct newStatus)
+        {
+            var products = _context.Products.Where(p => ids.Contains(p.Id));
+            await products.ExecuteUpdateAsync(s => s.SetProperty(p => p.Status, newStatus));
+        }
     }
 }
