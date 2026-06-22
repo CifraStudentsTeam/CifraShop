@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════════════════════
 // CifraShop Launcher — Консольный лаунчер для автоматизации запуска проекта
 // ══════════════════════════════════════════════════════════════════════════════
 //
@@ -89,7 +89,7 @@ using var mutex = new Mutex(false, "CifraShop_Launcher_SingleInstance");
 if (!mutex.WaitOne(0))
 {
     Console.ForegroundColor = ConsoleColor.Yellow;
-    Console.WriteLine("  ⚠ CifraShop Launcher уже запущен.");
+    Console.WriteLine("  [!] CifraShop Launcher уже запущен.");
     Console.WriteLine("    Закройте предыдущий экземпляр или подождите его завершения.");
     Console.ResetColor();
     Console.ReadKey(true);
@@ -367,9 +367,14 @@ volumes:
 
                 if (urlStr != null && urlStr.Contains("localhost"))
                 {
-                    var portStr = urlStr.Split(':').Last().TrimEnd('/');
-                    if (int.TryParse(portStr, out var port) && port > 0)
-                        return port;
+                    // Поддержка IPv4 и IPv6 форматов: http://localhost:5000, http://[::1]:5000
+                    var lastColon = urlStr.LastIndexOf(':');
+                    if (lastColon > 0)
+                    {
+                        var portStr = urlStr[(lastColon + 1)..].TrimEnd('/');
+                        if (int.TryParse(portStr, out var port) && port > 0)
+                            return port;
+                    }
                 }
             }
         }
@@ -479,6 +484,56 @@ volumes:
             Ok($"Docker Compose {compose.Trim()}");
         else
             Warn("docker compose недоступен (попробуйте 'docker-compose')");
+    }
+
+    /// <summary>
+    /// Пытается запустить Docker Desktop автоматически.
+    /// Работает на Windows (по реестру или стандартному пути) и Mac (open -a Docker).
+    /// Если не удалось — не критично, лаунчер продолжит ожидание.
+    /// </summary>
+    private static async Task TryStartDockerDesktop()
+    {
+        try
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                // Попытка 1: реестр
+                var regPath = Microsoft.Win32.Registry.GetValue(
+                    @"HKEY_LOCAL_MACHINE\SOFTWARE\Docker Inc.\Docker", "BinPath", "") as string;
+                if (!string.IsNullOrEmpty(regPath))
+                {
+                    var exe = Path.Combine(regPath, "Docker Desktop.exe");
+                    if (File.Exists(exe))
+                    {
+                        Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+                        return;
+                    }
+                }
+
+                // Попытка 2: стандартный путь
+                var defaultPaths = new[]
+                {
+                    @"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+                    @"C:\Program Files (x86)\Docker\Docker\Docker Desktop.exe"
+                };
+                foreach (var p in defaultPaths)
+                {
+                    if (File.Exists(p))
+                    {
+                        Process.Start(new ProcessStartInfo(p) { UseShellExecute = true });
+                        return;
+                    }
+                }
+
+                // Попытка 3: PATH
+                await RunCmdAsync("cmd", "/c start Docker Desktop");
+            }
+            else if (OperatingSystem.IsMacOS())
+            {
+                await RunCmdAsync("open", "-a Docker");
+            }
+        }
+        catch { /* не критично */ }
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -1492,7 +1547,7 @@ volumes:
     /// Возвращает null при ошибке (non-zero exit code) или исключении (команда не найдена и т.д.).
     /// Потоки stdout/stderr читаются параллельно во избежание deadlock.
     /// </summary>
-    private static async Task<string?> RunCmdAsync(string cmd, string args)
+    private static async Task<string?> RunCmdAsync(string cmd, string args, int timeoutMs = 60_000)
     {
         try
         {
@@ -1510,7 +1565,8 @@ volumes:
             p.Start();
             var outputTask = p.StandardOutput.ReadToEndAsync();
             var errorTask = p.StandardError.ReadToEndAsync();
-            await p.WaitForExitAsync();
+            using var cts = new CancellationTokenSource(timeoutMs); await p.WaitForExitAsync(cts.Token).ConfigureAwait(false); var completed = !cts.IsCancellationRequested;
+            if (!completed) { try { p.Kill(); } catch { } return null; }
             var output = await outputTask;
             var error = await errorTask;
             return p.ExitCode == 0 ? output : null;
@@ -1523,7 +1579,7 @@ volumes:
     /// Используется когда нужен вывод ошибок (docker build, dotnet ef и т.д.).
     /// Потоки stdout/stderr читаются параллельно во избежание deadlock.
     /// </summary>
-    private static async Task<(string? Output, int ExitCode)> RunCmdWithOutputAsync(string cmd, string args)
+    private static async Task<(string? Output, int ExitCode)> RunCmdWithOutputAsync(string cmd, string args, int timeoutMs = 120_000)
     {
         try
         {
@@ -1541,7 +1597,8 @@ volumes:
             p.Start();
             var outputTask = p.StandardOutput.ReadToEndAsync();
             var errorTask = p.StandardError.ReadToEndAsync();
-            await p.WaitForExitAsync();
+            using var cts = new CancellationTokenSource(timeoutMs); await p.WaitForExitAsync(cts.Token).ConfigureAwait(false); var completed = !cts.IsCancellationRequested;
+            if (!completed) { try { p.Kill(); } catch { } return (null, -1); }
             var output = await outputTask;
             var error = await errorTask;
             return (output + "\n" + error, p.ExitCode);
