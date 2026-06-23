@@ -14,6 +14,7 @@ namespace CifraShop.Contracts.Responses.Orders
         public DateTime DateOfPurchase { get; set; }
         public string CustomerEmail { get; set; } = string.Empty;
         public int CustomerId {  get; set; }
+        public string? ImageUrl { get; set; }
         public List<OrderItem.OrderItemResponse> Items { get; set; } = new();
     }
 }

@@ -15,9 +15,10 @@ services:
       context: .
       dockerfile: CifraShop.API/Dockerfile
     ports:
-      - "5000:8085"
+      - "5000:8086"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8086
       - ConnectionStrings__DefaultConnection=Server=db;Database=CifraShopDb;User Id=sa;Password=Your_strong_Password123;TrustServerCertificate=True;
     depends_on:
       - db

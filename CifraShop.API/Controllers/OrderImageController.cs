@@ -1,3 +1,4 @@
+using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -6,10 +7,10 @@ namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductImageController : ControllerBase
+    public class OrderImageController : ControllerBase
     {
-        private readonly IProductImageRepository _imageRepository;
-        private readonly IProductRepository _productRepository;
+        private readonly IOrderImageRepository _imageRepository;
+        private readonly IOrderRepository _orderRepository;
         private readonly IWebHostEnvironment _env;
 
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -17,20 +18,20 @@ namespace CifraShop.API.Controllers
             ".jpg", ".jpeg", ".png", ".webp", ".gif"
         };
 
-        public ProductImageController(
-            IProductImageRepository imageRepository,
-            IProductRepository productRepository,
+        public OrderImageController(
+            IOrderImageRepository imageRepository,
+            IOrderRepository orderRepository,
             IWebHostEnvironment env)
         {
             _imageRepository = imageRepository;
-            _productRepository = productRepository;
+            _orderRepository = orderRepository;
             _env = env;
         }
 
-        [HttpGet("by-product")]
-        public async Task<IActionResult> GetByProductId([FromQuery] int productId)
+        [HttpGet("by-order")]
+        public async Task<IActionResult> GetByOrderId([FromQuery] int orderId)
         {
-            var images = await _imageRepository.GetByProductId(productId);
+            var images = await _imageRepository.GetByOrderId(orderId);
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var result = images.Select(i => new
             {
@@ -47,7 +48,7 @@ namespace CifraShop.API.Controllers
         public IActionResult GetFile(string fileName)
         {
             var webRoot = _env.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
-            var filePath = Path.Combine(webRoot, "images", "products", fileName);
+            var filePath = Path.Combine(webRoot, "images", "orders", fileName);
             if (!System.IO.File.Exists(filePath))
                 return NotFound();
 
@@ -65,10 +66,10 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> Upload([FromForm] int productId, [FromForm] IFormFile file, [FromForm] bool isPrimary = false)
+        public async Task<IActionResult> Upload([FromForm] int orderId, [FromForm] IFormFile file, [FromForm] bool isPrimary = false)
         {
-            var product = await _productRepository.GetProductById(productId);
-            if (product == null) return NotFound($"Товар с id {productId} не найден");
+            var order = await _orderRepository.GetOrderById(orderId);
+            if (order == null) return NotFound($"Заказ с id {orderId} не найден");
 
             if (file == null || file.Length == 0)
                 return BadRequest("Файл не загружен");
@@ -81,13 +82,13 @@ namespace CifraShop.API.Controllers
                 return BadRequest("Допустимые форматы: jpg, jpeg, png, webp, gif");
 
             var webRoot = _env.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
-            var uploadsDir = Path.Combine(webRoot, "images", "products");
+            var uploadsDir = Path.Combine(webRoot, "images", "orders");
             Directory.CreateDirectory(uploadsDir);
 
-            var fileName = $"{productId}_{DateTime.UtcNow:yyyyMMddHHmmssfff}{ext}";
+            var fileName = $"{orderId}_{DateTime.UtcNow:yyyyMMddHHmmssfff}{ext}";
             var filePath = Path.Combine(uploadsDir, fileName);
 
-            ProductImage image;
+            OrderImage image;
             try
             {
                 using (var stream = new FileStream(filePath, FileMode.Create))
@@ -95,24 +96,17 @@ namespace CifraShop.API.Controllers
                     await file.CopyToAsync(stream);
                 }
 
-                var count = await _imageRepository.GetCountByProductId(productId);
+                var count = await _imageRepository.GetCountByOrderId(orderId);
 
-                image = new ProductImage
+                image = new OrderImage
                 {
-                    ProductId = productId,
+                    OrderId = orderId,
                     FileName = fileName,
                     IsPrimary = isPrimary || count == 0,
                     SortOrder = count
                 };
 
                 await _imageRepository.Add(image);
-
-                if (image.IsPrimary)
-                {
-                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                    product.ImageUrl = $"{baseUrl}{Url.Action(nameof(GetFile), new { fileName })}";
-                    await _productRepository.UpdateProduct(product);
-                }
             }
             catch
             {
@@ -131,7 +125,7 @@ namespace CifraShop.API.Controllers
             var image = await _imageRepository.GetById(imageId);
             if (image == null) return NotFound();
 
-            var allImages = await _imageRepository.GetByProductId(image.ProductId);
+            var allImages = await _imageRepository.GetByOrderId(image.OrderId);
             foreach (var img in allImages)
             {
                 if (img.Id == imageId && !img.IsPrimary)
@@ -146,14 +140,6 @@ namespace CifraShop.API.Controllers
                 }
             }
 
-            var product = await _productRepository.GetProductById(image.ProductId);
-            if (product != null)
-            {
-                var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                product.ImageUrl = $"{baseUrl}{Url.Action(nameof(GetFile), new { fileName = image.FileName })}";
-                await _productRepository.UpdateProduct(product);
-            }
-
             return Ok();
         }
 
@@ -163,27 +149,24 @@ namespace CifraShop.API.Controllers
             var image = await _imageRepository.GetById(id);
             if (image == null) return NotFound();
 
-            var uploadsDir = Path.Combine(_env.WebRootPath, "images", "products");
+            var uploadsDir = Path.Combine(_env.WebRootPath, "images", "orders");
             var filePath = Path.Combine(uploadsDir, image.FileName);
             if (System.IO.File.Exists(filePath))
                 System.IO.File.Delete(filePath);
 
             var wasPrimary = image.IsPrimary;
-            var productId = image.ProductId;
+            var orderId = image.OrderId;
 
             await _imageRepository.Delete(image);
 
             if (wasPrimary)
             {
-                var remaining = await _imageRepository.GetByProductId(productId);
-                var product = await _productRepository.GetProductById(productId);
-                if (product != null)
+                var remaining = await _imageRepository.GetByOrderId(orderId);
+                if (remaining.Any())
                 {
-                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                    product.ImageUrl = remaining.Any()
-                        ? $"{baseUrl}{Url.Action(nameof(GetFile), new { fileName = remaining.First().FileName })}"
-                        : null;
-                    await _productRepository.UpdateProduct(product);
+                    var newPrimary = remaining.First();
+                    newPrimary.IsPrimary = true;
+                    await _imageRepository.Update(newPrimary);
                 }
             }
 

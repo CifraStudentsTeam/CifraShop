@@ -34,6 +34,7 @@ public class OrderDto
     public DateTime DateOfPurchase { get; set; }
     public string CustomerEmail { get; set; } = "";
     public int CustomerId { get; set; }
+    public string? ImageUrl { get; set; }
     public List<OrderItemDto> Items { get; set; } = new();
 }
 
@@ -59,6 +60,16 @@ public class AdminActionDto
 
 /// <summary>Модель изображения товара</summary>
 public class ProductImageDto
+{
+    public int Id { get; set; }
+    public string Url { get; set; } = "";
+    public string FileName { get; set; } = "";
+    public bool IsPrimary { get; set; }
+    public int SortOrder { get; set; }
+}
+
+/// <summary>Модель изображения заказа</summary>
+public class OrderImageDto
 {
     public int Id { get; set; }
     public string Url { get; set; } = "";

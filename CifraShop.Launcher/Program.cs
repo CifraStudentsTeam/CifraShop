@@ -1,4 +1,4 @@
-﻿// ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // CifraShop Launcher — Консольный лаунчер для автоматизации запуска проекта
 // ══════════════════════════════════════════════════════════════════════════════
 //
@@ -300,6 +300,10 @@ volumes:
     public void Dispose()
     {
         Cleanup();
+        if (_dockerAvailable)
+        {
+            try { RunDockerComposeAsync("stop").GetAwaiter().GetResult(); } catch { }
+        }
         _httpClient?.Dispose();
         _monitorCts?.Dispose();
     }
@@ -389,7 +393,8 @@ volumes:
     {
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.WriteLine("┌" + new string('─', W) + "┐");
-        Console.WriteLine("│" + Center("Запускай и управляй") + "│");
+        Console.WriteLine("│" + Center("Удобное управление контейнерами Docker") + "│");
+        Console.WriteLine("│" + Center("MS SQL Server,   Web API") + "│");
         Console.WriteLine("│" + Center("─ CifraShop ─") + "│");
         Console.WriteLine("└" + new string('─', W) + "┘");
         Console.ResetColor();
@@ -458,16 +463,18 @@ volumes:
         var ps = await RunCmdAsync("docker", "ps");
         if (ps == null)
         {
-            Warn("Docker демон не отвечает. Ожидание запуска (до 60 сек)...");
+            Warn("Docker демон не отвечает. Попытка запуска Docker Desktop...");
+            await TryStartDockerDesktop();
             for (int i = 0; i < 60; i++)
             {
                 await Task.Delay(1000);
-                if (i % 10 == 0 && i > 0)
-                    await AnimateWait("    Идёт запуск Docker", i, 60);
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write($"\r    Ожидание Docker демона... {i + 1}с/60с");
+                Console.ResetColor();
                 ps = await RunCmdAsync("docker", "ps");
                 if (ps != null)
                 {
-                    Console.WriteLine();
+                    Console.Write("\r" + new string(' ', 50) + "\r");
                     Ok("Docker демон запущен");
                     return;
                 }
@@ -615,7 +622,6 @@ volumes:
             return;
         }
 
-        // Проверяем: уже запущен?
         var running = await RunCmdAsync("docker", "compose ps db --format '{{.Status}}'");
         if (running != null && running.Contains("Up"))
         {
@@ -623,7 +629,6 @@ volumes:
             return;
         }
 
-        // Контейнер есть, но остановлен — просто поднимаем
         var allStatus = await RunCmdAsync("docker", "compose ps -a db --format '{{.Status}}'");
         if (!string.IsNullOrWhiteSpace(allStatus) && allStatus.Trim().Length > 0)
         {
@@ -633,33 +638,57 @@ volumes:
         }
         else
         {
-            Log("    Скачивание образа SQL Server...");
-            var pullResult = await RunDockerComposeAsync("pull db");
-            if (pullResult == null)
+            Log("    Скачивание образа SQL Server (может занять несколько минут)...");
+            var (pullOutput, pullExit) = await RunCmdStreamingAsync("docker", $"compose -f \"{Path.Combine(_rootDir, "docker-compose.yml")}\" pull db",
+                line =>
+                {
+                    if (line.Contains("Downloading") || line.Contains("Extracting") || line.Contains("Pull complete") || line.Contains("already exists"))
+                    {
+                        var clean = line.Length > 60 ? line[..57] + "..." : line;
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"\r    {clean,-58}");
+                        Console.ResetColor();
+                    }
+                }, timeoutMs: 600_000);
+            Console.WriteLine();
+
+            if (pullExit != 0)
             {
-                Warn("Не удалось скачать образ. Проверьте подключение к интернету.");
+                var lastLines = pullOutput?.Split('\n', StringSplitOptions.RemoveEmptyEntries).TakeLast(3);
+                Warn("Не удалось скачать образ SQL Server:");
+                if (lastLines != null)
+                    foreach (var line in lastLines)
+                        if (!string.IsNullOrWhiteSpace(line))
+                            Log($"    {line.Trim()}");
                 return;
             }
+            Ok("Образ SQL Server скачан");
+
             Log("    Создание контейнера...");
             var createResult = await RunDockerComposeAsync("up -d db");
             if (createResult == null) { Warn("Не удалось создать контейнер SQL Server"); return; }
         }
 
-        // Ожидание готовности SQL Server (порт 1433)
         Log("    Ожидание готовности SQL Server...");
-        for (int i = 0; i < 90; i++)
+        for (int i = 0; i < 120; i++)
         {
             await Task.Delay(1000);
-            if (await IsPortOpenAsync("localhost", 1433))
+            var statusCheck = await RunCmdAsync("docker", "compose ps db --format '{{.Status}}'");
+            if (statusCheck != null && statusCheck.Contains("Up"))
             {
-                Ok("SQL Server готов");
-                return;
+                if (await IsPortOpenAsync("localhost", 1433))
+                {
+                    Console.Write("\r" + new string(' ', 60) + "\r");
+                    Ok("SQL Server готов");
+                    return;
+                }
             }
-            if (i > 0 && i % 10 == 0)
-                await AnimateWait("    Идёт инициализация", i, 90);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write($"\r    Ожидание SQL Server... {i + 1}с/120с");
+            Console.ResetColor();
         }
         Console.WriteLine();
-        Warn("SQL Server не ответил за 90 сек. Проверьте Docker.");
+        Warn("SQL Server не ответил за 120 сек. Проверьте Docker.");
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -676,7 +705,6 @@ volumes:
         var infraDir = Path.Combine(_rootDir, "CifraShop.Infrastructure");
         var apiDir = Path.Combine(_rootDir, "CifraShop.API");
 
-        // Установка dotnet-ef если отсутствует
         var efList = await RunCmdAsync("dotnet", "tool list -g");
         if (efList != null && !efList.Contains("dotnet-ef"))
         {
@@ -697,7 +725,9 @@ volumes:
                 var result = output ?? "";
                 if (result.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
                     result.Contains("connect", StringComparison.OrdinalIgnoreCase) ||
-                    result.Contains("timeout", StringComparison.OrdinalIgnoreCase))
+                    result.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+                    result.Contains("login failed", StringComparison.OrdinalIgnoreCase) ||
+                    result.Contains("cannot open database", StringComparison.OrdinalIgnoreCase))
                 {
                     Warn($"    SQL Server ещё не готов (попытка {attempt}/3)...");
                     if (attempt < 3) await Task.Delay(5000);
@@ -715,10 +745,21 @@ volumes:
             }
 
             var resultText = output ?? "";
+            var lowerResult = resultText.ToLowerInvariant();
 
-            if (resultText.Contains("Done")) { Ok("БД обновлена"); return; }
+            if (resultText.Contains("Done") ||
+                lowerResult.Contains("no migrations were applied") ||
+                lowerResult.Contains("no runtime changes are necessary") ||
+                lowerResult.Contains("already up to date"))
+            {
+                if (lowerResult.Contains("no migrations were applied"))
+                    Ok("БД уже актуальна");
+                else
+                    Ok("БД обновлена");
+                return;
+            }
 
-            if (resultText.Contains("PendingModelChanges"))
+            if (lowerResult.Contains("pending model changes"))
             {
                 Log("    Есть несохранённые изменения модели. Создаю миграцию...");
                 var (addOutput, addExitCode) = await RunCmdWithOutputAsync("dotnet",
@@ -735,7 +776,12 @@ volumes:
                 return;
             }
 
-            // Неожиданный вывод при успешном exit code — показываем и выходим
+            if (exitCode == 0)
+            {
+                Ok("БД обновлена");
+                return;
+            }
+
             Warn("Не удалось применить миграции:");
             if (!string.IsNullOrWhiteSpace(resultText))
                 foreach (var line in resultText.Split('\n'))
@@ -762,7 +808,19 @@ volumes:
         {
             Log("    Сборка Docker образа API...");
             var composePath = Path.Combine(_rootDir, "docker-compose.yml");
-            var (buildOutput, buildExitCode) = await RunCmdWithOutputAsync("docker", $"compose -f \"{composePath}\" build api");
+            var (buildOutput, buildExitCode) = await RunCmdStreamingAsync("docker", $"compose -f \"{composePath}\" build api",
+                line =>
+                {
+                    if (line.Contains("=>") || line.Contains("Building") || line.Contains("error"))
+                    {
+                        var clean = line.Length > 60 ? line[..57] + "..." : line;
+                        Console.ForegroundColor = line.Contains("error") ? ConsoleColor.Red : ConsoleColor.DarkGray;
+                        Console.Write($"\r    {clean,-58}");
+                        Console.ResetColor();
+                    }
+                }, timeoutMs: 300_000);
+            Console.WriteLine();
+
             if (buildExitCode == 0)
             {
                 Ok("Docker образ собран");
@@ -775,14 +833,24 @@ volumes:
                     await Task.Delay(500);
                     if (await IsPortOpenAsync("localhost", _apiPort))
                     {
-                        Ok($"API → https://localhost:{_apiPort} (Docker)");
+                        Ok($"API → http://localhost:{_apiPort} (Docker)");
                         return;
                     }
-                    if (i == 39) Warn("API не запустился за 20 сек");
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write($"\r    Ожидание API... {i * 500}мс");
+                    Console.ResetColor();
                 }
+                Console.WriteLine();
+                Warn("API не запустился за 20 сек");
                 return;
             }
-            Warn("Не удалось собрать Docker образ. Запуск локально...");
+
+            var lastLines = buildOutput?.Split('\n', StringSplitOptions.RemoveEmptyEntries).TakeLast(5);
+            Warn("Не удалось собрать Docker образ:");
+            if (lastLines != null)
+                foreach (var line in lastLines)
+                    if (!string.IsNullOrWhiteSpace(line))
+                        Log($"    {line.Trim()}");
             _apiInDocker = false;
         }
 
@@ -821,7 +889,7 @@ volumes:
     private async Task StartClientAsync()
     {
         Log("    Ожидание готовности API...");
-        if (!await WaitForApiHealthAsync(30))
+        if (!await WaitForApiHealthAsync(60))
             Warn("API не отвечает. Запуск клиента всё равно...");
 
         await KillPortAsync(_clientPort);
@@ -1006,9 +1074,11 @@ volumes:
             await Task.Delay(500);
             if (await CheckApiHealthAsync($"https://localhost:{_apiPort}/")) return true;
             if (await CheckApiHealthAsync($"http://localhost:{_apiPort}/")) return true;
-            if (i > 0 && i % 4 == 0)
-                await AnimateWait("    Проверка API", i, timeoutSec * 2);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write($"\r    Проверка API... {i * 500}мс");
+            Console.ResetColor();
         }
+        Console.Write("\r" + new string(' ', 50) + "\r");
         return false;
     }
 
@@ -1134,7 +1204,7 @@ volumes:
         {
             var apiPs = await RunCmdAsync("docker", "compose ps api --format '{{.Status}}'");
             var apiOk = apiPs != null && (apiPs.Contains("Up") || apiPs.Contains("running"));
-            PrintStatusLine("API", apiOk, apiOk ? $"https://localhost:{_apiPort} (Docker)" : "не запущен");
+            PrintStatusLine("API", apiOk, apiOk ? $"http://localhost:{_apiPort} (Docker)" : "не запущен");
         }
         else
         {
@@ -1158,7 +1228,7 @@ volumes:
         Console.ForegroundColor = ConsoleColor.Gray;
         Console.Write(detail);
         Console.ResetColor();
-        PadLine(W - 1 - 4 - 8 - detail.Length);
+        PadLine(W - 15 - detail.Length);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -1173,6 +1243,7 @@ volumes:
     {
         while (true)
         {
+            Console.WriteLine();
             DrawMenu();
             var choice = (Console.ReadLine() ?? "").Trim().ToLower();
 
@@ -1197,7 +1268,7 @@ volumes:
                 // ── Остановка ──────────────────────────────────────
                 case "6":
                     await StopAllAsync();
-                    Log("  Все сервисы остановлены.");
+                    Ok("Все сервисы остановлены.");
                     break;
 
                 // ── Docker ─────────────────────────────────────────
@@ -1216,7 +1287,12 @@ volumes:
                     return;
 
                 default:
-                    Warn("Неизвестная команда. Используйте 0-9.");
+                    if (!string.IsNullOrEmpty(choice))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("  Используйте цифры 0-9.");
+                        Console.ResetColor();
+                    }
                     break;
             }
         }
@@ -1250,7 +1326,7 @@ volumes:
 
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.Write("  ╰");
-        Console.Write(new string('─', W - 3));
+        Console.Write(new string('─', W - 2));
         Console.WriteLine("╯");
         Console.ResetColor();
 
@@ -1419,8 +1495,8 @@ volumes:
     {
         Cleanup();
 
-        if (_apiInDocker)
-            await RunDockerComposeAsync("stop api");
+        if (_dockerAvailable)
+            await RunDockerComposeAsync("stop");
 
         await KillPortAsync(_apiPort);
         await KillPortAsync(_clientPort);
@@ -1607,6 +1683,58 @@ volumes:
     }
 
     /// <summary>
+    /// Запуск команды со стримингом вывода в реальном времени.
+    /// Каждая строка вывода передаётся в onOutput.
+    /// Используется для docker pull, docker build и других долгих операций.
+    /// </summary>
+    private static async Task<(string Output, int ExitCode)> RunCmdStreamingAsync(string cmd, string args, Action<string>? onOutput = null, int timeoutMs = 600_000)
+    {
+        var output = new StringBuilder();
+        try
+        {
+            using var p = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = cmd, Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            p.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data == null) return;
+                output.AppendLine(e.Data);
+                onOutput?.Invoke(e.Data);
+            };
+            p.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data == null) return;
+                output.AppendLine(e.Data);
+                onOutput?.Invoke(e.Data);
+            };
+            p.Start();
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+            using var cts = new CancellationTokenSource(timeoutMs);
+            try { await p.WaitForExitAsync(cts.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException)
+            {
+                try { p.Kill(); } catch { }
+                return (output.ToString(), -1);
+            }
+            return (output.ToString(), p.ExitCode);
+        }
+        catch (Exception ex)
+        {
+            output.AppendLine(ex.Message);
+            return (output.ToString(), -1);
+        }
+    }
+
+    /// <summary>
     /// Обёртка над RunCmdAsync для docker compose команд.
     /// Автоматически подставляет путь к docker-compose.yml (для работы из любой директории).
     /// Содержимое файла кешируется для избежания лишних чтений.
@@ -1692,12 +1820,9 @@ volumes:
         try
         {
             var progress = Math.Min((double)elapsed / total, 1.0);
-            var filled = (int)(progress * 30);
-            var bar = new string('█', filled) + new string('░', 30 - filled);
             var pct = (int)(progress * 100);
-            if (Console.CursorLeft > 4) Console.CursorLeft = 0;
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($"    {bar} {pct,3}%  ({elapsed}s/{total}s)   ");
+            Console.Write($"\r    {label}... {elapsed}с/{total}с ({pct}%)");
             Console.ResetColor();
         }
         catch { }
@@ -1744,7 +1869,7 @@ volumes:
     private static void Separator()
     {
         Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("  │  " + new string('─', W - 5) + "│");
+        Console.WriteLine("  │  " + new string('─', W - 4) + "│");
         Console.ResetColor();
     }
 
@@ -1759,7 +1884,7 @@ volumes:
         Console.ForegroundColor = ConsoleColor.Gray;
         Console.Write(detail);
         Console.ResetColor();
-        var contentLen = 4 + 10 + detail.Length;
+        var contentLen = 7 + 10 + detail.Length;
         var pad = Math.Max(0, W - contentLen);
         Console.Write(new string(' ', pad));
         Console.ForegroundColor = ConsoleColor.DarkCyan;

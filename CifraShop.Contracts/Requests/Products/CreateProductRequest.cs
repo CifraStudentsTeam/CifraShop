@@ -17,5 +17,7 @@ namespace CifraShop.Contracts.Requests.Products
 
         [Range(0, int.MaxValue, ErrorMessage = "Количество не может быть отрицательным")]
         public int Quantity { get; set; }
+
+        public string? ImageUrl { get; set; }
     }
 }

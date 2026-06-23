@@ -33,7 +33,7 @@
             }
         </div>
         <div class="d-flex align-items-center gap-2">
-            <small class="text-secondary">Филиал:</small>
+            <small class="text-secondary">Филиал (фильтр):</small>
             <select class="form-select form-select-sm w-auto" @bind="_selectedBranch">
                 <option value="">Все филиалы</option>
                 @foreach (var branch in _notificationSettings.Select(s => s.Branch).Distinct().OrderBy(b => b))
@@ -45,9 +45,9 @@
     </div>
     <div class="row g-2 mb-3">
         <MetricCard Title="Товаров" Count="@_productTotalCount" Subtitle="@_lowStockSubtitle" Icon="bi-box" Color="primary" />
-        <MetricCard Title="Заказы" Count="@_orderTotalCount" Subtitle="@($"{_totalRevenue:N0} ₽ выручка")" Icon="bi-cart-check" Color="warning" />
+        <MetricCard Title="Заказы" Count="@_orderTotalCount" Subtitle="@($"{_totalRevenue:N0}  выручка")" Icon="bi-cart-check" Color="warning" />
         <MetricCard Title="Пользователи" Count="@_userTotalCount" Subtitle="@($"{_adminCount} админ(ов)")" Icon="bi-people" Color="success" />
-        <MetricCard Title="Филиалы" Count="@_notificationSettings.Count" Subtitle="@($"{_configuredFilials} с настройками")" Icon="bi-geo-alt" Color="info" />
+        <MetricCard Title="Филиалы" Count="@_notificationSettings.Count" Subtitle="@($"{_configuredFilials} настроено")" Icon="bi-geo-alt" Color="info" />
     </div>
 
     <!-- ==================== ТОВАРЫ ==================== -->
@@ -171,7 +171,7 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>@p.Price ₽</td>
+                                            <td>@p.Price </td>
                                             <td>
                                                 <input type="number" class="form-control form-control-sm @(isLowStock ? "border-warning" : "")"
                                                        style="width:3.75rem;" value="@p.Quantity"
@@ -206,7 +206,7 @@
                                     @_productTotalCount товар(ов)
                                     @if (_totalStockValue > 0)
                                     {
-                                        <span class="ms-2 text-muted">· @_totalStockValue.ToString("N0") ₽ на складе</span>
+                                        <span class="ms-2 text-muted">· @_totalStockValue.ToString("N0")  на складе</span>
                                     }
                                 </small>
                                 <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
@@ -306,6 +306,7 @@
                                                 }
                                             </div>
                                         </th>
+                                        <th style="width:2.5rem"></th>
                                         <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("id"))">
                                             № <i class="bi @SortIcon("id", _orderSortField, _orderSortAsc) small"></i>
                                         </th>
@@ -330,11 +331,27 @@
                                             <td @onclick:stopPropagation="true">
                                                 <input type="checkbox" class="form-check-input" @bind="o.IsSelected" />
                                             </td>
+                                            <td @onclick:stopPropagation="true">
+                                                @if (!string.IsNullOrEmpty(o.ImageUrl))
+                                                {
+                                                    <img src="@o.ImageUrl" alt="Фото заказа"
+                                                         class="rounded-1" style="width:2rem;height:2rem;object-fit:cover;cursor:pointer;"
+                                                         @onclick="() => OpenOrderImagesModal(o)" title="Изображения заказа" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="bg-light rounded-1 d-flex align-items-center justify-content-center"
+                                                         style="width:2rem;height:2rem;cursor:pointer;"
+                                                         @onclick="() => OpenOrderImagesModal(o)" title="Добавить изображение">
+                                                        <i class="bi bi-image text-secondary small"></i>
+                                                    </div>
+                                                }
+                                            </td>
                                             <td class="fw-semibold">#@o.Id</td>
                                             <td class="text-truncate" style="max-width:7.5rem;" title="@o.CustomerEmail">@((MarkupString)HighlightText(o.CustomerEmail, _orderSearch))</td>
                                             <td><small class="text-truncate d-block" style="max-width:9rem;" title="@items">@((MarkupString)HighlightText(items, _orderSearch))</small></td>
                                             <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
-                                            <td>@o.Sum ₽</td>
+                                            <td>@o.Sum </td>
                                             <td @onclick:stopPropagation="true">
                                                 <select class="form-select form-select-sm py-0"
                                                         value="@((int)o.Status)"
@@ -349,13 +366,16 @@
                                         @if (isExpanded)
                                         {
                                         <tr>
-                                                <td colspan="7" class="bg-light p-3">
+                                                <td colspan="8" class="bg-light p-3">
                                                     <div class="small">
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                             <div class="fw-semibold">Состав заказа:</div>
                                                             <div class="d-flex gap-2 align-items-center">
                                                                 <span class="text-secondary"><i class="bi bi-calendar me-1"></i>@o.DateOfPurchase.ToString("dd.MM.yyyy HH:mm")</span>
                                                                 <span class="badge @(OrderBadge(o.Status))">@OrderStatuses[((int)o.Status).ToString()]</span>
+                                                                <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true" @onclick="() => OpenOrderImagesModal(o)">
+                                                                    <i class="bi bi-image me-1"></i>Изображения
+                                                                </button>
                                                             </div>
                                                         </div>
                                                         @if (o.Items.Any())
@@ -363,13 +383,13 @@
                                                             @foreach (var item in o.Items)
                                                             {
                                                                 <div class="d-flex justify-content-between">
-                                                                    <span>@item.ProductName (@item.Quantity шт. × @item.Price ₽)</span>
-                                                                    <span class="fw-semibold">@item.Total ₽</span>
+                                                                    <span>@item.ProductName (@item.Quantity шт. × @item.Price )</span>
+                                                                    <span class="fw-semibold">@item.Total </span>
                                                                 </div>
                                                             }
                                                             <div class="border-top mt-1 pt-1 fw-bold d-flex justify-content-between">
                                                                 <span>Итого:</span>
-                                                                <span>@o.Items.Sum(i => i.Total) ₽</span>
+                                                                <span>@o.Items.Sum(i => i.Total) </span>
                                                             </div>
                                                         }
                                                         else
@@ -390,7 +410,7 @@
                                     @_orderTotalCount заказ(ов)
                                     @if (_totalRevenue > 0)
                                     {
-                                        <span class="ms-2 text-muted">· @_totalRevenue.ToString("N0") ₽</span>
+                                        <span class="ms-2 text-muted">· @_totalRevenue.ToString("N0") </span>
                                     }
                                 </small>
                                 <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
@@ -475,7 +495,7 @@
                                             <td>
                                                 <span class="px-1 rounded border-bottom border-secondary" style="cursor:pointer" @onclick="() => OpenEditUserModal(u)"
                                                       title="Нажмите для редактирования">
-                                                    @(u.Balance?.ToString("N0") ?? "0") ₽
+                                                    @(u.Balance?.ToString("N0") ?? "0") 
                                                     <i class="bi bi-pencil small text-primary ms-1"></i>
                                                 </span>
                                             </td>
@@ -521,7 +541,7 @@
         <div class="col-lg-5">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>Филиалы и уведомления</h6>
+                    <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>Уведомления по филиалам</h6>
                     <div class="d-flex align-items-center gap-2">
                         @if (_notificationSettings.Any())
                         {
@@ -672,17 +692,13 @@
                         </div>
                         <div class="row g-3">
                             <div class="col-6">
-                                <label class="form-label small fw-medium">Цена (₽)</label>
-                                <input type="number" class="form-control" @bind="_formPrice" min="1" step="1" disabled="@_saving" />
+                                <label class="form-label small fw-medium">Цена ()</label>
+                                <input type="number" class="form-control" @bind="_formPrice" min="1" step="1" placeholder="0" disabled="@_saving" />
                             </div>
                             <div class="col-6">
                                 <label class="form-label small fw-medium">Количество</label>
-                                <input type="number" class="form-control" @bind="_formQuantity" min="0" step="1" disabled="@_saving" />
+                                <input type="number" class="form-control" @bind="_formQuantity" min="0" step="1" placeholder="0" disabled="@_saving" />
                             </div>
-                        </div>
-                        <div class="mt-3">
-                            <label class="form-label small fw-medium">URL изображения</label>
-                            <input type="text" class="form-control" @bind="_formImageUrl" placeholder="https://... или image.jpg" disabled="@_saving" />
                         </div>
                         @if (_editingProduct != null)
                         {
@@ -784,8 +800,8 @@
                         <button type="button" class="btn-close" @onclick="() => _showEditUserModal = false"></button>
                     </div>
                     <div class="modal-body">
-                        <label class="form-label small fw-medium">Баланс (₽)</label>
-                        <input type="number" class="form-control" @bind="_editBalance" min="0" />
+                        <label class="form-label small fw-medium">Баланс ()</label>
+                        <input type="number" class="form-control" @bind="_editBalance" min="0" placeholder="0" />
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showEditUserModal = false">Отмена</button>
@@ -837,7 +853,7 @@
                                         <option value="0">Выберите товар</option>
                                         @foreach (var p in _allProductsForOrder.Where(p => p.Status == StatusProduct.InStock))
                                         {
-                                            <option value="@p.Id">@p.Name (@p.Price ₽)</option>
+                                            <option value="@p.Id">@p.Name (@p.Price )</option>
                                         }
                                     </select>
                                     <input type="number" class="form-control form-control-sm" style="width:4rem;" @bind="item.Quantity" min="1" />
@@ -855,7 +871,7 @@
                             <div class="border-top pt-2 small">
                                 <div class="d-flex justify-content-between fw-bold">
                                     <span>Итого:</span>
-                                    <span>@_newOrderItems.Where(i => i.ProductId > 0).Sum(i => (_allProductsForOrder.FirstOrDefault(p => p.Id == i.ProductId)?.Price ?? 0) * i.Quantity) ₽</span>
+                                    <span>@_newOrderItems.Where(i => i.ProductId > 0).Sum(i => (_allProductsForOrder.FirstOrDefault(p => p.Id == i.ProductId)?.Price ?? 0) * i.Quantity) </span>
                                 </div>
                             </div>
                         }
@@ -982,6 +998,59 @@
             </div>
         </div>
     }
+
+    <!-- МОДАЛКА ИЗОБРАЖЕНИЙ ЗАКАЗА -->
+    @if (_showOrderImagesModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
+             @onmousedown="() => _showOrderImagesModal = false">
+            <div class="modal-dialog modal-lg modal-dialog-centered"
+                 @onclick:stopPropagation="true"
+                 @onmousedown:stopPropagation="true"
+                 @onkeydown:stopPropagation="true">
+                <div class="modal-content rounded-3 shadow">
+                    <div class="modal-header border-0 pb-0">
+                        <h6 class="modal-title fw-semibold"><i class="bi bi-image me-1"></i>Изображения заказа #@_orderImagesOrderId</h6>
+                        <button type="button" class="btn-close" @onclick="() => _showOrderImagesModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex gap-2 flex-wrap mb-3">
+                            @foreach (var img in _orderImages)
+                            {
+                                <div class="position-relative" style="width:6rem;height:6rem;">
+                                    <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
+                                         alt="Фото заказа" />
+                                    <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
+                                            style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                            @onclick="() => DeleteOrderImage(img)" title="Удалить">×</button>
+                                    @if (!img.IsPrimary)
+                                    {
+                                        <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
+                                                style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                                @onclick="() => SetPrimaryOrderImage(img)" title="Сделать главным">★</button>
+                                    }
+                                </div>
+                            }
+                            @if (!_orderImages.Any())
+                            {
+                                <div class="text-center py-3 w-100 text-secondary small">
+                                    <i class="bi bi-image fs-3 d-block mb-1"></i>
+                                    Нет изображений
+                                </div>
+                            }
+                        </div>
+                        <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
+                               style="cursor:pointer;" for="orderImageFileInput">
+                            <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
+                            <small class="text-secondary">Нажмите для выбора изображения</small>
+                            <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
+                        </label>
+                        <InputFile id="orderImageFileInput" OnChange="OnOrderImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
@@ -994,6 +1063,8 @@
     private List<NotificationSettingsDto> _notificationSettings = new();
     private List<ProductDto> _allProductsForOrder = new();
     private List<ProductImageDto> _productImages = new();
+    private List<OrderImageDto> _orderImages = new();
+    private int _orderImagesOrderId;
 
     private string? _notification;
     private string _notificationType = "success";
@@ -1203,7 +1274,7 @@
     private bool _showUserModal, _showEditUserModal, _showOrderModal, _showNotificationModal;
     private ProductDto? _editingProduct;
     private UserDto? _editingUser;
-    private string _formName = "", _formDescription = "", _formImageUrl = "", _confirmMessage = "", _confirmButtonText = "Удалить";
+    private string _formName = "", _formDescription = "", _confirmMessage = "", _confirmButtonText = "Удалить";
     private int _formPrice, _formQuantity;
     private Func<Task>? _onConfirmAction;
 
@@ -1211,6 +1282,7 @@
     private int _editBalance;
     private string _newOrderEmail = "";
     private List<OrderItemForm> _newOrderItems = new();
+    private bool _showOrderImagesModal;
 
     private class OrderItemForm
     {
@@ -1422,7 +1494,6 @@
         _editingProduct = product;
         _formName = product?.Name ?? ""; _formDescription = product?.Description ?? "";
         _formPrice = product?.Price ?? 0; _formQuantity = product?.Quantity ?? 0;
-        _formImageUrl = product?.ImageUrl ?? "";
         _productImages = new();
         _showProductModal = true;
         if (product != null) _ = LoadProductImages(product.Id);
@@ -1554,19 +1625,33 @@
         _saving = true;
         try
         {
-            if (_formPrice < 1) { ShowNotification("Цена должна быть не менее 1 ₽", "warning"); return; }
+            if (_formPrice < 1) { ShowNotification("Цена должна быть не менее 1 ", "warning"); return; }
             if (_formQuantity < 0) { ShowNotification("Количество не может быть отрицательным", "warning"); return; }
-            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity, ImageUrl = _formImageUrl };
+            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity };
             if (_editingProduct == null)
             {
                 var r = await Http.PostAsJsonAsync("api/Product/create-product", body);
                 if (r.IsSuccessStatusCode)
                 {
-                    await LogAction("Создание", $"Товар «{_formName}»");
-                    ShowNotification("Товар создан");
-                    CloseProductModal();
-                    _productPage = 0;
-                    await LoadProducts();
+                    var created = await r.Content.ReadFromJsonAsync<ProductDto>();
+                    if (created != null)
+                    {
+                        _editingProduct = created;
+                        _productImages = new();
+                        await LogAction("Создание", $"Товар «{_formName}»");
+                        ShowNotification("Товар создан. Загрузите изображения ниже.");
+                        _productPage = 0;
+                        await LoadProducts();
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        await LogAction("Создание", $"Товар «{_formName}»");
+                        ShowNotification("Товар создан");
+                        CloseProductModal();
+                        _productPage = 0;
+                        await LoadProducts();
+                    }
                 }
                 else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
             }
@@ -1577,7 +1662,6 @@
                 {
                     (_editingProduct.Name, _editingProduct.Description, _editingProduct.Price, _editingProduct.Quantity)
                         = (_formName, _formDescription, _formPrice, _formQuantity);
-                    _editingProduct.ImageUrl = _formImageUrl;
                     await LogAction("Изменение", $"Товар #{_editingProduct.Id} «{_formName}»");
                     ShowNotification("Товар обновлён");
                     CloseProductModal();
@@ -1817,6 +1901,88 @@
         catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
         finally { _creatingOrder = false; }
     }
+
+    private async Task OpenOrderImagesModal(OrderDto order)
+    {
+        _orderImagesOrderId = order.Id;
+        _orderImages = new();
+        _showOrderImagesModal = true;
+        try
+        {
+            _orderImages = await Http.GetFromJsonAsync<List<OrderImageDto>>($"api/OrderImage/by-order?orderId={order.Id}") ?? new();
+        }
+        catch { _orderImages = new(); }
+        StateHasChanged();
+    }
+
+    private async Task OnOrderImageUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        using var content = new MultipartFormDataContent();
+        var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        var fileContent = new StreamContent(stream);
+        content.Add(fileContent, "file", file.Name);
+        content.Add(new StringContent(_orderImagesOrderId.ToString()), "orderId");
+        content.Add(new StringContent((_orderImages.Count == 0).ToString()), "isPrimary");
+
+        var r = await Http.PostAsync("api/OrderImage/upload", content);
+        if (r.IsSuccessStatusCode)
+        {
+            var result = await r.Content.ReadFromJsonAsync<OrderUploadResult>();
+            if (result != null)
+            {
+                _orderImages.Add(new OrderImageDto
+                {
+                    Id = result.Id,
+                    Url = result.Url,
+                    FileName = result.FileName,
+                    IsPrimary = result.IsPrimary,
+                    SortOrder = result.SortOrder
+                });
+                var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
+                if (order != null && result.IsPrimary) order.ImageUrl = result.Url;
+            }
+            ShowNotification("Изображение загружено");
+            StateHasChanged();
+        }
+        else ShowNotification($"Ошибка загрузки: {await r.Content.ReadAsStringAsync()}", "danger");
+    }
+
+    private async Task SetPrimaryOrderImage(OrderImageDto img)
+    {
+        var r = await Http.PostAsJsonAsync($"api/OrderImage/set-primary?imageId={img.Id}", new { });
+        if (r.IsSuccessStatusCode)
+        {
+            foreach (var i in _orderImages) i.IsPrimary = i.Id == img.Id;
+            var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
+            if (order != null) order.ImageUrl = img.Url;
+            ShowNotification("Главное изображение изменено");
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteOrderImage(OrderImageDto img)
+    {
+        var r = await Http.DeleteAsync($"api/OrderImage?id={img.Id}");
+        if (r.IsSuccessStatusCode)
+        {
+            _orderImages.Remove(img);
+            var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
+            if (order != null)
+            {
+                if (img.IsPrimary && _orderImages.Any())
+                    order.ImageUrl = _orderImages.First().Url;
+                else if (!_orderImages.Any())
+                    order.ImageUrl = null;
+            }
+            ShowNotification("Изображение удалено");
+            StateHasChanged();
+        }
+    }
+
+    private class OrderUploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
 
     private async Task LoadNotificationSettings()
     {

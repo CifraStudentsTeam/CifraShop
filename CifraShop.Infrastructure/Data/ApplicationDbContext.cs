@@ -13,6 +13,7 @@ namespace CifraShop.Infrastructure.Data
         public DbSet<ProductImage> ProductImages => Set<ProductImage>();
         public DbSet<AdminAction> AdminActions => Set<AdminAction>();
         public DbSet<NotificationSettings> NotificationSettings => Set<NotificationSettings>();
+        public DbSet<OrderImage> OrderImages => Set<OrderImage>();
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {
@@ -26,6 +27,7 @@ namespace CifraShop.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
             modelBuilder.ApplyConfiguration(new AdminActionConfiguration());
             modelBuilder.ApplyConfiguration(new NotificationSettingsConfiguration());
+            modelBuilder.ApplyConfiguration(new OrderImageConfiguration());
         }
     }
 }

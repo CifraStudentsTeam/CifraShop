@@ -11,5 +11,6 @@ namespace CifraShop.Domain.Entities
         public int CustomerId { get; set; }
         public User Customer { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public ICollection<OrderImage> Images { get; set; } = new List<OrderImage>();
     }
 }

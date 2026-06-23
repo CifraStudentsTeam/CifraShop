@@ -13,11 +13,11 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
             => _context = context;
 
         public async Task<List<Order>> GetAll()
-            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).ToListAsync();
+            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images).ToListAsync();
 
         public async Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusOrder? status = null, DateTime? dateFrom = null, DateTime? dateTo = null)
         {
-            var query = _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).AsQueryable();
+            var query = _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(o => o.Customer.Email.Contains(search) || o.Id.ToString().Contains(search));
@@ -37,23 +37,24 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         }
 
         public async Task<Order?> GetOrderById(int id)
-            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).SingleOrDefaultAsync(x => x.Id == id);
+            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images).SingleOrDefaultAsync(x => x.Id == id);
 
         public async Task<List<Order>> GetOrdersByCustomerEmail(string email)
             => await _context.Orders
                 .Include(o => o.OrderItems)
                 .Include(o => o.Customer)
+                .Include(o => o.Images)
                 .Where(x => x.Customer.Email == email)
                 .ToListAsync();
 
         public async Task<List<Order>> GetOrdersByStatus(StatusOrder order)
-            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Where(x => x.Status == order).ToListAsync();
+            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images).Where(x => x.Status == order).ToListAsync();
 
         public async Task<List<Order>> GetOrdersBySum(int sum)
-            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Where(x => x.Sum == sum).ToListAsync();
+            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images).Where(x => x.Sum == sum).ToListAsync();
 
         public async Task<List<Order>> GetOrdersByDateRange(DateTime from, DateTime to)
-            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer)
+            => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images)
                 .Where(x => x.DateOfPurchase >= from && x.DateOfPurchase <= to).ToListAsync();
 
         public async Task AddOrder(Order orderToAdd)

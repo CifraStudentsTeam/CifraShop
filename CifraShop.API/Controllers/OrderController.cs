@@ -4,6 +4,7 @@ using CifraShop.Contracts.Requests.Orders;
 using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.Orders;
 using CifraShop.Domain.Enums;
+using CifraShop.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
@@ -13,15 +14,31 @@ namespace CifraShop.API.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IOrderImageRepository _imageRepository;
 
-        public OrderController(IOrderService orderService)
-            => _orderService = orderService;
+        public OrderController(IOrderService orderService, IOrderImageRepository imageRepository)
+        {
+            _orderService = orderService;
+            _imageRepository = imageRepository;
+        }
+
+        private OrderResponse ToResponseWithImage(Domain.Entities.Order order)
+        {
+            var resp = order.ToResponse();
+            var primaryImage = order.Images?.FirstOrDefault(i => i.IsPrimary)
+                               ?? order.Images?.FirstOrDefault();
+            if (primaryImage != null)
+            {
+                resp.ImageUrl = Url.Action("GetFile", "OrderImage", new { fileName = primaryImage.FileName })!;
+            }
+            return resp;
+        }
 
         [HttpGet("all")]
         public async Task<ActionResult<List<OrderResponse>>> GetAll()
         {
             var orders = await _orderService.GetAllOrders();
-            return Ok(orders.Select(o => o.ToResponse()).ToList());
+            return Ok(orders.Select(o => ToResponseWithImage(o)).ToList());
         }
 
         [HttpGet("paged")]
@@ -36,7 +53,7 @@ namespace CifraShop.API.Controllers
             var paged = await _orderService.GetOrdersPaged(page, pageSize, search, status, dateFrom, dateTo);
             return Ok(new PagedResponse<OrderResponse>
             {
-                Items = paged.Items.Select(o => o.ToResponse()).ToList(),
+                Items = paged.Items.Select(o => ToResponseWithImage(o)).ToList(),
                 Page = paged.Page,
                 PageSize = paged.PageSize,
                 TotalCount = paged.TotalCount
@@ -48,35 +65,35 @@ namespace CifraShop.API.Controllers
         {
             var order = await _orderService.GetOrderById(id);
             if (order == null) return NotFound($"Заказ с id {id} не найден");
-            return Ok(order.ToResponse());
+            return Ok(ToResponseWithImage(order));
         }
 
         [HttpGet("by-email")]
         public async Task<ActionResult<List<OrderResponse>>> GetByCustomerEmail(string email)
         {
             var orders = await _orderService.GetOrdersByCustomerEmail(email);
-            return Ok(orders.Select(o => o.ToResponse()).ToList());
+            return Ok(orders.Select(o => ToResponseWithImage(o)).ToList());
         }
 
         [HttpGet("by-status")]
         public async Task<ActionResult<List<OrderResponse>>> GetByStatus(StatusOrder status)
         {
             var orders = await _orderService.GetOrdersByStatus(status);
-            return Ok(orders.Select(o => o.ToResponse()).ToList());
+            return Ok(orders.Select(o => ToResponseWithImage(o)).ToList());
         }
 
         [HttpGet("by-sum")]
         public async Task<ActionResult<List<OrderResponse>>> GetBySum([FromQuery] short sum)
         {
             var orders = await _orderService.GetOrdersBySum(sum);
-            return Ok(orders.Select(o => o.ToResponse()).ToList());
+            return Ok(orders.Select(o => ToResponseWithImage(o)).ToList());
         }
 
         [HttpGet("by-date")]
         public async Task<ActionResult<List<OrderResponse>>> GetByDate([FromQuery] DateTime from, [FromQuery] DateTime to)
         {
             var orders = await _orderService.GetOrdersByDateRange(from, to);
-            return Ok(orders.Select(o => o.ToResponse()).ToList());
+            return Ok(orders.Select(o => ToResponseWithImage(o)).ToList());
         }
 
         [HttpPost("create-order")]

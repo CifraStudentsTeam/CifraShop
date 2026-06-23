@@ -92,7 +92,7 @@ namespace CifraShop.API.Controllers
         [HttpPost("create-product")]
         public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
         {
-            var product = await _productService.CreateProduct(request.Name, request.Description, request.Price, request.Quantity);
+            var product = await _productService.CreateProduct(request.Name, request.Description, request.Price, request.Quantity, request.ImageUrl);
             return Ok(ToResponseWithUrl(product));
         }
 

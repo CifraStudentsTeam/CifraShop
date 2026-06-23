@@ -13,7 +13,7 @@ namespace CifraShop.Application.Services.Interfaces
         Task<List<Product>> GetProductsByPrice(int price);
         Task<List<Product>> GetProductsByQuantity(int quantity);
         Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct);
-        Task<Product> CreateProduct(string name, string description, int price, int quantity);
+        Task<Product> CreateProduct(string name, string description, int price, int quantity, string? imageUrl = null);
         Task UpdateProduct(Product productToUpdate);
         Task DeleteProduct(Product productToDelete);
         Task DeleteRange(List<int> ids);

@@ -121,14 +121,14 @@ CifraShop/
 ├── CifraShop.slnx                         XML-формат решения (.NET 10)
 │
 ├── CifraShop.Domain/                      Ядро — сущности, перечисления, интерфейсы репозиториев
-│   ├── Entities/                          User, Product, Order, OrderItem, AdminAction, NotificationSettings, ProductImage
+│   ├── Entities/                          User, Product, Order, OrderItem, AdminAction, NotificationSettings, ProductImage, OrderImage
 │   ├── Enums/                             UserRole, StatusProduct, StatusOrder
-│   └── Repositories/                      IProductRepository, IOrderRepository, IUserRepository, ...
+│   └── Repositories/                      IProductRepository, IOrderRepository, IUserRepository, IOrderImageRepository, ...
 │
 ├── CifraShop.Infrastructure/              Инфраструктура — EF Core, SQL Server, реализации репозиториев
 │   └── Data/
 │       ├── ApplicationDbContext.cs        ApplicationContext (DbContext)
-│       ├── Configurations/                Fluent API: все сущности
+│       ├── Configurations/                Fluent API: все сущности (User, Product, Order, OrderItem, AdminAction, NotificationSettings, OrderImage)
 │       └── Repositories/Implementations/  EF Core реализации репозиториев
 │
 ├── CifraShop.Application/                 Бизнес-логика — сервисы и их интерфейсы
@@ -138,7 +138,7 @@ CifraShop/
 │
 ├── CifraShop.Contracts/                   DTO (Request/Response) + маппинг
 │   ├── Requests/                          CreateProductRequest, BatchUpdateProductStatusRequest, ...
-│   ├── Responses/                         ProductResponse, OrderResponse, PagedResponse<T>, ...
+│   ├── Responses/                         ProductResponse, OrderResponse, OrderImageResponse, PagedResponse<T>, ...
 │   └── Mappings/                          Extension-методы: ToResponse()
 │
 ├── CifraShop.API/                         ASP.NET Core Web API — точка входа
@@ -205,6 +205,7 @@ CifraShop/
 | `AdminAction` | Действие администратора | ActionType, Details, Branch, CreatedAt |
 | `NotificationSettings` | Настройки филиала | Branch, Email, TelegramBotToken, AdminEmails, NotifyOnNewOrder/StatusChange/LowStock |
 | `ProductImage` | Фото товара | ProductId, FileName, IsPrimary, SortOrder |
+| `OrderImage` | Фото заказа | OrderId, FileName, IsPrimary, SortOrder |
 
 **Перечисления:**
 
@@ -250,8 +251,9 @@ Task DeleteRange(List<int> ids);                          // ExecuteDeleteAsync
 - DTO создаются локально в `Models/ApiModels.cs` (Client не ссылается на Contracts/Domain)
 - **Bootstrap 5.3.8 + Bootstrap Icons** — загружены локально через libman
 - **Никакого кастомного CSS и JS** — только Bootstrap utility classes + inline styles для свойств которых нет в Bootstrap
-- `HttpClient.BaseAddress`: `https://localhost:5000/`
+- `HttpClient.BaseAddress`: `http://localhost:5000/`
 - Компоненты: `MetricCard`, `SearchBar` (debounce 300мс), `Pagination` (ellipsis для >7 страниц), `Spinner`, `EmptyState`
+- Изображения: загрузка через `InputFile`, управление (выбор главного, удаление) в модалках
 
 ---
 
@@ -336,6 +338,16 @@ Task DeleteRange(List<int> ids);                          // ExecuteDeleteAsync
 | `POST` | `api/ProductImage/set-primary?imageId=X` | Сделать главным |
 | `DELETE` | `api/ProductImage?id=X` | Удалить |
 
+### Фотографии заказов
+
+| Метод | Маршрут | Описание |
+|-------|---------|----------|
+| `GET` | `api/OrderImage/by-order?orderId=X` | Все фото заказа |
+| `GET` | `api/OrderImage/file/{fileName}` | Получить файл изображения |
+| `POST` | `api/OrderImage/upload` | Загрузить фото (multipart: file, orderId, isPrimary) |
+| `POST` | `api/OrderImage/set-primary?imageId=X` | Сделать главным |
+| `DELETE` | `api/OrderImage?id=X` | Удалить |
+
 ### История действий
 
 | Метод | Маршрут | Описание |
@@ -365,7 +377,7 @@ Task DeleteRange(List<int> ids);                          // ExecuteDeleteAsync
 - **Фильтр** — по статусу (В наличии / Нет в наличии / Скоро в продаже)
 - **Пагинация** — серверная, размер страницы: 5/8/16/32
 - **Ellipsis пагинация** — при >7 страниц: `1 ... 5 6 7 ... 10`
-- **Создание** — модалка (название, описание, цена, количество, URL изображения)
+- **Создание** — модалка (название, описание, цена, количество). После создания автоматически появляется секция загрузки изображений
 - **Редактирование** — модалка + управление фотографиями товара
 - **Загрузка фото** — Bootstrap-styled `InputFile` (клик для выбора)
 - **Количество** — инлайн-редактирование в таблице (сразу отправляет PUT-запрос)
@@ -384,6 +396,7 @@ Task DeleteRange(List<int> ids);                          // ExecuteDeleteAsync
 - **Детали** — клик по строке раскрывает состав с датой и статусом
 - **Batch-операции** — чекбоксы + batch-смена статуса (один запрос)
 - **Создание** — модалка (автокомплит email + выбор товаров с расчётом итого)
+- **Изображения** — клик по превью в таблице → модалка загрузки/удаления/выбора главного фото
 - **Счётчик выбранных** — badge рядом с чекбоксом «выбрать все»
 
 ### Пользователи
@@ -490,9 +503,9 @@ Task DeleteRange(List<int> ids);                          // ExecuteDeleteAsync
 
 | Фаза | Описание |
 |------|----------|
-| 1 | Проверка .NET SDK и Docker |
+| 1 | Проверка .NET SDK и Docker (авто-запуск Docker Desktop) |
 | 2 | Создание `docker-compose.yml` и строки подключения (если нет) |
-| 3 | Запуск SQL Server через Docker (или проверка локального) |
+| 3 | Запуск SQL Server через Docker (с реалтайм-прогрессом скачивания) |
 | 4 | Применение EF Core миграций (с авто-синхронизацией модели) |
 | 5 | Запуск API (Docker или локально — автоматический выбор) |
 | 6 | Запуск Blazor-клиента |
@@ -544,12 +557,9 @@ dotnet run --project CifraShop.Launcher -- --quick
 | `--version` | Показать версию и выйти |
 | `--reset` | Полный сброс: остановка контейнеров, очистка образов, удаление маркеров |
 
-### Health-check endpoint
+### Health-check
 
-API предоставляет `GET /health` для надёжной проверки состояния:
-```json
-{"status": "healthy", "timestamp": "2025-01-01T00:00:00Z"}
-```
+Лаунчер проверяет доступность API через HTTP-запросы (порт 5000) перед запуском клиента.
 
 ---
 
@@ -557,12 +567,11 @@ API предоставляет `GET /health` для надёжной прове�
 
 | Сервис | Протокол | Порт | URL |
 |--------|----------|------|-----|
-| API | HTTPS | 5000 | `https://localhost:5000` |
+| API | HTTP | 5000 | `http://localhost:5000` |
 | Client | HTTP | 5001 | `http://localhost:5001` |
 | SQL Server | TCP | 1433 | `localhost:1433` |
-| Docker API | HTTPS | 8085 | `https://localhost:8085` |
 
-> **Примечание:** Клиент использует HTTP, т.к. .NET 10 WasmAppHost dev-сервер выбрасывает `InvalidOperationException` при HTTPS.
+> **Примечание:** API работает на HTTP (порт 5000) — в Docker используется HTTP для совместимости с браузером (самоподписанный HTTPS-сертификат не доверяется браузером).
 
 ---
 
@@ -630,7 +639,12 @@ API предоставляет `GET /health` для надёжной прове�
 - [x] Настройки филиалов (уведомления, привязка админов)
 - [x] Консольный лаунчер (автоматизация запуска + мониторинг)
 - [x] Bootstrap Icons локально (без CDN)
-- [x] Исправлено 20+ багов (XSS, batch-логика, memory leaks, data consistency)
+- [x] Изображения заказов (аналогично товарам: загрузка, главное фото, галерея)
+- [x] Авто-миграция при старте API (без блокировки)
+- [x] Реалтайм-стриминг Docker pull/build в лаунчере
+- [x] Корректная остановка Docker-контейнеров при выходе
+- [x] Авто-запуск Docker Desktop при отсутствии демона
+- [x] Исправлено 30+ багов (XSS, batch-логика, memory leaks, data consistency, UI alignment)
 
 ### Осталось
 
