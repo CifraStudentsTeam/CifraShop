@@ -10,7 +10,7 @@ public class SignalRService : IAsyncDisposable
     public event Action<string, string>? OnNotify;
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
 
-    public SignalRService(string hubUrl = "http://localhost:5000/hubs/admin")
+    public SignalRService(string hubUrl = "https://localhost:5000/hubs/admin")
     {
         _hubUrl = hubUrl;
     }
@@ -49,6 +49,11 @@ public class SignalRService : IAsyncDisposable
         {
             Console.WriteLine("[SignalR] Соединение закрыто. Переподключение через 5 сек...");
             await Task.Delay(5000);
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync();
+                _connection = null;
+            }
             try { await StartAsync(); } catch { }
         };
 

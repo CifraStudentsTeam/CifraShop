@@ -419,9 +419,9 @@
         _creatingOrder = true;
         try
         {
-            var items = _newOrderItems.Where(i => i.ProductId > 0)
-                .Select(i => new { ProductId = i.ProductId, Quantity = (int)i.Quantity }).ToList();
-            if (!items.Any()) { await OnNotification.InvokeAsync("Добавьте хотя бы один товар"); return; }
+            var items = _newOrderItems.Where(i => i.ProductId > 0 && i.Quantity > 0)
+                .Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList();
+            if (!items.Any()) { await OnNotification.InvokeAsync("Добавьте хотя бы один товар с количеством > 0"); return; }
             var body = new { CustomerEmail = _newOrderEmail, Items = items };
             var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
             if (r.IsSuccessStatusCode)

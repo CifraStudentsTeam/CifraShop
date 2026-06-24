@@ -31,11 +31,11 @@
             <h5 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap me-1"></i>Админ-панель</h5>
             @if (SignalR.IsConnected)
             {
-                <span class="badge bg-success" style="font-size:0.6rem;" title="Обновления в реальном времени">● Online</span>
+                <span class="badge bg-success" style="font-size:0.6rem;cursor:help;" title="SignalR подключён: все изменения отображаются мгновенно, без перезагрузки">● Online</span>
             }
             else
             {
-                <span class="badge bg-danger" style="font-size:0.6rem;" title="Опрос каждые 5 минут">● Offline</span>
+                <span class="badge bg-danger" style="font-size:0.6rem;cursor:help;" title="SignalR отключён: данные обновляются каждые 5 минут. Перезагрузите страницу для немедленного подключения">● Offline</span>
             }
             @if (_lastUpdated.HasValue)
             {
@@ -202,27 +202,36 @@
     {
         _ = InvokeAsync(async () =>
         {
-            switch (entity)
+            try
             {
-                case "product":
-                    await LoadProducts();
-                    await LoadMetrics();
-                    await LoadAllProducts();
-                    break;
-                case "order":
-                    await LoadOrders();
-                    await LoadMetrics();
-                    break;
-                case "user":
-                    await LoadUsers();
-                    await LoadUsersMetrics();
-                    break;
-                case "notification":
-                    await LoadNotificationSettings();
-                    break;
+                var expandedId = _expandedOrderId;
+                switch (entity)
+                {
+                    case "product":
+                        await LoadProducts();
+                        await LoadMetrics();
+                        await LoadAllProducts();
+                        break;
+                    case "order":
+                        await LoadOrders();
+                        _expandedOrderId = expandedId;
+                        await LoadMetrics();
+                        break;
+                    case "user":
+                        await LoadUsers();
+                        await LoadUsersMetrics();
+                        break;
+                    case "notification":
+                        await LoadNotificationSettings();
+                        break;
+                }
+                _lastUpdated = DateTime.Now;
+                StateHasChanged();
             }
-            _lastUpdated = DateTime.Now;
-            StateHasChanged();
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SignalR] HandleNotify error: {ex.Message}");
+            }
         });
     }
 
@@ -284,7 +293,7 @@
     {
         try
         {
-            _loadingProducts = Products.Count == 0;
+            _loadingProducts = true;
             var url = $"api/Product/paged?page={_productPage}&pageSize={_productPageSize}";
             if (!string.IsNullOrEmpty(_productSearch)) url += $"&search={Uri.EscapeDataString(_productSearch)}";
             if (!string.IsNullOrEmpty(_productFilter)) url += $"&status={_productFilter}";
@@ -300,7 +309,7 @@
         try
         {
             _expandedOrderId = null;
-            _loadingOrders = Orders.Count == 0;
+            _loadingOrders = true;
             var url = $"api/Order/paged?page={_orderPage}&pageSize={_orderPageSize}";
             if (!string.IsNullOrEmpty(_orderSearch)) url += $"&search={Uri.EscapeDataString(_orderSearch)}";
             if (!string.IsNullOrEmpty(_orderFilter)) url += $"&status={_orderFilter}";
@@ -317,7 +326,7 @@
     {
         try
         {
-            _loadingUsers = Users.Count == 0;
+            _loadingUsers = true;
             var url = $"api/User/paged?page={_userPage}&pageSize={_userPageSize}";
             if (!string.IsNullOrEmpty(_userSearch)) url += $"&search={Uri.EscapeDataString(_userSearch)}";
             if (!string.IsNullOrEmpty(_userFilter)) url += $"&role={_userFilter}";

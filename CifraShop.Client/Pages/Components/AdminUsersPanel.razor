@@ -5,7 +5,7 @@
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
             <h6 class="fw-semibold mb-0"><i class="bi bi-people me-1"></i>Пользователи</h6>
-            <button class="btn btn-primary btn-sm" @onclick="() => _showUserModal = true">
+            <button class="btn btn-primary btn-sm" @onclick="OpenUserModal">
                 <i class="bi bi-plus-lg me-1"></i>Добавить
             </button>
         </div>
@@ -132,7 +132,7 @@
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showUserModal = false">Отмена</button>
                     <button type="button" class="btn btn-primary btn-sm"
-                            disabled="@(_newUserEmail.Length == 0 || _newUserPassword.Length == 0 || _creatingUser)"
+                            disabled="@(_newUserEmail.Length == 0 || _newUserPassword.Length < 6 || _creatingUser)"
                             @onclick="CreateUser">
                         @if (_creatingUser) { <span class="spinner-border spinner-border-sm me-1"></span> }
                         else { <i class="bi bi-check-lg me-1"></i> }
@@ -198,6 +198,14 @@
 
     private string SortIcon(string field) =>
         field == SortField ? (SortAsc ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up";
+
+    private void OpenUserModal()
+    {
+        _newUserEmail = "";
+        _newUserPassword = "";
+        _newUserRole = "Student";
+        _showUserModal = true;
+    }
 
     private string HighlightText(string text)
     {
