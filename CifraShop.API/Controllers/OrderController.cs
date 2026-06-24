@@ -1,3 +1,4 @@
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Orders;
@@ -6,6 +7,7 @@ using CifraShop.Contracts.Responses.Orders;
 using CifraShop.Domain.Enums;
 using CifraShop.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace CifraShop.API.Controllers
 {
@@ -15,11 +17,13 @@ namespace CifraShop.API.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IOrderImageRepository _imageRepository;
+        private readonly IHubContext<AdminHub> _hub;
 
-        public OrderController(IOrderService orderService, IOrderImageRepository imageRepository)
+        public OrderController(IOrderService orderService, IOrderImageRepository imageRepository, IHubContext<AdminHub> hub)
         {
             _orderService = orderService;
             _imageRepository = imageRepository;
+            _hub = hub;
         }
 
         private OrderResponse ToResponseWithImage(Domain.Entities.Order order)
@@ -103,7 +107,7 @@ namespace CifraShop.API.Controllers
 
             var items = request.Items.Select(i => (i.ProductId, i.Quantity)).ToList();
             var order = await _orderService.CreateOrder(request.CustomerEmail, items);
-
+            await _hub.Clients.All.SendAsync("Notify", "order", "created");
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order.ToResponse());
         }
 
@@ -116,6 +120,7 @@ namespace CifraShop.API.Controllers
             if (request.Status.HasValue) order.Status = request.Status.Value;
 
             await _orderService.UpdateOrder(order);
+            await _hub.Clients.All.SendAsync("Notify", "order", "updated");
             return NoContent();
         }
 
@@ -126,6 +131,7 @@ namespace CifraShop.API.Controllers
                 return BadRequest("Список id пуст");
 
             await _orderService.UpdateStatusRange(request.OrderIds, request.NewStatus);
+            await _hub.Clients.All.SendAsync("Notify", "order", "updated");
             return Ok(new { updated = request.OrderIds.Count });
         }
 
@@ -136,6 +142,7 @@ namespace CifraShop.API.Controllers
             if (order == null) return NotFound($"Заказ с id {id} не найден");
 
             await _orderService.DeleteOrder(order);
+            await _hub.Clients.All.SendAsync("Notify", "order", "deleted");
             return NoContent();
         }
     }

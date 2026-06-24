@@ -1,7 +1,9 @@
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.Notifications;
 using CifraShop.Contracts.Responses.Notifications;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace CifraShop.API.Controllers
 {
@@ -10,9 +12,13 @@ namespace CifraShop.API.Controllers
     public class NotificationSettingsController : ControllerBase
     {
         private readonly INotificationSettingsService _service;
+        private readonly IHubContext<AdminHub> _hub;
 
-        public NotificationSettingsController(INotificationSettingsService service)
-            => _service = service;
+        public NotificationSettingsController(INotificationSettingsService service, IHubContext<AdminHub> hub)
+        {
+            _service = service;
+            _hub = hub;
+        }
 
         [HttpGet("all")]
         public async Task<ActionResult<List<NotificationSettingsResponse>>> GetAll()
@@ -46,6 +52,7 @@ namespace CifraShop.API.Controllers
                 request.NotifyOnLowStock, request.LowStockThreshold);
             settings.AdminEmails = request.AdminEmails;
             await _service.Update(settings);
+            await _hub.Clients.All.SendAsync("Notify", "notification", "updated");
             return Ok(MapToResponse(settings));
         }
 
@@ -66,6 +73,7 @@ namespace CifraShop.API.Controllers
             settings.LowStockThreshold = request.LowStockThreshold;
 
             await _service.Update(settings);
+            await _hub.Clients.All.SendAsync("Notify", "notification", "updated");
             return NoContent();
         }
 
@@ -75,6 +83,7 @@ namespace CifraShop.API.Controllers
             var settings = await _service.GetById(id);
             if (settings == null) return NotFound($"Настройка с id {id} не найдена");
             await _service.Delete(settings);
+            await _hub.Clients.All.SendAsync("Notify", "notification", "updated");
             return NoContent();
         }
 

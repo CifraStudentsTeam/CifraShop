@@ -1,0 +1,102 @@
+@using CifraShop.Client.Models
+
+<div class="col-lg-7">
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center"
+             style="cursor:pointer" @onclick="() => _showHistory = !_showHistory">
+            <h6 class="fw-semibold mb-0">
+                <i class="bi bi-clock-history me-1"></i>История действий
+                <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1" style="font-size:0.7rem;">@History.Count</span>
+            </h6>
+            <div class="d-flex align-items-center gap-2">
+                @if (History.Any())
+                {
+                    <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
+                            @onchange="OnHistoryTypeFilterChanged" @onclick:stopPropagation="true">
+                        <option value="">Все типы</option>
+                        <option value="Создание">Создание</option>
+                        <option value="Изменение">Изменение</option>
+                        <option value="Удаление">Удаление</option>
+                    </select>
+                    <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
+                            @onchange="OnHistoryBranchFilterChanged" @onclick:stopPropagation="true">
+                        <option value="">Все филиалы</option>
+                        @foreach (var branch in AvailableBranches)
+                        {
+                            <option value="@branch">@branch</option>
+                        }
+                    </select>
+                }
+                <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary small"></i>
+            </div>
+        </div>
+        @if (_showHistory)
+        {
+            <div class="card-body pt-0" style="max-height:18rem;overflow-y:auto;">
+                @if (!FilteredHistory.Any())
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history fs-3 text-secondary d-block mb-1"></i>
+                        <small class="text-secondary">Нет записей</small>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var a in FilteredHistory)
+                    {
+                        <div class="d-flex align-items-start gap-2 py-2 border-bottom">
+                            <div class="d-flex flex-column align-items-center" style="min-width:3.5rem;">
+                                <small class="text-secondary">@a.CreatedAt.ToString("dd.MM")</small>
+                                <small class="fw-semibold">@a.CreatedAt.ToString("HH:mm")</small>
+                            </div>
+                            <div class="mt-1" style="width:3px;min-height:2rem;background:@ActionColor(a.ActionType);border-radius:2px;"></div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span class="badge @(ActionBadge(a.ActionType))" style="font-size:0.65rem;">@a.ActionType</span>
+                                </div>
+                                <small class="text-dark">@a.Details</small>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<AdminActionDto> History { get; set; } = new();
+    [Parameter] public List<string> AvailableBranches { get; set; } = new();
+
+    private bool _showHistory;
+    private string _typeFilter = "";
+    private string _branchFilter = "";
+
+    private IEnumerable<AdminActionDto> FilteredHistory
+    {
+        get
+        {
+            var query = History.AsEnumerable();
+            if (!string.IsNullOrEmpty(_typeFilter))
+                query = query.Where(a => a.ActionType == _typeFilter);
+            if (!string.IsNullOrEmpty(_branchFilter))
+                query = query.Where(a => a.Branch == _branchFilter);
+            return query;
+        }
+    }
+
+    private void OnHistoryTypeFilterChanged(ChangeEventArgs e)
+    {
+        _typeFilter = e.Value?.ToString() ?? "";
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnHistoryBranchFilterChanged(ChangeEventArgs e)
+    {
+        _branchFilter = e.Value?.ToString() ?? "";
+        InvokeAsync(StateHasChanged);
+    }
+
+    private static string ActionBadge(string t) => t switch { "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary" };
+    private static string ActionColor(string t) => t switch { "Создание" => "#198754", "Удаление" => "#dc3545", "Изменение" => "#0d6efd", _ => "#6c757d" };
+}

@@ -1,8 +1,12 @@
 @page "/admin"
 @using System.Net.Http.Json
+@using CifraShop.Client.Models
+@using CifraShop.Client.Pages.Components
+@using CifraShop.Client.Services
 @implements IDisposable
 @inject HttpClient Http
 @inject NavigationManager Nav
+@inject SignalRService SignalR
 
 <PageTitle>Админ-панель — CifraShop</PageTitle>
 
@@ -13,7 +17,6 @@
 
 <div class="container-fluid px-3 py-2" @onkeydown="HandleKeyDown">
 
-    <!-- УВЕДОМЛЕНИЕ (Toast) -->
     @if (!string.IsNullOrEmpty(_notification))
     {
         <div class="alert alert-@_notificationType alert-dismissible fade show py-2 small" role="alert">
@@ -23,10 +26,17 @@
         </div>
     }
 
-    <!-- ШАПКА + МЕТРИКИ -->
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center gap-3">
             <h5 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap me-1"></i>Админ-панель</h5>
+            @if (SignalR.IsConnected)
+            {
+                <span class="badge bg-success" style="font-size:0.6rem;" title="Обновления в реальном времени">● Online</span>
+            }
+            else
+            {
+                <span class="badge bg-danger" style="font-size:0.6rem;" title="Опрос каждые 5 минут">● Offline</span>
+            }
             @if (_lastUpdated.HasValue)
             {
                 <small class="text-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Обновлено @_lastUpdated.Value.ToString("HH:mm:ss")</small>
@@ -50,937 +60,45 @@
         <MetricCard Title="Филиалы" Count="@_notificationSettings.Count" Subtitle="@($"{_configuredFilials} настроено")" Icon="bi-geo-alt" Color="info" />
     </div>
 
-    <!-- ==================== ТОВАРЫ ==================== -->
     <div class="row g-3 mb-3">
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-box me-1"></i>Товары</h6>
-                    <button class="btn btn-primary btn-sm" @onclick="() => OpenProductModal()">
-                        <i class="bi bi-plus-lg me-1"></i>Добавить
-                    </button>
-                </div>
-                <div class="card-body pt-0">
-                    <SearchBar Value="@_productSearch" ValueChanged="OnProductSearchChanged"
-                               FilterValue="@_productFilter" FilterValueChanged="OnProductFilterChanged"
-                               Placeholder="Название, описание...">
-                        <option value="">Все статусы</option>
-                        <option value="0">В наличии</option>
-                        <option value="1">Нет в наличии</option>
-                        <option value="2">Скоро</option>
-                    </SearchBar>
+        <AdminProductsPanel Products="Products" TotalCount="_productTotalCount" Page="_productPage"
+                            PageSize="_productPageSize" TotalPages="_productTotalPages" Loading="_loadingProducts"
+                            Search="_productSearch" Filter="_productFilter" SortField="_productSortField" SortAsc="_productSortAsc"
+                            TotalStockValue="_totalStockValue"
+                            OnSearchChanged="OnProductSearchChanged" OnFilterChanged="OnProductFilterChanged"
+                            OnPageChanged="OnProductPageChanged" OnPageSizeChanged="OnProductPageSizeChanged"
+                            OnSortToggle="ToggleProductSort"
+                            OnNotification="NotifyFromChild" OnConfirm="ConfirmFromChild" OnLogAction="LogFromChild"
+                            OnMetricsChanged="LoadMetrics" />
 
-                    @if (Products.Any(p => p.IsSelected))
-                    {
-                        <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
-                            <span class="small text-secondary me-auto align-self-center">Выбрано: @Products.Count(p => p.IsSelected)</span>
-                            <button class="btn btn-outline-success btn-sm" @onclick="ShowSelectedProducts">
-                                <i class="bi bi-eye me-1"></i>Показать
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm" @onclick="HideSelectedProducts">
-                                <i class="bi bi-eye-slash me-1"></i>Скрыть
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="DeleteSelectedProducts">
-                                <i class="bi bi-trash me-1"></i>Удалить
-                            </button>
-                        </div>
-                    }
-
-                    @if (_loadingProducts)
-                    {
-                        <Spinner />
-                    }
-                    else if (!Products.Any())
-                    {
-                        <div class="text-center py-4 text-secondary small">
-                            <i class="bi bi-box fs-3 d-block mb-1"></i>
-                            @if (!string.IsNullOrEmpty(_productSearch) || !string.IsNullOrEmpty(_productFilter))
-                            {
-                                <span>Товары не найдены по заданным критериям</span>
-                            }
-                            else
-                            {
-                                <span>Товаров пока нет. Добавьте первый товар</span>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width:2.25rem">
-                                            <div class="d-flex align-items-center gap-1">
-                                                <input type="checkbox" class="form-check-input"
-                                                       checked="@(IsAllProductsSelected)"
-                                                       indeterminate="@(IsProductPartialSelected)"
-                                                       @onchange="ToggleSelectAllProducts" />
-                                                @if (Products.Any(p => p.IsSelected))
-                                                {
-                                                    <span class="badge bg-primary" style="font-size:0.6rem;">@Products.Count(p => p.IsSelected)</span>
-                                                }
-                                            </div>
-                                        </th>
-                                        <th style="cursor:pointer" @onclick="@(() => ToggleProductSort("name"))">
-                                            Товар <i class="bi @SortIcon("name", _productSortField, _productSortAsc) small"></i>
-                                        </th>
-                                        <th style="width:4rem;cursor:pointer" @onclick="@(() => ToggleProductSort("price"))">
-                                            Цена <i class="bi @SortIcon("price", _productSortField, _productSortAsc) small"></i>
-                                        </th>
-                                        <th style="width:5rem;cursor:pointer" @onclick="@(() => ToggleProductSort("quantity"))">
-                                            Склад <i class="bi @SortIcon("quantity", _productSortField, _productSortAsc) small"></i>
-                                        </th>
-                                        <th style="width:6rem;">Статус</th>
-                                        <th style="width:4rem;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var p in Products)
-                                    {
-                                        var isLowStock = p.Status == StatusProduct.InStock && p.Quantity <= 5;
-                                        var isOutOfStock = p.Status == StatusProduct.OutOfStock;
-                                        <tr class="@(isOutOfStock ? "opacity-50" : "") @(isLowStock ? "table-warning" : "")">
-                                            <td><input type="checkbox" class="form-check-input" @bind="p.IsSelected" /></td>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    @if (!string.IsNullOrEmpty(p.ImageUrl))
-                                                    {
-                                                             <img src="@p.ImageUrl" alt="@p.Name"
-                                                             class="rounded-1" style="width:2rem;height:2rem;object-fit:cover;" />
-                                                    }
-                                                    else
-                                                    {
-                                                         <div class="bg-light rounded-1 d-flex align-items-center justify-content-center"
-                                                              style="width:2rem;height:2rem;">
-                                                            <i class="bi bi-image text-secondary small"></i>
-                                                        </div>
-                                                    }
-                                                    <div>
-                                                        <div class="fw-semibold text-truncate" style="max-width:10rem;" title="@p.Name">
-                                                            @((MarkupString)HighlightText(p.Name, _productSearch))
-                                                            @if (isLowStock)
-                                                            {
-                                                                <i class="bi bi-exclamation-triangle text-warning ms-1" title="Низкий остаток"></i>
-                                                            }
-                                                        </div>
-                                                        @if (!string.IsNullOrEmpty(p.Description))
-                                                        {
-                                                            <small class="text-secondary text-truncate d-block" style="max-width:10rem;">@((MarkupString)HighlightText(p.Description, _productSearch))</small>
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>@p.Price </td>
-                                            <td>
-                                                <input type="number" class="form-control form-control-sm @(isLowStock ? "border-warning" : "")"
-                                                       style="width:3.75rem;" value="@p.Quantity"
-                                                       @onchange="(ChangeEventArgs e) => OnQuantityChanged(p, e)" />
-                                            </td>
-                                            <td>
-                                                <span class="badge @(StatusBadge(p.Status))"
-                                                      style="cursor:pointer"
-                                                      @onclick="() => ToggleProductStatus(p)"
-                                                      title="@(StatusTooltip(p.Status))">
-                                                    @StatusText(p.Status)
-                                                </span>
-                                            </td>
-                                            <td class="text-nowrap">
-                                                <button class="btn btn-sm btn-outline-primary me-1" title="Редактировать"
-                                                        @onclick="() => OpenProductModal(p)">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" title="Удалить"
-                                                        @onclick="() => DeleteProduct(p)">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <small class="text-secondary">
-                                    @_productTotalCount товар(ов)
-                                    @if (_totalStockValue > 0)
-                                    {
-                                        <span class="ms-2 text-muted">· @_totalStockValue.ToString("N0")  на складе</span>
-                                    }
-                                </small>
-                                <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                        value="@_productPageSize" @onchange="OnProductPageSizeChanged">
-                                    <option value="5">5</option>
-                                    <option value="8">8</option>
-                                    <option value="16">16</option>
-                                    <option value="32">32</option>
-                                </select>
-                            </div>
-                            <Pagination Page="_productPage" TotalPages="@_productTotalPages" Loading="@_loadingProducts"
-                                         PageChanged="OnProductPageChanged" />
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== ЗАКАЗЫ ==================== -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-cart-check me-1"></i>Заказы</h6>
-                    <button class="btn btn-primary btn-sm" @onclick="OpenOrderModal">
-                        <i class="bi bi-plus-lg me-1"></i>Создать
-                    </button>
-                </div>
-                <div class="card-body pt-0">
-                    <div class="d-flex gap-2 mb-2 flex-wrap align-items-center">
-                        <SearchBar Value="@_orderSearch" ValueChanged="OnOrderSearchChanged"
-                                   FilterValue="@_orderFilter" FilterValueChanged="OnOrderFilterChanged"
-                                   Placeholder="Номер, email...">
-                            <option value="">Все статусы</option>
-                            @foreach (var s in OrderStatuses)
-                            {
-                                <option value="@s.Key">@s.Value</option>
-                            }
-                        </SearchBar>
-                        <div class="d-flex align-items-center gap-1">
-                            <small class="text-secondary">с</small>
-                            <input type="date" class="form-control form-control-sm w-auto"
-                                   value="@_orderDateFrom" @onchange="OnOrderDateFromChanged" />
-                            <small class="text-secondary">по</small>
-                            <input type="date" class="form-control form-control-sm w-auto"
-                                   value="@_orderDateTo" @onchange="OnOrderDateToChanged" />
-                        </div>
-                    </div>
-
-                    @if (Orders.Any(o => o.IsSelected))
-                    {
-                        <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
-                            <span class="small text-secondary me-auto align-self-center">Выбрано: @Orders.Count(o => o.IsSelected)</span>
-                            <select class="form-select form-select-sm w-auto"
-                                    @onchange="async e => { if (int.TryParse(e.Value?.ToString(), out int s)) await MassChangeOrderStatus((StatusOrder)s); }">
-                                <option value="">Сменить статус на...</option>
-                                @foreach (var s in OrderStatuses)
-                                {
-                                    <option value="@s.Key">@s.Value</option>
-                                }
-                            </select>
-                        </div>
-                    }
-
-                    @if (_loadingOrders)
-                    {
-                        <Spinner />
-                    }
-                    else if (!Orders.Any())
-                    {
-                        <div class="text-center py-4 text-secondary small">
-                            <i class="bi bi-cart fs-3 d-block mb-1"></i>
-                            @if (!string.IsNullOrEmpty(_orderSearch) || !string.IsNullOrEmpty(_orderFilter) || !string.IsNullOrEmpty(_orderDateFrom) || !string.IsNullOrEmpty(_orderDateTo))
-                            {
-                                <span>Заказы не найдены по заданным критериям</span>
-                            }
-                            else
-                            {
-                                <span>Заказов пока нет</span>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width:2.25rem">
-                                            <div class="d-flex align-items-center gap-1">
-                                                <input type="checkbox" class="form-check-input"
-                                                       checked="@(IsAllOrdersSelected)"
-                                                       indeterminate="@(IsOrderPartialSelected)"
-                                                       @onchange="ToggleSelectAllOrders" />
-                                                @if (Orders.Any(o => o.IsSelected))
-                                                {
-                                                    <span class="badge bg-primary" style="font-size:0.6rem;">@Orders.Count(o => o.IsSelected)</span>
-                                                }
-                                            </div>
-                                        </th>
-                                        <th style="width:2.5rem"></th>
-                                        <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("id"))">
-                                            № <i class="bi @SortIcon("id", _orderSortField, _orderSortAsc) small"></i>
-                                        </th>
-                                        <th>Покупатель</th>
-                                        <th>Состав</th>
-                                        <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("date"))">
-                                            Дата <i class="bi @SortIcon("date", _orderSortField, _orderSortAsc) small"></i>
-                                        </th>
-                                        <th style="cursor:pointer" @onclick="@(() => ToggleOrderSort("sum"))">
-                                            Сумма <i class="bi @SortIcon("sum", _orderSortField, _orderSortAsc) small"></i>
-                                        </th>
-                                        <th>Статус</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var o in Orders)
-                                    {
-                                        var items = string.Join(", ", o.Items.Select(i => $"{i.Quantity}\u00d7{i.ProductName}"));
-                                        var isExpanded = _expandedOrderId == o.Id;
-                                        <tr style="cursor:pointer" @onclick="() => ToggleOrderExpand(o.Id)"
-                                            class="@(isExpanded ? "table-active" : "")">
-                                            <td @onclick:stopPropagation="true">
-                                                <input type="checkbox" class="form-check-input" @bind="o.IsSelected" />
-                                            </td>
-                                            <td @onclick:stopPropagation="true">
-                                                @if (!string.IsNullOrEmpty(o.ImageUrl))
-                                                {
-                                                    <img src="@o.ImageUrl" alt="Фото заказа"
-                                                         class="rounded-1" style="width:2rem;height:2rem;object-fit:cover;cursor:pointer;"
-                                                         @onclick="() => OpenOrderImagesModal(o)" title="Изображения заказа" />
-                                                }
-                                                else
-                                                {
-                                                    <div class="bg-light rounded-1 d-flex align-items-center justify-content-center"
-                                                         style="width:2rem;height:2rem;cursor:pointer;"
-                                                         @onclick="() => OpenOrderImagesModal(o)" title="Добавить изображение">
-                                                        <i class="bi bi-image text-secondary small"></i>
-                                                    </div>
-                                                }
-                                            </td>
-                                            <td class="fw-semibold">#@o.Id</td>
-                                            <td class="text-truncate" style="max-width:7.5rem;" title="@o.CustomerEmail">@((MarkupString)HighlightText(o.CustomerEmail, _orderSearch))</td>
-                                            <td><small class="text-truncate d-block" style="max-width:9rem;" title="@items">@((MarkupString)HighlightText(items, _orderSearch))</small></td>
-                                            <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
-                                            <td>@o.Sum </td>
-                                            <td @onclick:stopPropagation="true">
-                                                <select class="form-select form-select-sm py-0"
-                                                        value="@((int)o.Status)"
-                                                        @onchange="e => ChangeOrderStatus(o, (StatusOrder)int.Parse(e.Value!.ToString()!))">
-                                                    @foreach (var s in OrderStatuses)
-                                                    {
-                                                        <option value="@s.Key" selected="@((int)o.Status).ToString() == s.Key">@s.Value</option>
-                                                    }
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        @if (isExpanded)
-                                        {
-                                        <tr>
-                                                <td colspan="8" class="bg-light p-3">
-                                                    <div class="small">
-                                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                                            <div class="fw-semibold">Состав заказа:</div>
-                                                            <div class="d-flex gap-2 align-items-center">
-                                                                <span class="text-secondary"><i class="bi bi-calendar me-1"></i>@o.DateOfPurchase.ToString("dd.MM.yyyy HH:mm")</span>
-                                                                <span class="badge @(OrderBadge(o.Status))">@OrderStatuses[((int)o.Status).ToString()]</span>
-                                                                <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true" @onclick="() => OpenOrderImagesModal(o)">
-                                                                    <i class="bi bi-image me-1"></i>Изображения
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        @if (o.Items.Any())
-                                                        {
-                                                            @foreach (var item in o.Items)
-                                                            {
-                                                                <div class="d-flex justify-content-between">
-                                                                    <span>@item.ProductName (@item.Quantity шт. × @item.Price )</span>
-                                                                    <span class="fw-semibold">@item.Total </span>
-                                                                </div>
-                                                            }
-                                                            <div class="border-top mt-1 pt-1 fw-bold d-flex justify-content-between">
-                                                                <span>Итого:</span>
-                                                                <span>@o.Items.Sum(i => i.Total) </span>
-                                                            </div>
-                                                        }
-                                                        else
-                                                        {
-                                                            <span class="text-secondary">Нет позиций</span>
-                                                        }
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <small class="text-secondary">
-                                    @_orderTotalCount заказ(ов)
-                                    @if (_totalRevenue > 0)
-                                    {
-                                        <span class="ms-2 text-muted">· @_totalRevenue.ToString("N0") </span>
-                                    }
-                                </small>
-                                <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                        value="@_orderPageSize" @onchange="OnOrderPageSizeChanged">
-                                    <option value="5">5</option>
-                                    <option value="8">8</option>
-                                    <option value="16">16</option>
-                                    <option value="32">32</option>
-                                </select>
-                            </div>
-                            <Pagination Page="_orderPage" TotalPages="@_orderTotalPages" Loading="@_loadingOrders"
-                                         PageChanged="OnOrderPageChanged" />
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
+        <AdminOrdersPanel Orders="Orders" TotalCount="_orderTotalCount" Page="_orderPage"
+                          PageSize="_orderPageSize" TotalPages="_orderTotalPages" Loading="_loadingOrders"
+                          Search="_orderSearch" Filter="_orderFilter" DateFrom="_orderDateFrom" DateTo="_orderDateTo"
+                          SortField="_orderSortField" SortAsc="_orderSortAsc" ExpandedOrderId="_expandedOrderId"
+                          TotalRevenue="_totalRevenue" AllProducts="_allProductsForOrder" AllUsersCache="_allUsersCache"
+                          OnSearchChanged="OnOrderSearchChanged" OnFilterChanged="OnOrderFilterChanged"
+                          OnDateFromChanged="OnOrderDateFromChanged" OnDateToChanged="OnOrderDateToChanged"
+                          OnPageChanged="OnOrderPageChanged" OnPageSizeChanged="OnOrderPageSizeChanged"
+                          OnSortToggle="ToggleOrderSort" OnOrderExpand="OnOrderExpandWrapper"
+                          OnNotification="NotifyFromChild" OnConfirm="ConfirmFromChild" OnLogAction="LogFromChild"
+                          OnMetricsChanged="LoadMetrics" />
     </div>
 
-    <!-- ==================== ПОЛЬЗОВАТЕЛИ ==================== -->
     <div class="row g-3 mb-3">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-people me-1"></i>Пользователи</h6>
-                    <button class="btn btn-primary btn-sm" @onclick="() => _showUserModal = true">
-                        <i class="bi bi-plus-lg me-1"></i>Добавить
-                    </button>
-                </div>
-                <div class="card-body pt-0">
-                    <SearchBar Value="@_userSearch" ValueChanged="OnUserSearchChanged"
-                               FilterValue="@_userFilter" FilterValueChanged="OnUserFilterChanged"
-                               Placeholder="Email...">
-                        <option value="">Все роли</option>
-                        <option value="0">Студенты</option>
-                        <option value="1">Админы</option>
-                    </SearchBar>
-
-                    @if (_loadingUsers)
-                    {
-                        <Spinner />
-                    }
-                    else if (!Users.Any())
-                    {
-                        <div class="text-center py-4 text-secondary small">
-                            <i class="bi bi-people fs-3 d-block mb-1"></i>
-                            @if (!string.IsNullOrEmpty(_userSearch) || !string.IsNullOrEmpty(_userFilter))
-                            {
-                                <span>Пользователи не найдены по заданным критериям</span>
-                            }
-                            else
-                            {
-                                <span>Пользователей пока нет. Создайте первого пользователя</span>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width:3rem;cursor:pointer" @onclick="@(() => ToggleUserSort("id"))">
-                                            ID <i class="bi @SortIcon("id", _userSortField, _userSortAsc) small"></i>
-                                        </th>
-                                        <th style="cursor:pointer" @onclick="@(() => ToggleUserSort("email"))">
-                                            Email <i class="bi @SortIcon("email", _userSortField, _userSortAsc) small"></i>
-                                        </th>
-                                        <th style="width:6rem;cursor:pointer" @onclick="@(() => ToggleUserSort("balance"))">
-                                            Баланс <i class="bi @SortIcon("balance", _userSortField, _userSortAsc) small"></i>
-                                        </th>
-                                        <th>Роль</th>
-                                        <th style="width:6rem;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var u in Users)
-                                    {
-                                        <tr>
-                                            <td class="text-secondary small">#@u.Id</td>
-                                            <td class="text-truncate" style="max-width:15rem;" title="@u.Email">@((MarkupString)HighlightText(u.Email, _userSearch))</td>
-                                            <td>
-                                                <span class="px-1 rounded border-bottom border-secondary" style="cursor:pointer" @onclick="() => OpenEditUserModal(u)"
-                                                      title="Нажмите для редактирования">
-                                                    @(u.Balance?.ToString("N0") ?? "0") 
-                                                    <i class="bi bi-pencil small text-primary ms-1"></i>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="badge @(u.Role == UserRole.Admin ? "bg-warning text-dark" : "bg-info")">
-                                                    @(u.Role == UserRole.Admin ? "Админ" : "Студент")
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-danger" title="Удалить"
-                                                        @onclick="() => DeleteUser(u)">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <small class="text-secondary">@_userTotalCount пользовател(ей)</small>
-                                <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                        value="@_userPageSize" @onchange="OnUserPageSizeChanged">
-                                    <option value="5">5</option>
-                                    <option value="8">8</option>
-                                    <option value="16">16</option>
-                                    <option value="32">32</option>
-                                </select>
-                            </div>
-                            <Pagination Page="_userPage" TotalPages="@_userTotalPages" Loading="@_loadingUsers"
-                                         PageChanged="OnUserPageChanged" />
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
+        <AdminUsersPanel Users="Users" TotalCount="_userTotalCount" Page="_userPage"
+                         PageSize="_userPageSize" TotalPages="_userTotalPages" Loading="_loadingUsers"
+                         Search="_userSearch" Filter="_userFilter" SortField="_userSortField" SortAsc="_userSortAsc"
+                         OnSearchChanged="OnUserSearchChanged" OnFilterChanged="OnUserFilterChanged"
+                         OnPageChanged="OnUserPageChanged" OnPageSizeChanged="OnUserPageSizeChanged"
+                         OnSortToggle="ToggleUserSort"
+                         OnNotification="NotifyFromChild" OnConfirm="ConfirmFromChild" OnLogAction="LogFromChild" />
     </div>
 
-    <!-- ==================== ФИЛИАЛЫ И УВЕДОМЛЕНИЯ + ИСТОРИЯ ==================== -->
     <div class="row g-3 mb-3">
-        <!-- Филиалы и уведомления -->
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>Уведомления по филиалам</h6>
-                    <div class="d-flex align-items-center gap-2">
-                        @if (_notificationSettings.Any())
-                        {
-                            <small class="text-secondary">@_configuredFilials/@_notificationSettings.Count настроено</small>
-                        }
-                        <button class="btn btn-outline-primary btn-sm" @onclick="() => _showNotificationModal = true">
-                            <i class="bi bi-gear"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body pt-0">
-                    @if (!_notificationSettings.Any())
-                    {
-                        <div class="text-center py-3">
-                            <small class="text-secondary"><i class="bi bi-bell-slash me-1"></i>Не настроено</small>
-                        </div>
-                    }
-                    else
-                    {
-                        @foreach (var s in _notificationSettings)
-                        {
-                            <div class="d-flex align-items-start gap-2 py-2 border-bottom">
-                                <i class="bi bi-geo-alt text-primary mt-1"></i>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold small">@s.Branch</div>
-                                    @if (!string.IsNullOrEmpty(s.AdminEmails))
-                                    {
-                                        <div class="small text-secondary mt-1"><i class="bi bi-person me-1"></i>@s.AdminEmails</div>
-                                    }
-                                    <div class="d-flex gap-1 flex-wrap mt-1">
-                                        @if (!string.IsNullOrEmpty(s.Email))
-                                        {
-                                            <span class="badge bg-light text-dark border"><i class="bi bi-envelope me-1"></i>Email</span>
-                                        }
-                                        @if (!string.IsNullOrEmpty(s.TelegramChatId))
-                                        {
-                                            <span class="badge bg-light text-dark border"><i class="bi bi-telegram me-1"></i>Telegram</span>
-                                        }
-                                        @if (s.NotifyOnNewOrder)
-                                        {
-                                            <span class="badge bg-primary bg-opacity-10 text-primary">Заказы</span>
-                                        }
-                                        @if (s.NotifyOnStatusChange)
-                                        {
-                                            <span class="badge bg-info bg-opacity-10 text-info">Статус</span>
-                                        }
-                                        @if (s.NotifyOnLowStock)
-                                        {
-                                            <span class="badge bg-warning text-dark">Остаток ≤ @s.LowStockThreshold</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- История действий -->
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center"
-                     style="cursor:pointer" @onclick="() => _showHistory = !_showHistory">
-                    <h6 class="fw-semibold mb-0">
-                        <i class="bi bi-clock-history me-1"></i>История действий
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1" style="font-size:0.7rem;">@_actionHistory.Count</span>
-                    </h6>
-                    <div class="d-flex align-items-center gap-2">
-                        @if (_actionHistory.Any())
-                        {
-                            <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                    @onchange="OnHistoryTypeFilterChanged" @onclick:stopPropagation="true">
-                                <option value="">Все типы</option>
-                                <option value="Создание">Создание</option>
-                                <option value="Изменение">Изменение</option>
-                                <option value="Удаление">Удаление</option>
-                            </select>
-                            <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
-                                    @onchange="OnHistoryBranchFilterChanged" @onclick:stopPropagation="true">
-                                <option value="">Все филиалы</option>
-                                @foreach (var branch in _availableBranches)
-                                {
-                                    <option value="@branch">@branch</option>
-                                }
-                            </select>
-                        }
-                        <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary small"></i>
-                    </div>
-                </div>
-                @if (_showHistory)
-                {
-                    <div class="card-body pt-0" style="max-height:18rem;overflow-y:auto;">
-                        @if (!_filteredHistory.Any())
-                        {
-                            <div class="text-center py-4">
-                                <i class="bi bi-clock-history fs-3 text-secondary d-block mb-1"></i>
-                                <small class="text-secondary">Нет записей</small>
-                            </div>
-                        }
-                        else
-                        {
-                            @foreach (var a in _filteredHistory)
-                            {
-                                <div class="d-flex align-items-start gap-2 py-2 border-bottom">
-                                    <div class="d-flex flex-column align-items-center" style="min-width:3.5rem;">
-                                        <small class="text-secondary">@a.CreatedAt.ToString("dd.MM")</small>
-                                        <small class="fw-semibold">@a.CreatedAt.ToString("HH:mm")</small>
-                                    </div>
-                                    <div class="mt-1" style="width:3px;min-height:2rem;background:ActionColor(a.ActionType);border-radius:2px;"></div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex align-items-center gap-1 mb-1">
-                                            <span class="badge @(ActionBadge(a.ActionType))" style="font-size:0.65rem;">@a.ActionType</span>
-                                        </div>
-                                        <small class="text-dark">@a.Details</small>
-                                    </div>
-                                </div>
-                            }
-                        }
-                    </div>
-                }
-            </div>
-        </div>
+        <AdminNotificationsPanel Settings="_notificationSettings" OnNotification="NotifyFromChild" />
+        <AdminHistoryPanel History="_actionHistory" AvailableBranches="_availableBranches" />
     </div>
 
-    <!-- ==================== МОДАЛКА ТОВАРА ==================== -->
-    @if (_showProductModal)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CloseProductModal">
-            <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
-                <div class="modal-content rounded-3 shadow">
-                    <div class="modal-header border-0 pb-0">
-                        <h6 class="modal-title fw-semibold">
-                            <i class="bi bi-@(_editingProduct == null ? "plus-circle" : "pencil-square") me-1"></i>
-                            @(_editingProduct == null ? "Новый товар" : "Редактирование товара")
-                        </h6>
-                        <button type="button" class="btn-close" @onclick="CloseProductModal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label small fw-medium">Название <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @(_formName.Length > 0 ? "is-valid" : "")"
-                                   @bind="_formName" placeholder="Введите название" disabled="@_saving" />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-medium">Описание</label>
-                            <textarea class="form-control" rows="2" @bind="_formDescription" placeholder="Краткое описание товара" disabled="@_saving"></textarea>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <label class="form-label small fw-medium">Цена ()</label>
-                                <input type="number" class="form-control" @bind="_formPrice" min="1" step="1" placeholder="0" disabled="@_saving" />
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-medium">Количество</label>
-                                <input type="number" class="form-control" @bind="_formQuantity" min="0" step="1" placeholder="0" disabled="@_saving" />
-                            </div>
-                        </div>
-                        @if (_editingProduct != null)
-                        {
-                            <div class="mt-3">
-                                <label class="form-label small fw-medium">Фотографии товара</label>
-                                <div class="d-flex gap-2 flex-wrap mb-2">
-                                    @foreach (var img in _productImages)
-                                    {
-                                        <div class="position-relative" style="width:5rem;height:5rem;">
-                                            <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
-                                                 alt="Фото" />
-                                            <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
-                                                    style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
-                                                    @onclick="() => DeleteProductImage(img)" title="Удалить">×</button>
-                                            @if (!img.IsPrimary)
-                                            {
-                                                <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
-                                                        style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
-                                                        @onclick="() => SetPrimaryImage(img)" title="Сделать главной">★</button>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                                <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
-                                       style="cursor:pointer;" for="imageFileInput">
-                                    <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
-                                    <small class="text-secondary">Нажмите для выбора изображения</small>
-                                    <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
-                                </label>
-                                <InputFile id="imageFileInput" OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
-                            </div>
-                        }
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary btn-sm" @onclick="CloseProductModal" disabled="@_saving">Отмена</button>
-                        <button type="button" class="btn btn-primary btn-sm"
-                                disabled="@(_formName.Length == 0 || _saving)"
-                                @onclick="SaveProduct">
-                            @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                            else { <i class="bi bi-check-lg me-1"></i> }
-                            Сохранить
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- МОДАЛКА ПОЛЬЗОВАТЕЛЯ -->
-    @if (_showUserModal)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showUserModal = false">
-            <div class="modal-dialog modal-sm modal-dialog-centered" @onclick:stopPropagation="true">
-                <div class="modal-content rounded-3 shadow">
-                    <div class="modal-header border-0 pb-0">
-                        <h6 class="modal-title fw-semibold"><i class="bi bi-person-plus me-1"></i>Новый пользователь</h6>
-                        <button type="button" class="btn-close" @onclick="() => _showUserModal = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label small fw-medium">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" @bind="_newUserEmail" placeholder="user@example.com" />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-medium">Пароль <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control" @bind="_newUserPassword" placeholder="Минимум 6 символов" />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-medium">Роль</label>
-                            <select class="form-select form-select-sm" @bind="_newUserRole">
-                                <option value="Student">Студент</option>
-                                <option value="Admin">Админ</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showUserModal = false">Отмена</button>
-                        <button type="button" class="btn btn-primary btn-sm"
-                                disabled="@(_newUserEmail.Length == 0 || _newUserPassword.Length == 0 || _creatingUser)"
-                                @onclick="CreateUser">
-                            @if (_creatingUser) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                            else { <i class="bi bi-check-lg me-1"></i> }
-                            Создать
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- МОДАЛКА РЕДАКТИРОВАНИЯ БАЛАНСА -->
-    @if (_showEditUserModal && _editingUser != null)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showEditUserModal = false">
-            <div class="modal-dialog modal-sm modal-dialog-centered" @onclick:stopPropagation="true">
-                <div class="modal-content rounded-3 shadow">
-                    <div class="modal-header border-0 pb-0">
-                        <h6 class="modal-title fw-semibold"><i class="bi bi-wallet2 me-1"></i>Баланс — @_editingUser.Email</h6>
-                        <button type="button" class="btn-close" @onclick="() => _showEditUserModal = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        <label class="form-label small fw-medium">Баланс ()</label>
-                        <input type="number" class="form-control" @bind="_editBalance" min="0" placeholder="0" />
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showEditUserModal = false">Отмена</button>
-                        <button type="button" class="btn btn-primary btn-sm" @onclick="SaveUserBalance" disabled="@_savingBalance">
-                            @if (_savingBalance) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                            else { <i class="bi bi-check-lg me-1"></i> }
-                            Сохранить
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- МОДАЛКА СОЗДАНИЯ ЗАКАЗА -->
-    @if (_showOrderModal)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showOrderModal = false">
-            <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
-                <div class="modal-content rounded-3 shadow">
-                    <div class="modal-header border-0 pb-0">
-                        <h6 class="modal-title fw-semibold"><i class="bi bi-cart-plus me-1"></i>Новый заказ</h6>
-                        <button type="button" class="btn-close" @onclick="() => _showOrderModal = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3 position-relative">
-                            <label class="form-label small fw-medium">Email покупателя <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" @bind="_newOrderEmail" @bind:after="OnOrderEmailInput"
-                                   placeholder="Начните вводить email..." autocomplete="off" />
-                            @if (_emailSuggestions.Any())
-                            {
-                                <div class="position-absolute top-100 start-0 end-0 bg-white border border-top-0 rounded-bottom shadow-sm overflow-y-auto" style="z-index:1050;max-height:12rem;">
-                                    @foreach (var u in _emailSuggestions)
-                                    {
-                                        <div class="autocomplete-item py-1 px-3 small" style="cursor:pointer" @onclick="() => SelectOrderEmail(u.Email)">
-                                            <strong>@u.Email</strong>
-                                            <small class="text-secondary ms-1">(@u.Role)</small>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-medium">Товары</label>
-                            @foreach (var item in _newOrderItems)
-                            {
-                                <div class="d-flex gap-2 mb-2 align-items-center">
-                                    <select class="form-select form-select-sm flex-grow-1" @bind="item.ProductId">
-                                        <option value="0">Выберите товар</option>
-                                        @foreach (var p in _allProductsForOrder.Where(p => p.Status == StatusProduct.InStock))
-                                        {
-                                            <option value="@p.Id">@p.Name (@p.Price )</option>
-                                        }
-                                    </select>
-                                    <input type="number" class="form-control form-control-sm" style="width:4rem;" @bind="item.Quantity" min="1" />
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => _newOrderItems.Remove(item)">
-                                        <i class="bi bi-x"></i>
-                                    </button>
-                                </div>
-                            }
-                            <button class="btn btn-sm btn-outline-primary" @onclick="() => _newOrderItems.Add(new OrderItemForm())">
-                                <i class="bi bi-plus me-1"></i>Добавить позицию
-                            </button>
-                        </div>
-                        @if (_newOrderItems.Any(i => i.ProductId > 0))
-                        {
-                            <div class="border-top pt-2 small">
-                                <div class="d-flex justify-content-between fw-bold">
-                                    <span>Итого:</span>
-                                    <span>@_newOrderItems.Where(i => i.ProductId > 0).Sum(i => (_allProductsForOrder.FirstOrDefault(p => p.Id == i.ProductId)?.Price ?? 0) * i.Quantity) </span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showOrderModal = false">Отмена</button>
-                        <button type="button" class="btn btn-primary btn-sm"
-                                disabled="@(_newOrderEmail.Length == 0 || !_newOrderItems.Any(i => i.ProductId > 0) || _creatingOrder)"
-                                @onclick="CreateOrder">
-                            @if (_creatingOrder) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                            else { <i class="bi bi-check-lg me-1"></i> }
-                            Создать
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- МОДАЛКА УВЕДОМЛЕНИЙ -->
-    @if (_showNotificationModal)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
-             @onmousedown="() => _showNotificationModal = false">
-            <div class="modal-dialog modal-lg modal-dialog-centered"
-                 @onclick:stopPropagation="true"
-                 @onmousedown:stopPropagation="true"
-                 @onkeydown:stopPropagation="true">
-                <div class="modal-content rounded-3 shadow">
-                    <div class="modal-header border-0 pb-0">
-                        <h6 class="modal-title fw-semibold"><i class="bi bi-bell me-1"></i>Настройки уведомлений</h6>
-                        <button type="button" class="btn-close" @onclick="() => _showNotificationModal = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        @if (!_notificationSettings.Any())
-                        {
-                            <p class="text-secondary small">Уведомления не настроены. Создайте первую настройку для филиала.</p>
-                        }
-                        @foreach (var s in _notificationSettings)
-                        {
-                            <div class="border rounded-3 p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>@s.Branch</h6>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm @(s.Id == 0 ? "btn-success" : "btn-outline-primary")" @onclick="() => SaveNotificationSettings(s)">
-                                            <i class="bi bi-check-lg me-1"></i>@(s.Id == 0 ? "Создать" : "Сохранить")
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteNotificationSettings(s)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <label class="form-label small">Название филиала</label>
-                                        <input type="text" class="form-control form-control-sm" @bind="s.Branch" placeholder="Москва, Казань..." />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label small">Email для уведомлений</label>
-                                        <input type="email" class="form-control form-control-sm" @bind="s.Email" placeholder="admin@example.com" />
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label small">Telegram Bot Token</label>
-                                        <input type="text" class="form-control form-control-sm" @bind="s.TelegramBotToken" placeholder="123456:ABC..." />
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label small">Telegram Chat ID</label>
-                                        <input type="text" class="form-control form-control-sm" @bind="s.TelegramChatId" placeholder="-100123..." />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label small">Email администраторов филиала</label>
-                                        <input type="text" class="form-control form-control-sm" @bind="s.AdminEmails" placeholder="admin1@example.com, admin2@example.com" />
-                                        <small class="text-secondary">Через запятую. Определяет, какие админы принадлежат этому филиалу.</small>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label small fw-medium">Уведомлять о:</label>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" @bind="s.NotifyOnNewOrder" />
-                                            <label class="form-check-label small">Новых заказах</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" @bind="s.NotifyOnStatusChange" />
-                                            <label class="form-check-label small">Смене статуса заказа</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" @bind="s.NotifyOnLowStock" />
-                                            <label class="form-check-label small">Малом остатке на складе</label>
-                                        </div>
-                                    </div>
-                                    @if (s.NotifyOnLowStock)
-                                    {
-                                        <div class="col-6">
-                                            <label class="form-label small">Порог остатка</label>
-                                            <input type="number" class="form-control form-control-sm" @bind="s.LowStockThreshold" min="1" />
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                        <button class="btn btn-sm btn-outline-success" @onclick="AddNewNotificationSettings">
-                            <i class="bi bi-plus-lg me-1"></i>Добавить филиал
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ -->
     @if (_showConfirmModal)
     {
         <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CancelConfirm">
@@ -998,59 +116,6 @@
             </div>
         </div>
     }
-
-    <!-- МОДАЛКА ИЗОБРАЖЕНИЙ ЗАКАЗА -->
-    @if (_showOrderImagesModal)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
-             @onmousedown="() => _showOrderImagesModal = false">
-            <div class="modal-dialog modal-lg modal-dialog-centered"
-                 @onclick:stopPropagation="true"
-                 @onmousedown:stopPropagation="true"
-                 @onkeydown:stopPropagation="true">
-                <div class="modal-content rounded-3 shadow">
-                    <div class="modal-header border-0 pb-0">
-                        <h6 class="modal-title fw-semibold"><i class="bi bi-image me-1"></i>Изображения заказа #@_orderImagesOrderId</h6>
-                        <button type="button" class="btn-close" @onclick="() => _showOrderImagesModal = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="d-flex gap-2 flex-wrap mb-3">
-                            @foreach (var img in _orderImages)
-                            {
-                                <div class="position-relative" style="width:6rem;height:6rem;">
-                                    <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
-                                         alt="Фото заказа" />
-                                    <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
-                                            style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
-                                            @onclick="() => DeleteOrderImage(img)" title="Удалить">×</button>
-                                    @if (!img.IsPrimary)
-                                    {
-                                        <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
-                                                style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
-                                                @onclick="() => SetPrimaryOrderImage(img)" title="Сделать главным">★</button>
-                                    }
-                                </div>
-                            }
-                            @if (!_orderImages.Any())
-                            {
-                                <div class="text-center py-3 w-100 text-secondary small">
-                                    <i class="bi bi-image fs-3 d-block mb-1"></i>
-                                    Нет изображений
-                                </div>
-                            }
-                        </div>
-                        <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
-                               style="cursor:pointer;" for="orderImageFileInput">
-                            <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
-                            <small class="text-secondary">Нажмите для выбора изображения</small>
-                            <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
-                        </label>
-                        <InputFile id="orderImageFileInput" OnChange="OnOrderImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
 </div>
 
 @code {
@@ -1058,23 +123,15 @@
     private List<OrderDto> Orders = new();
     private List<UserDto> Users = new();
     private List<UserDto> _allUsersCache = new();
-    private List<UserDto> _emailSuggestions = new();
     private List<AdminActionDto> _actionHistory = new();
     private List<NotificationSettingsDto> _notificationSettings = new();
     private List<ProductDto> _allProductsForOrder = new();
-    private List<ProductImageDto> _productImages = new();
-    private List<OrderImageDto> _orderImages = new();
-    private int _orderImagesOrderId;
 
     private string? _notification;
     private string _notificationType = "success";
     private bool _loadingProducts = true;
     private bool _loadingOrders = true;
     private bool _loadingUsers = true;
-    private bool _saving;
-    private bool _creatingUser;
-    private bool _creatingOrder;
-    private bool _savingBalance;
 
     private int _productTotalCount, _orderTotalCount, _userTotalCount;
     private int _productPage, _orderPage, _userPage;
@@ -1086,23 +143,25 @@
     private int _totalRevenue;
     private int _adminCount;
     private int _lowStockCount;
-    private string _lowStockSubtitle => _lowStockCount > 0 ? $"⚠ {_lowStockCount} с низким остатком" : "Все в наличии";
+    private string _lowStockSubtitle
+    {
+        get
+        {
+            var outOfStock = _outOfStockCount;
+            var lowStock = _lowStockCount;
+            var parts = new List<string>();
+            if (outOfStock > 0) parts.Add($"{outOfStock} без наличия");
+            if (lowStock > 0) parts.Add($"{lowStock} с низким остатком");
+            return parts.Count > 0 ? string.Join(", ", parts) : "Все в наличии";
+        }
+    }
+    private int _outOfStockCount;
     private int _configuredFilials => _notificationSettings.Count(s => !string.IsNullOrEmpty(s.Email) || !string.IsNullOrEmpty(s.TelegramChatId));
     private int _totalStockValue;
-
-    private PeriodicTimer? _refreshTimer;
-
-    private static readonly Dictionary<string, string> OrderStatuses = new()
-    {
-        ["0"] = "Ожидание", ["1"] = "Ожидает оплаты", ["2"] = "Оплачен",
-        ["3"] = "В производстве", ["4"] = "Выполнен"
-    };
 
     private string _productSearch = "", _productFilter = "";
     private string _orderSearch = "", _orderFilter = "", _orderDateFrom = "", _orderDateTo = "";
     private string _userSearch = "", _userFilter = "";
-    private string _historyBranchFilter = "";
-    private string _historyTypeFilter = "";
     private string _selectedBranch = "";
     private List<string> _availableBranches = new();
 
@@ -1116,7 +175,191 @@
     private int _orderPageSize = 8;
     private int _userPageSize = 8;
 
+    private int? _expandedOrderId;
+
+    private bool _showConfirmModal;
+    private string _confirmMessage = "", _confirmButtonText = "Удалить";
+    private Func<Task>? _onConfirmAction;
+
     private CancellationTokenSource? _productSearchCts, _orderSearchCts, _userSearchCts, _notificationCts;
+    private PeriodicTimer? _fallbackTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        RestoreFiltersFromUrl();
+        await LoadAllData();
+        await LoadHistory();
+
+        SignalR.OnNotify += HandleSignalRNotify;
+        try { await SignalR.StartAsync(); }
+        catch (Exception ex) { ShowNotification($"SignalR: {ex.Message}", "warning"); }
+
+        _fallbackTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+        _ = FallbackLoop();
+    }
+
+    private void HandleSignalRNotify(string entity, string action)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            switch (entity)
+            {
+                case "product":
+                    await LoadProducts();
+                    await LoadMetrics();
+                    await LoadAllProducts();
+                    break;
+                case "order":
+                    await LoadOrders();
+                    await LoadMetrics();
+                    break;
+                case "user":
+                    await LoadUsers();
+                    await LoadUsersMetrics();
+                    break;
+                case "notification":
+                    await LoadNotificationSettings();
+                    break;
+            }
+            _lastUpdated = DateTime.Now;
+            StateHasChanged();
+        });
+    }
+
+    private async Task FallbackLoop()
+    {
+        while (_fallbackTimer is not null && await _fallbackTimer.WaitForNextTickAsync())
+        {
+            try
+            {
+                if (SignalR.IsConnected) continue;
+                await LoadAllData();
+                await InvokeAsync(StateHasChanged);
+            }
+            catch { }
+        }
+    }
+
+    public void Dispose()
+    {
+        SignalR.OnNotify -= HandleSignalRNotify;
+        _fallbackTimer?.Dispose();
+        _productSearchCts?.Cancel(); _productSearchCts?.Dispose();
+        _orderSearchCts?.Cancel(); _orderSearchCts?.Dispose();
+        _userSearchCts?.Cancel(); _userSearchCts?.Dispose();
+        _notificationCts?.Cancel(); _notificationCts?.Dispose();
+    }
+
+    private async Task LoadAllData()
+    {
+        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers(), LoadNotificationSettings(), LoadMetrics(), LoadUsersMetrics(), LoadAllProducts());
+        _lastUpdated = DateTime.Now;
+    }
+
+    private async Task LoadMetrics()
+    {
+        try
+        {
+            var allProducts = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new();
+            var allOrders = await Http.GetFromJsonAsync<List<OrderDto>>("api/Order/all") ?? new();
+            _totalRevenue = allOrders.Sum(o => o.Sum);
+            _lowStockCount = allProducts.Count(p => p.Status == StatusProduct.InStock && p.Quantity <= 5);
+            _outOfStockCount = allProducts.Count(p => p.Status == StatusProduct.OutOfStock);
+            _totalStockValue = allProducts.Where(p => p.Status == StatusProduct.InStock).Sum(p => p.Price * p.Quantity);
+        }
+        catch { }
+    }
+
+    private async Task LoadUsersMetrics()
+    {
+        try
+        {
+            await LoadAllUsers();
+            _adminCount = _allUsersCache.Count(u => u.Role == UserRole.Admin);
+        }
+        catch { }
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            _loadingProducts = Products.Count == 0;
+            var url = $"api/Product/paged?page={_productPage}&pageSize={_productPageSize}";
+            if (!string.IsNullOrEmpty(_productSearch)) url += $"&search={Uri.EscapeDataString(_productSearch)}";
+            if (!string.IsNullOrEmpty(_productFilter)) url += $"&status={_productFilter}";
+            var r = await Http.GetFromJsonAsync<PagedProductResponse>(url);
+            if (r != null) { Products = r.Items; _productTotalCount = r.TotalCount; }
+        }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки товаров: {ex.Message}", "danger"); }
+        finally { _loadingProducts = false; }
+    }
+
+    private async Task LoadOrders()
+    {
+        try
+        {
+            _expandedOrderId = null;
+            _loadingOrders = Orders.Count == 0;
+            var url = $"api/Order/paged?page={_orderPage}&pageSize={_orderPageSize}";
+            if (!string.IsNullOrEmpty(_orderSearch)) url += $"&search={Uri.EscapeDataString(_orderSearch)}";
+            if (!string.IsNullOrEmpty(_orderFilter)) url += $"&status={_orderFilter}";
+            if (!string.IsNullOrEmpty(_orderDateFrom)) url += $"&dateFrom={_orderDateFrom}";
+            if (!string.IsNullOrEmpty(_orderDateTo)) url += $"&dateTo={_orderDateTo}";
+            var r = await Http.GetFromJsonAsync<PagedOrderResponse>(url);
+            if (r != null) { Orders = r.Items; _orderTotalCount = r.TotalCount; }
+        }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки заказов: {ex.Message}", "danger"); }
+        finally { _loadingOrders = false; }
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            _loadingUsers = Users.Count == 0;
+            var url = $"api/User/paged?page={_userPage}&pageSize={_userPageSize}";
+            if (!string.IsNullOrEmpty(_userSearch)) url += $"&search={Uri.EscapeDataString(_userSearch)}";
+            if (!string.IsNullOrEmpty(_userFilter)) url += $"&role={_userFilter}";
+            var r = await Http.GetFromJsonAsync<PagedUserResponse>(url);
+            if (r != null) { Users = r.Items; _userTotalCount = r.TotalCount; }
+        }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки пользователей: {ex.Message}", "danger"); }
+        finally { _loadingUsers = false; }
+    }
+
+    private async Task LoadAllUsers()
+    {
+        try { _allUsersCache = await Http.GetFromJsonAsync<List<UserDto>>("api/User/all") ?? new(); }
+        catch { _allUsersCache = new(); }
+    }
+
+    private async Task LoadAllProducts()
+    {
+        try { _allProductsForOrder = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new(); }
+        catch { _allProductsForOrder = new(); }
+    }
+
+    private async Task LoadHistory()
+    {
+        try
+        {
+            _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=100") ?? new();
+            _availableBranches = _actionHistory
+                .Select(a => a.Branch)
+                .Where(b => !string.IsNullOrEmpty(b))
+                .Distinct()
+                .OrderBy(b => b)
+                .ToList();
+        }
+        catch { }
+    }
+
+    private async Task LoadNotificationSettings()
+    {
+        try { _notificationSettings = await Http.GetFromJsonAsync<List<NotificationSettingsDto>>("api/NotificationSettings/all") ?? new(); }
+        catch { _notificationSettings = new(); }
+    }
 
     private async Task OnProductSearchChanged(string value)
     {
@@ -1240,9 +483,6 @@
         StateHasChanged();
     }
 
-    private string SortIcon(string field, string sortField, bool sortAsc) =>
-        field == sortField ? (sortAsc ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up";
-
     private async Task OnProductPageSizeChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out int size) && size > 0)
@@ -1259,254 +499,8 @@
         { _userPageSize = size; _userPage = 0; await LoadUsers(); }
     }
 
-    private bool IsAllProductsSelected => Products.Any() && Products.All(p => p.IsSelected);
-    private bool IsProductPartialSelected => Products.Any(p => p.IsSelected) && !IsAllProductsSelected;
-    private bool IsAllOrdersSelected => Orders.Any() && Orders.All(o => o.IsSelected);
-    private bool IsOrderPartialSelected => Orders.Any(o => o.IsSelected) && !IsAllOrdersSelected;
-
-    private void ToggleSelectAllProducts(ChangeEventArgs e) { var v = (bool)e.Value!; foreach (var p in Products) p.IsSelected = v; }
-    private void ToggleSelectAllOrders(ChangeEventArgs e) { var v = (bool)e.Value!; foreach (var o in Orders) o.IsSelected = v; }
-
-    private int? _expandedOrderId;
     private void ToggleOrderExpand(int id) => _expandedOrderId = _expandedOrderId == id ? null : id;
-
-    private bool _showProductModal, _showConfirmModal, _showHistory;
-    private bool _showUserModal, _showEditUserModal, _showOrderModal, _showNotificationModal;
-    private ProductDto? _editingProduct;
-    private UserDto? _editingUser;
-    private string _formName = "", _formDescription = "", _confirmMessage = "", _confirmButtonText = "Удалить";
-    private int _formPrice, _formQuantity;
-    private Func<Task>? _onConfirmAction;
-
-    private string _newUserEmail = "", _newUserPassword = "", _newUserRole = "Student";
-    private int _editBalance;
-    private string _newOrderEmail = "";
-    private List<OrderItemForm> _newOrderItems = new();
-    private bool _showOrderImagesModal;
-
-    private class OrderItemForm
-    {
-        public int ProductId { get; set; }
-        public int Quantity { get; set; } = 1;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        RestoreFiltersFromUrl();
-        await LoadAllData();
-        await LoadHistory();
-        _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(30));
-        _ = RefreshLoop();
-    }
-
-    private async Task RefreshLoop()
-    {
-        while (_refreshTimer is not null && await _refreshTimer.WaitForNextTickAsync())
-        {
-            try { await LoadAllData(); await InvokeAsync(StateHasChanged); }
-            catch { }
-        }
-    }
-
-    public void Dispose()
-    {
-        _refreshTimer?.Dispose();
-        _productSearchCts?.Cancel(); _productSearchCts?.Dispose();
-        _orderSearchCts?.Cancel(); _orderSearchCts?.Dispose();
-        _userSearchCts?.Cancel(); _userSearchCts?.Dispose();
-        _notificationCts?.Cancel(); _notificationCts?.Dispose();
-    }
-
-    private async Task LoadAllData()
-    {
-        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers(), LoadNotificationSettings(), LoadMetrics(), LoadUsersMetrics());
-        _lastUpdated = DateTime.Now;
-    }
-
-    private async Task LoadMetrics()
-    {
-        try
-        {
-            var allProducts = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new();
-            var allOrders = await Http.GetFromJsonAsync<List<OrderDto>>("api/Order/all") ?? new();
-            _totalRevenue = allOrders.Sum(o => o.Sum);
-            _lowStockCount = allProducts.Count(p => p.Status == StatusProduct.InStock && p.Quantity <= 5);
-            _totalStockValue = allProducts.Where(p => p.Status == StatusProduct.InStock).Sum(p => p.Price * p.Quantity);
-        }
-        catch { }
-    }
-
-    private async Task LoadUsersMetrics()
-    {
-        try
-        {
-            await LoadAllUsers();
-            _adminCount = _allUsersCache.Count(u => u.Role == UserRole.Admin);
-        }
-        catch { }
-    }
-
-    private async Task LoadProducts()
-    {
-        try
-        {
-            _loadingProducts = Products.Count == 0;
-            var url = $"api/Product/paged?page={_productPage}&pageSize={_productPageSize}";
-            if (!string.IsNullOrEmpty(_productSearch)) url += $"&search={Uri.EscapeDataString(_productSearch)}";
-            if (!string.IsNullOrEmpty(_productFilter)) url += $"&status={_productFilter}";
-            var r = await Http.GetFromJsonAsync<PagedProductResponse>(url);
-            if (r != null) { Products = r.Items; _productTotalCount = r.TotalCount; }
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка загрузки товаров: {ex.Message}", "danger"); }
-        finally { _loadingProducts = false; }
-    }
-
-    private async Task LoadOrders()
-    {
-        try
-        {
-            _expandedOrderId = null;
-            _loadingOrders = Orders.Count == 0;
-            var url = $"api/Order/paged?page={_orderPage}&pageSize={_orderPageSize}";
-            if (!string.IsNullOrEmpty(_orderSearch)) url += $"&search={Uri.EscapeDataString(_orderSearch)}";
-            if (!string.IsNullOrEmpty(_orderFilter)) url += $"&status={_orderFilter}";
-            if (!string.IsNullOrEmpty(_orderDateFrom)) url += $"&dateFrom={_orderDateFrom}";
-            if (!string.IsNullOrEmpty(_orderDateTo)) url += $"&dateTo={_orderDateTo}";
-            var r = await Http.GetFromJsonAsync<PagedOrderResponse>(url);
-            if (r != null) { Orders = r.Items; _orderTotalCount = r.TotalCount; }
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка загрузки заказов: {ex.Message}", "danger"); }
-        finally { _loadingOrders = false; }
-    }
-
-    private async Task LoadUsers()
-    {
-        try
-        {
-            _loadingUsers = Users.Count == 0;
-            var url = $"api/User/paged?page={_userPage}&pageSize={_userPageSize}";
-            if (!string.IsNullOrEmpty(_userSearch)) url += $"&search={Uri.EscapeDataString(_userSearch)}";
-            if (!string.IsNullOrEmpty(_userFilter)) url += $"&role={_userFilter}";
-            var r = await Http.GetFromJsonAsync<PagedUserResponse>(url);
-            if (r != null) { Users = r.Items; _userTotalCount = r.TotalCount; }
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка загрузки пользователей: {ex.Message}", "danger"); }
-        finally { _loadingUsers = false; }
-    }
-
-    private async Task LoadAllUsers()
-    {
-        try { _allUsersCache = await Http.GetFromJsonAsync<List<UserDto>>("api/User/all") ?? new(); }
-        catch { _allUsersCache = new(); }
-    }
-
-    private async Task LoadAllProducts()
-    {
-        try { _allProductsForOrder = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new(); }
-        catch { _allProductsForOrder = new(); }
-    }
-
-    private async Task LoadHistory()
-    {
-        try
-        {
-            _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=100") ?? new();
-            _availableBranches = _actionHistory
-                .Select(a => a.Branch)
-                .Where(b => !string.IsNullOrEmpty(b))
-                .Distinct()
-                .OrderBy(b => b)
-                .ToList();
-        }
-        catch { }
-    }
-
-    private void FilterHistory(string branch)
-    {
-        _historyBranchFilter = branch;
-    }
-
-    private void ClearHistoryFilter()
-    {
-        _historyBranchFilter = "";
-    }
-
-    private void OnHistoryTypeFilterChanged(ChangeEventArgs e)
-    {
-        _historyTypeFilter = e.Value?.ToString() ?? "";
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void OnHistoryBranchFilterChanged(ChangeEventArgs e)
-    {
-        _historyBranchFilter = e.Value?.ToString() ?? "";
-        InvokeAsync(StateHasChanged);
-    }
-
-    private IEnumerable<AdminActionDto> _filteredHistory
-    {
-        get
-        {
-            var query = _actionHistory.AsEnumerable();
-            if (!string.IsNullOrEmpty(_historyTypeFilter))
-                query = query.Where(a => a.ActionType == _historyTypeFilter);
-            if (!string.IsNullOrEmpty(_historyBranchFilter))
-                query = query.Where(a => a.Branch == _historyBranchFilter);
-            return query;
-        }
-    }
-
-    private async Task LogAction(string type, string details)
-    {
-        var branch = _selectedBranch;
-        if (string.IsNullOrEmpty(branch) && _notificationSettings.Any())
-            branch = _notificationSettings.First().Branch;
-        try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch }); }
-        catch { }
-        _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, Branch = branch ?? "", CreatedAt = DateTime.Now });
-        if (_actionHistory.Count > 100) _actionHistory.RemoveAt(_actionHistory.Count - 1);
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private void ShowNotification(string message, string type = "success")
-    {
-        _notificationCts?.Cancel();
-        _notificationCts?.Dispose();
-        _notification = message; _notificationType = type;
-        _notificationCts = new CancellationTokenSource();
-        var token = _notificationCts.Token;
-        _ = Task.Delay(4000, token).ContinueWith(_ =>
-        {
-            if (!token.IsCancellationRequested && _notification == message)
-            { _notification = null; InvokeAsync(StateHasChanged); }
-        }, token);
-    }
-
-    private void ShowConfirm(string message, Func<Task> action, string buttonText = "Удалить")
-    { _confirmMessage = message; _onConfirmAction = action; _confirmButtonText = buttonText; _showConfirmModal = true; }
-
-    private void CancelConfirm() { _showConfirmModal = false; _onConfirmAction = null; }
-    private async Task ExecuteConfirm()
-    { _showConfirmModal = false; if (_onConfirmAction is not null) await _onConfirmAction(); _onConfirmAction = null; }
-
-    private void OpenProductModal(ProductDto? product = null)
-    {
-        _editingProduct = product;
-        _formName = product?.Name ?? ""; _formDescription = product?.Description ?? "";
-        _formPrice = product?.Price ?? 0; _formQuantity = product?.Quantity ?? 0;
-        _productImages = new();
-        _showProductModal = true;
-        if (product != null) _ = LoadProductImages(product.Id);
-    }
-
-    private async Task LoadProductImages(int productId)
-    {
-        try
-        {
-            _productImages = await Http.GetFromJsonAsync<List<ProductImageDto>>($"api/ProductImage/by-product?productId={productId}") ?? new();
-        }
-        catch { _productImages = new(); }
-    }
+    private void OnOrderExpandWrapper(int? id) { if (id.HasValue) ToggleOrderExpand(id.Value); }
 
     private void RestoreFiltersFromUrl()
     {
@@ -1538,550 +532,49 @@
         Nav.NavigateTo(string.IsNullOrEmpty(qs) ? baseUri : $"{baseUri}?{qs}", forceLoad: false, replace: true);
     }
 
-    private string HighlightText(string text, string searchTerm)
+    private async Task LogAction(string type, string details)
     {
-        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(searchTerm))
-            return System.Net.WebUtility.HtmlEncode(text ?? "");
-        var encoded = System.Net.WebUtility.HtmlEncode(text);
-        var encodedSearch = System.Net.WebUtility.HtmlEncode(searchTerm);
-        var idx = encoded.IndexOf(encodedSearch, StringComparison.OrdinalIgnoreCase);
-        if (idx < 0) return encoded;
-        return encoded[..idx] + "<strong class=\"text-decoration-underline\">" + encoded[idx..(idx + encodedSearch.Length)] + "</strong>" + encoded[(idx + encodedSearch.Length)..];
+        var branch = _selectedBranch;
+        if (string.IsNullOrEmpty(branch) && _notificationSettings.Any())
+            branch = _notificationSettings.First().Branch;
+        try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch }); }
+        catch { }
+        _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, Branch = branch ?? "", CreatedAt = DateTime.Now });
+        if (_actionHistory.Count > 100) _actionHistory.RemoveAt(_actionHistory.Count - 1);
+        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnImageUpload(InputFileChangeEventArgs e)
+    private void NotifyFromChild(string msg) => ShowNotification(msg);
+    private void ConfirmFromChild((string message, Func<Task> action) t) => ShowConfirm(t.message, t.action);
+    private async Task LogFromChild((string type, string details) t) => await LogAction(t.type, t.details);
+
+    private void ShowNotification(string message, string type = "success")
     {
-        if (_editingProduct == null) return;
-        var file = e.File;
-        if (file == null) return;
-
-        using var content = new MultipartFormDataContent();
-        var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-        var fileContent = new StreamContent(stream);
-        content.Add(fileContent, "file", file.Name);
-        content.Add(new StringContent(_editingProduct.Id.ToString()), "productId");
-        content.Add(new StringContent((_productImages.Count == 0).ToString()), "isPrimary");
-
-        var r = await Http.PostAsync("api/ProductImage/upload", content);
-        if (r.IsSuccessStatusCode)
+        _notificationCts?.Cancel();
+        _notificationCts?.Dispose();
+        _notification = message; _notificationType = type;
+        _notificationCts = new CancellationTokenSource();
+        var token = _notificationCts.Token;
+        _ = Task.Delay(4000, token).ContinueWith(_ =>
         {
-            var result = await r.Content.ReadFromJsonAsync<UploadResult>();
-            if (result != null)
-            {
-                _productImages.Add(new ProductImageDto
-                {
-                    Id = result.Id,
-                    Url = result.Url,
-                    FileName = result.FileName,
-                    IsPrimary = result.IsPrimary,
-                    SortOrder = result.SortOrder
-                });
-                if (result.IsPrimary) _editingProduct.ImageUrl = result.Url;
-            }
-            ShowNotification("Изображение загружено");
-        }
-        else ShowNotification($"Ошибка загрузки: {await r.Content.ReadAsStringAsync()}", "danger");
+            if (!token.IsCancellationRequested && _notification == message)
+            { _notification = null; InvokeAsync(StateHasChanged); }
+        }, token);
     }
 
-    private async Task SetPrimaryImage(ProductImageDto img)
+    private void ShowConfirm(string message, Func<Task> action, string buttonText = "Удалить")
+    { _confirmMessage = message; _onConfirmAction = action; _confirmButtonText = buttonText; _showConfirmModal = true; }
+
+    private void CancelConfirm() { _showConfirmModal = false; _onConfirmAction = null; }
+    private async Task ExecuteConfirm()
+    { _showConfirmModal = false; if (_onConfirmAction is not null) await _onConfirmAction(); _onConfirmAction = null; }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        var r = await Http.PostAsJsonAsync($"api/ProductImage/set-primary?imageId={img.Id}", new { });
-        if (r.IsSuccessStatusCode && _editingProduct != null)
-        {
-            foreach (var i in _productImages) i.IsPrimary = i.Id == img.Id;
-            _editingProduct.ImageUrl = img.Url;
-            ShowNotification("Главное изображение изменено");
-            StateHasChanged();
-        }
+        if (e.Key == "Escape" && _showConfirmModal) CancelConfirm();
     }
-
-    private async Task DeleteProductImage(ProductImageDto img)
-    {
-        var r = await Http.DeleteAsync($"api/ProductImage?id={img.Id}");
-        if (r.IsSuccessStatusCode && _editingProduct != null)
-        {
-            _productImages.Remove(img);
-            if (img.IsPrimary && _productImages.Any())
-            {
-                var newPrimary = _productImages.First();
-                newPrimary.IsPrimary = true;
-                _editingProduct.ImageUrl = newPrimary.Url;
-            }
-            else if (!_productImages.Any())
-            {
-                _editingProduct.ImageUrl = null;
-            }
-            ShowNotification("Изображение удалено");
-            StateHasChanged();
-        }
-    }
-
-    private class UploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
-
-    private void CloseProductModal() { _showProductModal = false; _saving = false; }
-
-    private async Task SaveProduct()
-    {
-        _saving = true;
-        try
-        {
-            if (_formPrice < 1) { ShowNotification("Цена должна быть не менее 1 ", "warning"); return; }
-            if (_formQuantity < 0) { ShowNotification("Количество не может быть отрицательным", "warning"); return; }
-            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice, Quantity = _formQuantity };
-            if (_editingProduct == null)
-            {
-                var r = await Http.PostAsJsonAsync("api/Product/create-product", body);
-                if (r.IsSuccessStatusCode)
-                {
-                    var created = await r.Content.ReadFromJsonAsync<ProductDto>();
-                    if (created != null)
-                    {
-                        _editingProduct = created;
-                        _productImages = new();
-                        await LogAction("Создание", $"Товар «{_formName}»");
-                        ShowNotification("Товар создан. Загрузите изображения ниже.");
-                        _productPage = 0;
-                        await LoadProducts();
-                        StateHasChanged();
-                    }
-                    else
-                    {
-                        await LogAction("Создание", $"Товар «{_formName}»");
-                        ShowNotification("Товар создан");
-                        CloseProductModal();
-                        _productPage = 0;
-                        await LoadProducts();
-                    }
-                }
-                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-            }
-            else
-            {
-                var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={_editingProduct.Id}", body);
-                if (r.IsSuccessStatusCode)
-                {
-                    (_editingProduct.Name, _editingProduct.Description, _editingProduct.Price, _editingProduct.Quantity)
-                        = (_formName, _formDescription, _formPrice, _formQuantity);
-                    await LogAction("Изменение", $"Товар #{_editingProduct.Id} «{_formName}»");
-                    ShowNotification("Товар обновлён");
-                    CloseProductModal();
-                }
-                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-            }
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
-        finally { _saving = false; }
-    }
-
-    private async Task OnQuantityChanged(ProductDto product, ChangeEventArgs e)
-    {
-        var oldQuantity = product.Quantity;
-        if (int.TryParse(e.Value?.ToString(), out int q) && product.Quantity != q)
-        {
-            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Quantity = q });
-            if (r.IsSuccessStatusCode)
-            {
-                product.Quantity = q;
-                await LogAction("Изменение", $"«{product.Name}»: склад = {q}");
-                ShowNotification($"«{product.Name}»: количество = {q}");
-            }
-            else
-            {
-                product.Quantity = oldQuantity;
-                ShowNotification($"Не удалось обновить количество «{product.Name}»", "danger");
-            }
-        }
-    }
-
-    private async Task ToggleProductStatus(ProductDto product)
-    {
-        var newStatus = product.Status switch
-        {
-            StatusProduct.InStock => StatusProduct.OutOfStock,
-            StatusProduct.OutOfStock => StatusProduct.ComingSoon,
-            _ => StatusProduct.InStock
-        };
-        var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = (int)newStatus });
-        if (r.IsSuccessStatusCode) { product.Status = newStatus; await LogAction("Изменение", $"«{product.Name}»: {StatusText(newStatus)}"); ShowNotification($"«{product.Name}»: {StatusText(newStatus)}"); }
-        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-    }
-
-    private void DeleteProduct(ProductDto product)
-    {
-        ShowConfirm($"Удалить «{product.Name}»?", async () =>
-        {
-            var r = await Http.DeleteAsync($"api/Product/delete-product?id={product.Id}");
-            if (r.IsSuccessStatusCode) { Products.Remove(product); await LogAction("Удаление", $"Товар «{product.Name}»"); ShowNotification("Товар удалён"); await LoadProducts(); StateHasChanged(); }
-        });
-    }
-
-    private void DeleteSelectedProducts()
-    {
-        var sel = Products.Where(p => p.IsSelected).ToList();
-        ShowConfirm($"Удалить {sel.Count} товар(ов)?", async () =>
-        {
-            var ids = sel.Select(p => p.Id).ToList();
-            var r = await Http.PostAsJsonAsync("api/Product/batch-delete", new { ProductIds = ids });
-            if (r.IsSuccessStatusCode)
-            {
-                await LogAction("Удаление", $"{sel.Count} товар(ов)");
-                ShowNotification($"Удалено: {sel.Count} товар(ов)");
-                await LoadProducts();
-                StateHasChanged();
-            }
-        });
-    }
-
-    private async Task ShowSelectedProducts() => await SetSelectedProductStatus(StatusProduct.InStock);
-    private async Task HideSelectedProducts() => await SetSelectedProductStatus(StatusProduct.OutOfStock);
-
-    private async Task SetSelectedProductStatus(StatusProduct status)
-    {
-        var sel = Products.Where(p => p.IsSelected).ToList();
-        if (!sel.Any()) { ShowNotification("Выберите товары для изменения", "warning"); return; }
-        var ids = sel.Select(p => p.Id).ToList();
-        var r = await Http.PostAsJsonAsync("api/Product/batch-update-status", new { ProductIds = ids, NewStatus = (int)status });
-        if (r.IsSuccessStatusCode)
-        {
-            foreach (var p in sel) p.Status = status;
-            await LogAction("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}");
-            ShowNotification($"Обновлено: {sel.Count} товар(ов)");
-        }
-        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-        StateHasChanged();
-    }
-
-    private async Task ChangeOrderStatus(OrderDto order, StatusOrder newStatus)
-    {
-        var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={order.Id}", new { Status = (int)newStatus });
-        if (r.IsSuccessStatusCode)
-        {
-            order.Status = newStatus;
-            await LogAction("Изменение", $"Заказ #{order.Id}: статус = {OrderStatuses[((int)newStatus).ToString()]}");
-            ShowNotification($"Заказ #{order.Id}: статус изменён");
-        }
-        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-    }
-
-    private async Task MassChangeOrderStatus(StatusOrder newStatus)
-    {
-        var sel = Orders.Where(o => o.IsSelected).ToList();
-        if (!sel.Any()) { ShowNotification("Выберите заказы для изменения", "warning"); return; }
-        var ids = sel.Select(o => o.Id).ToList();
-        var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = (int)newStatus });
-        if (r.IsSuccessStatusCode)
-        {
-            foreach (var o in sel) o.Status = newStatus;
-            await LogAction("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[((int)newStatus).ToString()]}");
-            ShowNotification($"Обновлено: {sel.Count} заказ(ов)");
-        }
-        else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-        StateHasChanged();
-    }
-
-    private async Task OpenOrderModal()
-    {
-        _showOrderModal = true;
-        _newOrderEmail = "";
-        _newOrderItems = new List<OrderItemForm> { new() };
-        _emailSuggestions = new();
-        await LoadAllUsers();
-        await LoadAllProducts();
-    }
-
-    private void OnOrderEmailInput()
-    {
-        if (_newOrderEmail.Length < 2) { _emailSuggestions = new(); return; }
-        _emailSuggestions = _allUsersCache
-            .Where(u => u.Email.Contains(_newOrderEmail, StringComparison.OrdinalIgnoreCase))
-            .Take(5)
-            .ToList();
-    }
-
-    private void SelectOrderEmail(string email)
-    {
-        _newOrderEmail = email;
-        _emailSuggestions = new();
-    }
-
-    private async Task CreateUser()
-    {
-        _creatingUser = true;
-        try
-        {
-            var body = new { Email = _newUserEmail, Password = _newUserPassword };
-            var url = _newUserRole == "Admin" ? "api/User/create-admin" : "api/User/create-student";
-            var r = await Http.PostAsJsonAsync(url, body);
-            if (r.IsSuccessStatusCode)
-            {
-                await LogAction("Создание", $"Пользователь «{_newUserEmail}» ({_newUserRole})");
-                ShowNotification("Пользователь создан");
-                _showUserModal = false;
-                _newUserEmail = ""; _newUserPassword = ""; _newUserRole = "Student";
-                _userPage = 0;
-                await LoadUsers();
-                StateHasChanged();
-            }
-            else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
-        finally { _creatingUser = false; }
-    }
-
-    private void OpenEditUserModal(UserDto user)
-    {
-        _editingUser = user;
-        _editBalance = user.Balance ?? 0;
-        _showEditUserModal = true;
-    }
-
-    private async Task SaveUserBalance()
-    {
-        if (_editingUser == null) return;
-        _savingBalance = true;
-        try
-        {
-            var r = await Http.PutAsJsonAsync($"api/User?id={_editingUser.Id}", new { Balance = _editBalance });
-            if (r.IsSuccessStatusCode)
-            {
-                _editingUser.Balance = _editBalance;
-                await LogAction("Изменение", $"Баланс «{_editingUser.Email}» = {_editBalance}");
-                ShowNotification("Баланс обновлён");
-                _showEditUserModal = false;
-                StateHasChanged();
-            }
-            else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
-        finally { _savingBalance = false; }
-    }
-
-    private async Task DeleteUser(UserDto user)
-    {
-        ShowConfirm($"Удалить «{user.Email}»?", async () =>
-        {
-            var r = await Http.DeleteAsync($"api/User?id={user.Id}");
-            if (r.IsSuccessStatusCode) { await LogAction("Удаление", $"Пользователь «{user.Email}»"); ShowNotification($"Пользователь «{user.Email}» удалён"); await LoadUsers(); StateHasChanged(); }
-        });
-    }
-
-    private async Task CreateOrder()
-    {
-        _creatingOrder = true;
-        try
-        {
-            var items = _newOrderItems
-                .Where(i => i.ProductId > 0)
-                .Select(i => new { ProductId = i.ProductId, Quantity = (int)i.Quantity })
-                .ToList();
-
-            if (!items.Any())
-            {
-                ShowNotification("Добавьте хотя бы один товар", "warning");
-                return;
-            }
-
-            var body = new { CustomerEmail = _newOrderEmail, Items = items };
-            var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
-            if (r.IsSuccessStatusCode)
-            {
-                await LogAction("Создание", $"Заказ для «{_newOrderEmail}» ({items.Count} поз.)");
-                ShowNotification("Заказ создан");
-                _showOrderModal = false;
-                _newOrderEmail = ""; _newOrderItems.Clear();
-                _orderPage = 0;
-                await LoadOrders();
-            }
-            else
-            {
-                var error = await r.Content.ReadAsStringAsync();
-                ShowNotification($"Ошибка: {error}", "danger");
-            }
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
-        finally { _creatingOrder = false; }
-    }
-
-    private async Task OpenOrderImagesModal(OrderDto order)
-    {
-        _orderImagesOrderId = order.Id;
-        _orderImages = new();
-        _showOrderImagesModal = true;
-        try
-        {
-            _orderImages = await Http.GetFromJsonAsync<List<OrderImageDto>>($"api/OrderImage/by-order?orderId={order.Id}") ?? new();
-        }
-        catch { _orderImages = new(); }
-        StateHasChanged();
-    }
-
-    private async Task OnOrderImageUpload(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        if (file == null) return;
-
-        using var content = new MultipartFormDataContent();
-        var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-        var fileContent = new StreamContent(stream);
-        content.Add(fileContent, "file", file.Name);
-        content.Add(new StringContent(_orderImagesOrderId.ToString()), "orderId");
-        content.Add(new StringContent((_orderImages.Count == 0).ToString()), "isPrimary");
-
-        var r = await Http.PostAsync("api/OrderImage/upload", content);
-        if (r.IsSuccessStatusCode)
-        {
-            var result = await r.Content.ReadFromJsonAsync<OrderUploadResult>();
-            if (result != null)
-            {
-                _orderImages.Add(new OrderImageDto
-                {
-                    Id = result.Id,
-                    Url = result.Url,
-                    FileName = result.FileName,
-                    IsPrimary = result.IsPrimary,
-                    SortOrder = result.SortOrder
-                });
-                var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
-                if (order != null && result.IsPrimary) order.ImageUrl = result.Url;
-            }
-            ShowNotification("Изображение загружено");
-            StateHasChanged();
-        }
-        else ShowNotification($"Ошибка загрузки: {await r.Content.ReadAsStringAsync()}", "danger");
-    }
-
-    private async Task SetPrimaryOrderImage(OrderImageDto img)
-    {
-        var r = await Http.PostAsJsonAsync($"api/OrderImage/set-primary?imageId={img.Id}", new { });
-        if (r.IsSuccessStatusCode)
-        {
-            foreach (var i in _orderImages) i.IsPrimary = i.Id == img.Id;
-            var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
-            if (order != null) order.ImageUrl = img.Url;
-            ShowNotification("Главное изображение изменено");
-            StateHasChanged();
-        }
-    }
-
-    private async Task DeleteOrderImage(OrderImageDto img)
-    {
-        var r = await Http.DeleteAsync($"api/OrderImage?id={img.Id}");
-        if (r.IsSuccessStatusCode)
-        {
-            _orderImages.Remove(img);
-            var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
-            if (order != null)
-            {
-                if (img.IsPrimary && _orderImages.Any())
-                    order.ImageUrl = _orderImages.First().Url;
-                else if (!_orderImages.Any())
-                    order.ImageUrl = null;
-            }
-            ShowNotification("Изображение удалено");
-            StateHasChanged();
-        }
-    }
-
-    private class OrderUploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
-
-    private async Task LoadNotificationSettings()
-    {
-        try { _notificationSettings = await Http.GetFromJsonAsync<List<NotificationSettingsDto>>("api/NotificationSettings/all") ?? new(); }
-        catch { _notificationSettings = new(); }
-    }
-
-    private void AddNewNotificationSettings()
-    {
-        _notificationSettings.Add(new NotificationSettingsDto { Branch = "Новый филиал", NotifyOnNewOrder = true, NotifyOnStatusChange = true, NotifyOnLowStock = true, LowStockThreshold = 5 });
-    }
-
-    private async Task SaveNotificationSettings(NotificationSettingsDto settings)
-    {
-        var body = new { settings.Email, settings.TelegramBotToken, settings.TelegramChatId, settings.Branch, settings.AdminEmails, settings.NotifyOnNewOrder, settings.NotifyOnStatusChange, settings.NotifyOnLowStock, settings.LowStockThreshold };
-        try
-        {
-            if (settings.Id == 0)
-            {
-                var r = await Http.PostAsJsonAsync("api/NotificationSettings", body);
-                if (r.IsSuccessStatusCode)
-                {
-                    var created = await r.Content.ReadFromJsonAsync<NotificationSettingsDto>();
-                    if (created != null) { settings.Id = created.Id; }
-                    ShowNotification($"Настройка «{settings.Branch}» создана");
-                    StateHasChanged();
-                }
-                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-            }
-            else
-            {
-                var r = await Http.PutAsJsonAsync($"api/NotificationSettings?id={settings.Id}", body);
-                if (r.IsSuccessStatusCode)
-                {
-                    ShowNotification($"Настройка «{settings.Branch}» обновлена");
-                    StateHasChanged();
-                }
-                else ShowNotification($"Ошибка: {await r.Content.ReadAsStringAsync()}", "danger");
-            }
-        }
-        catch (Exception ex) { ShowNotification($"Ошибка: {ex.Message}", "danger"); }
-    }
-
-    private async Task DeleteNotificationSettings(NotificationSettingsDto settings)
-    {
-        if (settings.Id > 0)
-        {
-            var r = await Http.DeleteAsync($"api/NotificationSettings?id={settings.Id}");
-            if (r.IsSuccessStatusCode) ShowNotification($"Настройка «{settings.Branch}» удалена");
-        }
-        _notificationSettings.Remove(settings);
-    }
-
-    private static string StatusBadge(StatusProduct s) => s switch
-    {
-        StatusProduct.InStock => "bg-success",
-        StatusProduct.OutOfStock => "bg-secondary",
-        _ => "bg-info"
-    };
-
-    private static string StatusText(StatusProduct s) => s switch
-    {
-        StatusProduct.InStock => "В наличии",
-        StatusProduct.OutOfStock => "Нет в наличии",
-        _ => "Скоро в продаже"
-    };
-    private static string StatusTooltip(StatusProduct s) => s switch
-    {
-        StatusProduct.InStock => "Товар в наличии. Нажмите, чтобы пометить «Нет в наличии»",
-        StatusProduct.OutOfStock => "Товар отсутствует. Нажмите, чтобы пометить «Скоро в продаже»",
-        _ => "Скоро в продаже. Нажмите, чтобы пометить «В наличии»"
-    };
-    private static string ActionBadge(string t) => t switch { "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary" };
-    private static string ActionColor(string t) => t switch { "Создание" => "#198754", "Удаление" => "#dc3545", "Изменение" => "#0d6efd", _ => "#6c757d" };
-
-    private void HandleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Escape")
-        {
-            if (_showConfirmModal) CancelConfirm();
-            else if (_showProductModal) CloseProductModal();
-            else if (_showUserModal) _showUserModal = false;
-            else if (_showEditUserModal) _showEditUserModal = false;
-            else if (_showOrderModal) _showOrderModal = false;
-            else if (_showNotificationModal) _showNotificationModal = false;
-        }
-    }
-    private static string OrderBadge(StatusOrder s) => s switch
-    {
-        StatusOrder.Pending => "bg-secondary",
-        StatusOrder.AwaitingPayment => "bg-warning text-dark",
-        StatusOrder.Paid => "bg-info",
-        StatusOrder.Manufactured => "bg-primary",
-        StatusOrder.Completed => "bg-success",
-        _ => "bg-secondary"
-    };
 
     private class PagedProductResponse { public List<ProductDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
     private class PagedOrderResponse { public List<OrderDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
     private class PagedUserResponse { public List<UserDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
-    private class NotificationSettingsDto { public int Id { get; set; } public string Email { get; set; } = ""; public string TelegramBotToken { get; set; } = ""; public string TelegramChatId { get; set; } = ""; public string Branch { get; set; } = ""; public string AdminEmails { get; set; } = ""; public bool NotifyOnNewOrder { get; set; } public bool NotifyOnStatusChange { get; set; } public bool NotifyOnLowStock { get; set; } public int LowStockThreshold { get; set; } }
 }

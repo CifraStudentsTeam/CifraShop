@@ -1,3 +1,4 @@
+using CifraShop.API.Hubs;
 using CifraShop.API.Middleware;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
@@ -9,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.AddSignalR();
 
 builder.Services.AddOpenApi();
 
@@ -39,7 +42,8 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins("https://localhost:5001", "http://localhost:5001")
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         });
 });
 
@@ -83,5 +87,7 @@ app.UseCors("ClientCORS");
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<AdminHub>("/hubs/admin");
 
 app.Run();

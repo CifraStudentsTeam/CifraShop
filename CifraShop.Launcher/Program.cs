@@ -670,7 +670,7 @@ volumes:
         }
 
         Log("    Ожидание готовности SQL Server...");
-        for (int i = 0; i < 120; i++)
+        for (int i = 0; i < 180; i++)
         {
             await Task.Delay(1000);
             var statusCheck = await RunCmdAsync("docker", "compose ps db --format '{{.Status}}'");
@@ -683,12 +683,30 @@ volumes:
                     return;
                 }
             }
+
+            if (i == 30 && (statusCheck == null || !statusCheck.Contains("Up")))
+            {
+                Console.WriteLine();
+                Warn("SQL Server не запущен. Повторный запуск контейнера...");
+                await RunDockerComposeAsync("up -d db");
+            }
+
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($"\r    Ожидание SQL Server... {i + 1}с/120с");
+            Console.Write($"\r    Ожидание SQL Server... {i + 1}с/180с");
             Console.ResetColor();
         }
         Console.WriteLine();
-        Warn("SQL Server не ответил за 120 сек. Проверьте Docker.");
+
+        var dbLogs = await RunCmdAsync("docker", "compose logs db --tail 10");
+        if (!string.IsNullOrWhiteSpace(dbLogs))
+        {
+            Warn("SQL Server не ответил за 180 сек. Последние логи:");
+            foreach (var line in dbLogs.Split('\n').TakeLast(5))
+                if (!string.IsNullOrWhiteSpace(line))
+                    Log($"    {line.Trim()}");
+        }
+        else
+            Warn("SQL Server не ответил за 180 сек. Проверьте Docker.");
     }
 
     // ════════════════════════════════════════════════════════════════

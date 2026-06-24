@@ -98,6 +98,11 @@ namespace CifraShop.Application.Services.Implementations
                 stockUpdates.Add((productId, quantity));
             }
 
+            var userBalance = user.Balance ?? 0;
+            if (userBalance < totalSum)
+                throw new InvalidOperationException(
+                    $"Недостаточно средств на балансе пользователя \"{customerEmail}\" (баланс: {userBalance}, сумма заказа: {totalSum})");
+
             var order = new Order
             {
                 Status = StatusOrder.Pending,
@@ -106,7 +111,7 @@ namespace CifraShop.Application.Services.Implementations
                 CustomerId = user.Id
             };
 
-            return await _repository.CreateOrderInTransaction(order, orderItems, stockUpdates);
+            return await _repository.CreateOrderInTransaction(order, orderItems, stockUpdates, user.Id, totalSum);
         }
 
         public async Task UpdateOrder(Order orderToUpdate)

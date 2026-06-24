@@ -77,3 +77,18 @@ public class OrderImageDto
     public bool IsPrimary { get; set; }
     public int SortOrder { get; set; }
 }
+
+/// <summary>Модель настроек уведомлений для филиала</summary>
+public class NotificationSettingsDto
+{
+    public int Id { get; set; }
+    public string Email { get; set; } = "";
+    public string TelegramBotToken { get; set; } = "";
+    public string TelegramChatId { get; set; } = "";
+    public string Branch { get; set; } = "";
+    public string AdminEmails { get; set; } = "";
+    public bool NotifyOnNewOrder { get; set; }
+    public bool NotifyOnStatusChange { get; set; }
+    public bool NotifyOnLowStock { get; set; }
+    public int LowStockThreshold { get; set; }
+}
