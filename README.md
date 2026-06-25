@@ -17,403 +17,403 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> &bull;
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#project-structure">Structure</a> &bull;
-  <a href="#api-endpoints">API</a> &bull;
-  <a href="#admin-panel">Admin Panel</a> &bull;
-  <a href="#architecture">Architecture</a> &bull;
-  <a href="#launcher">Launcher</a>
+  <a href="#возможности">Возможности</a> &bull;
+  <a href="#быстрый-старт">Быстрый старт</a> &bull;
+  <a href="#структура-проекта">Структура</a> &bull;
+  <a href="#api-эндпоинты">API</a> &bull;
+  <a href="#админ-панель">Админ-панель</a> &bull;
+  <a href="#архитектура">Архитектура</a> &bull;
+  <a href="#лаунчер">Лаунчер</a>
 </p>
 
 ---
 
-## Features
+## Возможности
 
 <table>
   <tr>
-    <td><b>Real-time Updates</b></td>
-    <td>SignalR — all changes (products, orders, users) appear instantly across all connected admin panels without page refresh. Auto-reconnect with fallback polling every 5 min</td>
+    <td><b>Обновления в реальном времени</b></td>
+    <td>SignalR — все изменения (товары, заказы, пользователи) отображаются мгновенно на всех подключённых вкладках админки без перезагрузки. Автопереподключение с fallback-опросом каждые 5 минут</td>
   </tr>
   <tr>
-    <td><b>Products</b></td>
-    <td>Full CRUD, photo management, inline quantity editing, status toggle, batch operations (status change, delete). Server-side search with 300ms debounce</td>
+    <td><b>Товары</b></td>
+    <td>Полный CRUD, управление фотографиями, инлайн-редактирование количества, переключение статуса, batch-операции (смена статуса, удаление). Серверный поиск с debounce 300мс</td>
   </tr>
   <tr>
-    <td><b>Orders</b></td>
-    <td>Creation with email autocomplete, status management, expandable details with product images, date filtering, batch status change</td>
+    <td><b>Заказы</b></td>
+    <td>Создание с автокомплитом email, управление статусами, развёрнутый состав с изображениями товаров, фильтр по дате, batch-смена статуса</td>
   </tr>
   <tr>
-    <td><b>Users</b></td>
-    <td>CRUD with role assignment (Student/Admin), inline balance editing</td>
+    <td><b>Пользователи</b></td>
+    <td>CRUD с назначением ролей (Студент/Админ), редактирование баланса</td>
   </tr>
   <tr>
-    <td><b>Notifications</b></td>
-    <td>Per-branch notification settings: email, Telegram Bot, low-stock thresholds. Admin-to-branch binding</td>
+    <td><b>Уведомления</b></td>
+    <td>Настройки уведомлений по филиалам: email, Telegram Bot, пороги остатков. Привязка админов к филиалам</td>
   </tr>
   <tr>
-    <td><b>Action History</b></td>
-    <td>Full audit log with filtering by type and branch. Auto-timestamped</td>
+    <td><b>История действий</b></td>
+    <td>Полный аудит-лог с фильтрацией по типу и филиалу. Автоматическая временная метка</td>
   </tr>
   <tr>
-    <td><b>Search &amp; Filtering</b></td>
-    <td>Highlight matching text, server-side pagination, URL-persisted filters (shareable links)</td>
+    <td><b>Поиск и фильтры</b></td>
+    <td>Подсветка совпадений, серверная пагинация, URL-фильтры (можно поделиться ссылкой)</td>
   </tr>
   <tr>
-    <td><b>Launcher</b></td>
-    <td>One-command startup: Docker, DB, migrations, API, client. Interactive menu with monitoring and auto-restart</td>
+    <td><b>Лаунчер</b></td>
+    <td>Запуск одной командой: Docker, БД, миграции, API, клиент. Интерактивное меню с мониторингом и авто-рестартом</td>
   </tr>
 </table>
 
 ---
 
-## Quick Start
+## Быстрый старт
 
-### Prerequisites
+### Требования
 
 1. **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**
-2. **Docker Desktop** (for SQL Server)
+2. **Docker Desktop** (для SQL Server)
 
-### Option A: Launcher (recommended)
+### Вариант А: Через лаунчер (рекомендуется)
 
 ```bash
 dotnet run --project CifraShop.Launcher
 ```
 
-The launcher automates everything:
-- Checks .NET SDK and Docker
-- Creates `docker-compose.yml` and connection string
-- Starts SQL Server in Docker
-- Applies EF Core migrations
-- Starts API and Client
-- Provides an interactive management menu
+Лаунчер автоматически:
+- Проверит .NET SDK и Docker
+- Создаст `docker-compose.yml` и строку подключения
+- Запустит SQL Server в Docker
+- Применит EF Core миграции
+- Запустит API и клиент
+- Предоставит интерактивное меню управления
 
-Quick mode (skip already-completed phases):
+Быстрый режим (пропуск выполненных фаз):
 ```bash
 dotnet run --project CifraShop.Launcher -- --quick
 ```
 
-### Option B: Manual
+### Вариант Б: Ручной запуск
 
 ```bash
-# Start SQL Server
+# Запуск SQL Server
 docker compose up -d db
 
-# Apply migrations
+# Применение миграций
 dotnet ef database update --project CifraShop.Infrastructure --startup-project CifraShop.API
 
-# Start API (port 5000)
+# Запуск API (порт 5000)
 dotnet run --project CifraShop.API --urls http://localhost:5000
 
-# Start Client (port 5001)
+# Запуск клиента (порт 5001)
 dotnet run --project CifraShop.Client
 ```
 
-Open **http://localhost:5001/admin** — the admin panel.
+Откройте **http://localhost:5001/admin** — админ-панель.
 
 ---
 
-## Project Structure
+## Структура проекта
 
 ```
 CifraShop/
-├── CifraShop.slnx                     .NET 10 solution (XML format)
+├── CifraShop.slnx                     Решение .NET 10 (XML-формат)
 │
-├── CifraShop.Domain/                  Core — entities, enums, repository interfaces
-│   ├── Entities/                      User, Product, Order, OrderItem, AdminAction, etc.
+├── CifraShop.Domain/                  Ядро — сущности, перечисления, интерфейсы репозиториев
+│   ├── Entities/                      User, Product, Order, OrderItem, AdminAction и др.
 │   ├── Enums/                         UserRole, StatusProduct, StatusOrder
 │   └── Repositories/                  IProductRepository, IOrderRepository, ...
 │
-├── CifraShop.Infrastructure/          EF Core, SQL Server, repository implementations
+├── CifraShop.Infrastructure/          EF Core, SQL Server, реализации репозиториев
 │   └── Data/
 │       ├── ApplicationDbContext.cs    ApplicationContext (DbContext)
-│       ├── Configurations/            Fluent API configurations
+│       ├── Configurations/            Конфигурации Fluent API
 │       └── Repositories/Implementations/
 │
-├── CifraShop.Application/             Business logic — services
+├── CifraShop.Application/             Бизнес-логика — сервисы
 │   └── Services/
 │       ├── Interfaces/                IOrderService, IProductService, ...
 │       └── Implementations/           OrderService, ProductService, ...
 │
-├── CifraShop.Contracts/               DTOs (Request/Response) + mappings
+├── CifraShop.Contracts/               DTO (Request/Response) + маппинг
 │   ├── Requests/                      CreateProductRequest, BatchUpdateRequest, ...
 │   ├── Responses/                     ProductResponse, PagedResponse<T>, ...
-│   └── Mappings/                      Extension methods: ToResponse()
+│   └── Mappings/                      Extension-методы: ToResponse()
 │
-├── CifraShop.API/                     ASP.NET Core Web API — entry point
+├── CifraShop.API/                     ASP.NET Core Web API — точка входа
 │   ├── Program.cs                     DI, CORS, SignalR, middleware
-│   ├── Controllers/                   7 controllers + ExceptionHandlerMiddleware
+│   ├── Controllers/                   7 контроллеров + ExceptionHandlerMiddleware
 │   ├── Hubs/                          AdminHub (SignalR)
-│   └── Dockerfile                     Multi-stage Docker build
+│   └── Dockerfile                     Мультистадийная сборка Docker
 │
-├── CifraShop.Client/                  Blazor WebAssembly — SPA client
+├── CifraShop.Client/                  Blazor WebAssembly — SPA-клиент
 │   ├── Pages/
-│   │   ├── Admin.razor                Admin panel (orchestrator)
-│   │   └── Components/                5 child components:
-│   │       ├── AdminProductsPanel     Products CRUD + image management
-│   │       ├── AdminOrdersPanel       Orders CRUD + status management
-│   │       ├── AdminUsersPanel        Users CRUD + balance editing
-│   │       ├── AdminNotificationsPanel Branch notification settings
-│   │       └── AdminHistoryPanel      Action audit log
-│   ├── Services/SignalRService.cs     SignalR client with auto-reconnect
-│   ├── Models/ApiModels.cs            Client-side DTOs
-│   └── wwwroot/                       Bootstrap 5.3.8 + Icons (local)
+│   │   ├── Admin.razor                Админ-панель (оркестратор)
+│   │   └── Components/                5 дочерних компонентов:
+│   │       ├── AdminProductsPanel     CRUD товаров + изображения
+│   │       ├── AdminOrdersPanel       CRUD заказов + статусы
+│   │       ├── AdminUsersPanel        CRUD пользователей + баланс
+│   │       ├── AdminNotificationsPanel Настройки уведомлений филиалов
+│   │       └── AdminHistoryPanel      Аудит действий
+│   ├── Services/SignalRService.cs     SignalR-клиент с автопереподключением
+│   ├── Models/ApiModels.cs            Клиентские DTO
+│   └── wwwroot/                       Bootstrap 5.3.8 + Icons (локально)
 │
-├── CifraShop.Launcher/                Console launcher — startup automation
-│   └── Program.cs                     6 phases + menu + monitoring
+├── CifraShop.Launcher/                Консольный лаунчер — автоматизация запуска
+│   └── Program.cs                     6 фаз + меню + мониторинг
 │
-├── CifraShop.Tests/                   MSTest (skeleton)
+├── CifraShop.Tests/                   MSTest (заготовка)
 └── README.md
 ```
 
-### Data Flow
+### Поток данных
 
 ```
-┌──────────────┐   HTTP/WS   ┌──────────────┐
-│   Client     │ <──────────> │   API        │
-│   (Blazor)   │  SignalR     │   Controllers│
-└──────────────┘              └──────┬───────┘
-                                     │
-                              ┌──────▼───────┐
-                              │  Application  │
-                              │   Services    │
-                              └──────┬───────┘
-                                     │
-                       ┌─────────────┼─────────────┐
-                ┌──────▼──────┐           ┌───────▼──────┐
-                │   Domain    │           │Infrastructure│
-                │  Entities   │           │   EF Core    │
-                └─────────────┘           └──────┬───────┘
-                                                 │
-                                          ┌──────▼───────┐
-                                          │  SQL Server   │
-                                          └──────────────┘
+┌──────────────┐  HTTP/WS   ┌──────────────┐
+│   Клиент     │ <─────────> │   API        │
+│   (Blazor)   │  SignalR    │  Контроллеры │
+└──────────────┘             └──────┬───────┘
+                                    │
+                             ┌──────▼───────┐
+                             │ Application  │
+                             │  Сервисы     │
+                             └──────┬───────┘
+                                    │
+                      ┌─────────────┼─────────────┐
+               ┌──────▼──────┐           ┌───────▼──────┐
+               │   Domain    │           │Infrastructure│
+               │  Сущности   │           │   EF Core    │
+               └─────────────┘           └──────┬───────┘
+                                                │
+                                         ┌──────▼───────┐
+                                         │  SQL Server   │
+                                         └──────────────┘
 ```
 
 ---
 
-## API Endpoints
+## API Эндпоинты
 
-### Products
+### Товары
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `api/Product/all` | All products |
-| `GET` | `api/Product/paged?page=0&pageSize=8` | Paginated with search &amp; filter |
-| `POST` | `api/Product/create-product` | Create |
-| `PUT` | `api/Product/update-product?id=X` | Update |
-| `DELETE` | `api/Product/delete-product?id=X` | Delete |
-| `POST` | `api/Product/batch-delete` | Batch delete |
-| `POST` | `api/Product/batch-update-status` | Batch status change |
+| Метод | Роут | Описание |
+|-------|------|----------|
+| `GET` | `api/Product/all` | Все товары |
+| `GET` | `api/Product/paged?page=0&pageSize=8` | С пагинацией, поиском и фильтром |
+| `POST` | `api/Product/create-product` | Создать |
+| `PUT` | `api/Product/update-product?id=X` | Обновить |
+| `DELETE` | `api/Product/delete-product?id=X` | Удалить |
+| `POST` | `api/Product/batch-delete` | Массовое удаление |
+| `POST` | `api/Product/batch-update-status` | Массовая смена статуса |
 
-### Orders
+### Заказы
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `api/Order/paged?page=0&pageSize=8` | Paginated with filters |
-| `POST` | `api/Order/create-order` | Create (CustomerEmail, Items) |
-| `PUT` | `api/Order/update-order?id=X` | Update status |
-| `POST` | `api/Order/batch-update-status` | Batch status change |
+| Метод | Роут | Описание |
+|-------|------|----------|
+| `GET` | `api/Order/paged?page=0&pageSize=8` | С пагинацией и фильтрами |
+| `POST` | `api/Order/create-order` | Создать (CustomerEmail, Items) |
+| `PUT` | `api/Order/update-order?id=X` | Обновить статус |
+| `POST` | `api/Order/batch-update-status` | Массовая смена статуса |
 
-### Users
+### Пользователи
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `api/User/paged?page=0&pageSize=8` | Paginated |
-| `POST` | `api/User/create-admin` | Create admin |
-| `POST` | `api/User/create-student` | Create student |
-| `PUT` | `api/User?id=X` | Update |
-| `DELETE` | `api/User?id=X` | Delete |
+| Метод | Роут | Описание |
+|-------|------|----------|
+| `GET` | `api/User/paged?page=0&pageSize=8` | С пагинацией |
+| `POST` | `api/User/create-admin` | Создать админа |
+| `POST` | `api/User/create-student` | Создать студента |
+| `PUT` | `api/User?id=X` | Обновить |
+| `DELETE` | `api/User?id=X` | Удалить |
 
-### Notifications, Images, History
+### Уведомления, изображения, история
 
-See full API documentation in the source controllers.
-
----
-
-## Admin Panel
-
-### Real-time Status
-
-| Badge | Meaning |
-|-------|---------|
-| <span style="color:green">● Online</span> | SignalR connected — all changes appear instantly |
-| <span style="color:red">● Offline</span> | SignalR disconnected — fallback polling every 5 min. Refresh page to reconnect |
-
-### Features by Section
-
-**Products:**
-- Search with highlight, status filter, server-side pagination
-- Inline quantity editing, status toggle (click badge)
-- Photo upload with drag-and-drop style
-- Batch operations: status change, delete (checkbox selection)
-- Low stock warning (highlighted rows)
-
-**Orders:**
-- Email autocomplete, date range filter
-- Expandable rows with product details and images
-- Status dropdown in table, batch status change
-
-**Users:**
-- Role filter (Students/Admins)
-- Balance editing via modal
-
-**Notifications:**
-- Per-branch: email, Telegram, low-stock threshold
-- Admin-to-branch binding
-
-**History:**
-- Collapsible timeline
-- Filter by action type and branch
-
-### URL Filters
-
-All search/filter state is persisted in URL query parameters (`ps`, `pf`, `os`, `of`, `us`, `uf`, `odf`, `odt`). Share links with specific filters applied.
+Полная документация API — в исходных контроллерах.
 
 ---
 
-## Architecture
+## Админ-панель
 
-### Clean Architecture
+### Статус подключения
+
+| Бейдж | Значение |
+|-------|----------|
+| <span style="color:green">● Online</span> | SignalR подключён — все изменения отображаются мгновенно |
+| <span style="color:red">● Offline</span> | SignalR отключён — fallback-опрос каждые 5 минут. Перезагрузите страницу для подключения |
+
+### Разделы
+
+**Товары:**
+- Поиск с подсветкой, фильтр по статусу, серверная пагинация
+- Инлайн-редактирование количества, переключение статуса (клик по бейджу)
+- Загрузка фотографий
+- Batch-операции: смена статуса, удаление (выбор чекбоксами)
+- Предупреждение о низком остатке (подсветка строк)
+
+**Заказы:**
+- Автокомплит email, фильтр по дате
+- Развёрнутые строки с деталями и изображениями товаров
+- Выпадающий список статусов, batch-смена
+
+**Пользователи:**
+- Фильтр по роли (Студенты/Админы)
+- Редактирование баланса через модалку
+
+**Уведомления:**
+- По филиалам: email, Telegram, порог остатков
+- Привязка админов к филиалам
+
+**История:**
+- Сворачиваемая шкала времени
+- Фильтр по типу действия и филиалу
+
+### URL-фильтры
+
+Все поисковые запросы и фильтры сохраняются в URL query-параметрах (`ps`, `pf`, `os`, `of`, `us`, `uf`, `odf`, `odt`). Можно поделиться ссылкой с результатами поиска.
+
+---
+
+## Архитектура
+
+### Чистая архитектура
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Presentation                                        │
-│  ├── API Controllers + SignalR Hub                   │
-│  └── Blazor WASM Client (5 components)              │
+│  Представление                                       │
+│  ├── Контроллеры API + SignalR Hub                   │
+│  └── Blazor WASM клиент (5 компонентов)             │
 ├─────────────────────────────────────────────────────┤
-│  Application                                         │
-│  ├── Service Interfaces                              │
-│  └── Service Implementations                         │
+│  Приложение                                          │
+│  ├── Интерфейсы сервисов                             │
+│  └── Реализации сервисов                             │
 ├─────────────────────────────────────────────────────┤
-│  Contracts                                           │
-│  ├── Request/Response DTOs                           │
-│  └── Mappings (extension methods)                    │
+│  Контракты                                           │
+│  ├── DTO запросов/ответов                            │
+│  └── Маппинг (extension-методы)                     │
 ├─────────────────────────────────────────────────────┤
-│  Domain (no dependencies)                            │
-│  ├── Entities + Enums                                │
-│  └── Repository Interfaces                           │
+│  Домен (без зависимостей)                            │
+│  ├── Сущности + перечисления                         │
+│  └── Интерфейсы репозиториев                         │
 ├─────────────────────────────────────────────────────┤
-│  Infrastructure                                      │
+│  Инфраструктура                                      │
 │  ├── EF Core + Fluent API                            │
-│  └── Repository Implementations                      │
+│  └── Реализации репозиториев                         │
 └─────────────────────────────────────────────────────┘
 ```
 
-### SignalR Integration
+### Интеграция SignalR
 
-| Component | Role |
+| Компонент | Роль |
 |-----------|------|
-| `AdminHub` | Empty hub — server pushes, clients listen |
-| Controllers | `IHubContext<AdminHub>` → `SendAsync("Notify", entity, action)` after mutations |
-| `SignalRService` | Client connection with auto-reconnect (0s, 2s, 5s, 10s) |
-| `Admin.razor` | `HandleSignalRNotify` → reloads relevant data section |
+| `AdminHub` | Пустой хаб — сервер шлёт, клиенты слушают |
+| Контроллеры | `IHubContext<AdminHub>` → `SendAsync("Notify", entity, action)` после мутаций |
+| `SignalRService` | Клиентское подключение с автопереподключением (0с, 2с, 5с, 10с) |
+| `Admin.razor` | `HandleSignalRNotify` → перезагружает нужный раздел данных |
 
-Events: `product` (created/updated/deleted), `order` (created/updated), `user` (created/updated/deleted), `notification` (updated).
+События: `product` (created/updated/deleted), `order` (created/updated), `user` (created/updated/deleted), `notification` (updated).
 
-### Exception Handling
+### Обработка ошибок
 
-| Exception | HTTP Code |
-|-----------|-----------|
+| Исключение | HTTP-код |
+|------------|----------|
 | `ArgumentException` | 400 Bad Request |
 | `KeyNotFoundException` | 404 Not Found |
 | `InvalidOperationException` | 409 Conflict |
-| Other | 500 Internal Server Error |
+| Остальные | 500 Internal Server Error |
 
 ---
 
-## Launcher
+## Лаунчер
 
-### 6 Startup Phases
+### 6 фаз запуска
 
-| Phase | Description |
-|-------|-------------|
-| 1 | Check .NET SDK and Docker (auto-start Docker Desktop) |
-| 2 | Create `docker-compose.yml` and connection string |
-| 3 | Start SQL Server in Docker |
-| 4 | Apply EF Core migrations |
-| 5 | Start API |
-| 6 | Start Blazor Client |
+| Фаза | Описание |
+|------|----------|
+| 1 | Проверка .NET SDK и Docker (авто-запуск Docker Desktop) |
+| 2 | Создание `docker-compose.yml` и строки подключения |
+| 3 | Запуск SQL Server в Docker |
+| 4 | Применение EF Core миграций |
+| 5 | Запуск API |
+| 6 | Запуск Blazor-клиента |
 
-### Interactive Menu
+### Интерактивное меню
 
 ```
 ╔══════════════════════════════════════════════════╗
-║  MANAGEMENT MENU                                 ║
-║  [1] Open admin panel                            ║
-║  [2] Open main page                              ║
+║  МЕНЮ УПРАВЛЕНИЯ                                 ║
+║  [1] Открыть админ-панель                         ║
+║  [2] Открыть главную страницу                     ║
 ║  ──────────────────────────────────────────────── ║
-║  [3] Restart API                                 ║
-║  [4] Restart client                              ║
-║  [5] Restart all                                 ║
+║  [3] Перезапустить API                            ║
+║  [4] Перезапустить клиент                         ║
+║  [5] Перезапустить всё                            ║
 ║  ──────────────────────────────────────────────── ║
-║  [6] Stop all                                    ║
+║  [6] Остановить всё                               ║
 ║  ──────────────────────────────────────────────── ║
-║  [7] Rebuild API (Docker)                        ║
-║  [8] Clean Docker images                         ║
+║  [7] Пересобрать API (Docker)                     ║
+║  [8] Очистить Docker-образы                       ║
 ║  ──────────────────────────────────────────────── ║
-║  [9] Show logs                                   ║
-║  [0] Exit                                        ║
+║  [9] Показать логи                                ║
+║  [0] Выход                                        ║
 ╚══════════════════════════════════════════════════╝
 ```
 
-### CLI Flags
+### CLI-флаги
 
-| Flag | Description |
-|------|-------------|
-| `--quick` | Skip completed phases |
-| `--skip-docker` | Force local mode |
-| `--port-api N` | Override API port |
-| `--port-client N` | Override client port |
-| `--reset` | Full reset: stop containers, clean images |
+| Флаг | Описание |
+|------|----------|
+| `--quick` | Быстрый режим — пропуск выполненных фаз |
+| `--skip-docker` | Принудительно локальный режим |
+| `--port-api N` | Переопределение порта API |
+| `--port-client N` | Переопределение порта клиента |
+| `--reset` | Полный сброс: остановка контейнеров, очистка образов |
 
-### Monitoring
+### Мониторинг
 
-- Background process check every 5 seconds
-- Auto-restart on crash (up to 3 times)
-- Log buffer with restart markers
+- Фоновая проверка процессов каждые 5 секунд
+- Авто-рестарт при падении (до 3 раз)
+- Буфер логов с маркерами перезапуска
 
 ---
 
-## Ports
+## Порты
 
-| Service | Protocol | Port | URL |
-|---------|----------|------|-----|
+| Сервис | Протокол | Порт | URL |
+|--------|----------|------|-----|
 | API | HTTP | 5000 | `http://localhost:5000` |
-| Client | HTTP | 5001 | `http://localhost:5001` |
+| Клиент | HTTP | 5001 | `http://localhost:5001` |
 | SQL Server | TCP | 1433 | `localhost:1433` |
 
 ---
 
-## Roadmap
+## Дорожная карта
 
-### Done
+### Сделано
 
-- [x] CRUD for products, orders, users
-- [x] Admin panel with search, filters, server pagination
-- [x] Batch operations (status change, delete)
-- [x] **SignalR real-time updates**
-- [x] Photo upload and management
-- [x] Action history with filtering
-- [x] URL-persisted filters
-- [x] Console launcher with auto-restart
-- [x] Docker integration
-- [x] Exception handler middleware
-- [x] 30+ bugs fixed
+- [x] CRUD для товаров, заказов, пользователей
+- [x] Админ-панель с поиском, фильтрами, серверной пагинацией
+- [x] Batch-операции (смена статуса, удаление)
+- [x] **SignalR — обновления в реальном времени**
+- [x] Загрузка и управление фотографиями
+- [x] История действий с фильтрацией
+- [x] URL-фильтры
+- [x] Консольный лаунчер с авто-рестартом
+- [x] Интеграция с Docker
+- [x] ExceptionHandlerMiddleware
+- [x] Исправлено 30+ багов
 
-### Planned
+### Запланировано
 
-- [ ] Authentication (JWT)
-- [ ] Password hashing
-- [ ] DTO validation (FluentValidation)
-- [ ] Unit tests (MSTest)
-- [ ] Student-facing catalog page
-- [ ] Shopping cart
-- [ ] Real notifications (email/Telegram)
-- [ ] Server-side sorting
+- [ ] Аутентификация (JWT)
+- [ ] Хеширование паролей
+- [ ] Валидация DTO (FluentValidation)
+- [ ] Unit-тесты (MSTest)
+- [ ] Страница каталога для студентов
+- [ ] Корзина и оформление заказа
+- [ ] Реальные уведомления (email/Telegram)
+- [ ] Серверная сортировка
 
 ---
 
 <p align="center">
-  Built for the <b>Cifra</b> course project
+  Проект разработан в рамках курса <b>Cifra</b>
 </p>
