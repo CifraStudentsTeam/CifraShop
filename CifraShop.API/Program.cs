@@ -90,4 +90,6 @@ app.MapControllers();
 
 app.MapHub<AdminHub>("/hubs/admin");
 
+app.MapHub<ShopHub>("/hubs/shop");
+
 app.Run();

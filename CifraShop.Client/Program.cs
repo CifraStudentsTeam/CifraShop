@@ -13,5 +13,8 @@ builder.Services.AddScoped(sp => new HttpClient
 });
 
 builder.Services.AddScoped<SignalRService>();
+builder.Services.AddScoped<ShopSignalRService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<CartService>();
 
 await builder.Build().RunAsync();
