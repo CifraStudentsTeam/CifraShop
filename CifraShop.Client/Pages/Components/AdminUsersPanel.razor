@@ -64,7 +64,7 @@
                                     <td>
                                         <span class="px-1 rounded border-bottom border-secondary" style="cursor:pointer" @onclick="() => OpenEditBalance(u)"
                                               title="Нажмите для редактирования">
-                                            @(u.Balance?.ToString("N0") ?? "0") 
+                                            @(u.Balance?.ToString("N0") ?? "0") ЦФК
                                             <i class="bi bi-pencil small text-primary ms-1"></i>
                                         </span>
                                     </td>
@@ -154,7 +154,7 @@
                     <button type="button" class="btn-close" @onclick="() => _showEditModal = false"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label small fw-medium">Баланс ()</label>
+                    <label class="form-label small fw-medium">Баланс (ЦФК)</label>
                     <input type="number" class="form-control" @bind="_editBalance" min="0" placeholder="0" />
                 </div>
                 <div class="modal-footer border-0 pt-0">

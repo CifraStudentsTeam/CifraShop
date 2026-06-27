@@ -55,7 +55,7 @@
     </div>
     <div class="row g-2 mb-3">
         <MetricCard Title="Товаров" Count="@_productTotalCount" Subtitle="@_lowStockSubtitle" Icon="bi-box" Color="primary" />
-        <MetricCard Title="Заказы" Count="@_orderTotalCount" Subtitle="@($"{_totalRevenue:N0}  выручка")" Icon="bi-cart-check" Color="warning" />
+        <MetricCard Title="Заказы" Count="@_orderTotalCount" Subtitle="@($"{_totalRevenue:N0}  ЦФК")" Icon="bi-cart-check" Color="warning" />
         <MetricCard Title="Пользователи" Count="@_userTotalCount" Subtitle="@($"{_adminCount} админ(ов)")" Icon="bi-people" Color="success" />
         <MetricCard Title="Филиалы" Count="@_notificationSettings.Count" Subtitle="@($"{_configuredFilials} настроено")" Icon="bi-geo-alt" Color="info" />
     </div>
@@ -63,7 +63,7 @@
     <div class="row g-3 mb-3">
         <AdminProductsPanel Products="Products" TotalCount="_productTotalCount" Page="_productPage"
                             PageSize="_productPageSize" TotalPages="_productTotalPages" Loading="_loadingProducts"
-                            Search="_productSearch" Filter="_productFilter" SortField="_productSortField" SortAsc="_productSortAsc"
+                            Search="@_productSearch" Filter="@_productFilter" SortField="@_productSortField" SortAsc="_productSortAsc"
                             TotalStockValue="_totalStockValue"
                             OnSearchChanged="OnProductSearchChanged" OnFilterChanged="OnProductFilterChanged"
                             OnPageChanged="OnProductPageChanged" OnPageSizeChanged="OnProductPageSizeChanged"
@@ -73,8 +73,8 @@
 
         <AdminOrdersPanel Orders="Orders" TotalCount="_orderTotalCount" Page="_orderPage"
                           PageSize="_orderPageSize" TotalPages="_orderTotalPages" Loading="_loadingOrders"
-                          Search="_orderSearch" Filter="_orderFilter" DateFrom="_orderDateFrom" DateTo="_orderDateTo"
-                          SortField="_orderSortField" SortAsc="_orderSortAsc" ExpandedOrderId="_expandedOrderId"
+                          Search="@_orderSearch" Filter="@_orderFilter" DateFrom="@_orderDateFrom" DateTo="@_orderDateTo"
+                          SortField="@_orderSortField" SortAsc="_orderSortAsc" ExpandedOrderId="_expandedOrderId"
                           TotalRevenue="_totalRevenue" AllProducts="_allProductsForOrder" AllUsersCache="_allUsersCache"
                           OnSearchChanged="OnOrderSearchChanged" OnFilterChanged="OnOrderFilterChanged"
                           OnDateFromChanged="OnOrderDateFromChanged" OnDateToChanged="OnOrderDateToChanged"
@@ -87,7 +87,7 @@
     <div class="row g-3 mb-3">
         <AdminUsersPanel Users="Users" TotalCount="_userTotalCount" Page="_userPage"
                          PageSize="_userPageSize" TotalPages="_userTotalPages" Loading="_loadingUsers"
-                         Search="_userSearch" Filter="_userFilter" SortField="_userSortField" SortAsc="_userSortAsc"
+                         Search="@_userSearch" Filter="@_userFilter" SortField="@_userSortField" SortAsc="_userSortAsc"
                          OnSearchChanged="OnUserSearchChanged" OnFilterChanged="OnUserFilterChanged"
                          OnPageChanged="OnUserPageChanged" OnPageSizeChanged="OnUserPageSizeChanged"
                          OnSortToggle="ToggleUserSort"
@@ -208,18 +208,14 @@
                 switch (entity)
                 {
                     case "product":
-                        await LoadProducts();
-                        await LoadMetrics();
-                        await LoadAllProducts();
+                        await Task.WhenAll(LoadProducts(), LoadMetrics(), LoadAllProducts());
                         break;
                     case "order":
-                        await LoadOrders();
+                        await Task.WhenAll(LoadOrders(), LoadProducts(), LoadAllProducts(), LoadUsers(), LoadMetrics(), LoadUsersMetrics());
                         _expandedOrderId = expandedId;
-                        await LoadMetrics();
                         break;
                     case "user":
-                        await LoadUsers();
-                        await LoadUsersMetrics();
+                        await Task.WhenAll(LoadUsers(), LoadUsersMetrics(), LoadAllUsers());
                         break;
                     case "notification":
                         await LoadNotificationSettings();

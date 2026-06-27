@@ -4,8 +4,7 @@
         <input type="text" class="form-control bg-light border-0"
                placeholder="@Placeholder"
                value="@Value"
-               @oninput="OnInput"
-               @onchange="OnChange" />
+               @oninput="OnInput" />
     </div>
     <select class="form-select form-select-sm w-auto"
             value="@FilterValue"
@@ -35,16 +34,6 @@
         var val = e.Value?.ToString() ?? "";
         _lastValue = val;
         await ValueChanged.InvokeAsync(val);
-    }
-
-    private async Task OnChange(ChangeEventArgs e)
-    {
-        var val = e.Value?.ToString() ?? "";
-        if (val != _lastValue)
-        {
-            _lastValue = val;
-            await ValueChanged.InvokeAsync(val);
-        }
     }
 
     private async Task OnFilterChange(ChangeEventArgs e)
