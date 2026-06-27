@@ -120,7 +120,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>@p.Price </td>
+                                    <td>@p.Price ЦФК</td>
                                     <td>
                                         <input type="number" class="form-control form-control-sm @(isLowStock ? "border-warning" : "")"
                                                style="width:3.75rem;" value="@p.Quantity"
@@ -155,7 +155,7 @@
                             @TotalCount товар(ов)
                             @if (TotalStockValue > 0)
                             {
-                                <span class="ms-2 text-muted">· @TotalStockValue.ToString("N0")  на складе</span>
+                                <span class="ms-2 text-muted">· @TotalStockValue.ToString("N0") ЦФК на складе</span>
                             }
                         </small>
                         <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
@@ -198,7 +198,7 @@
                     </div>
                     <div class="row g-3">
                         <div class="col-6">
-                            <label class="form-label small fw-medium">Цена ()</label>
+                            <label class="form-label small fw-medium">Цена (ЦФК)</label>
                             <input type="number" class="form-control @(_formPrice is > 0 ? "is-valid" : "")" @bind="_formPrice" min="1" step="1" placeholder="Введите цену" disabled="@_saving" />
                         </div>
                         <div class="col-6">
