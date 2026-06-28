@@ -1,4 +1,4 @@
-<h1 align="center">
+﻿<h1 align="center">
   <br>
   CifraShop
   <br>
@@ -50,7 +50,7 @@
   </tr>
   <tr>
     <td><b>Уведомления по филиалам</b></td>
-    <td>Настройки уведомлений для каждого филиала: email для уведомлений, Telegram Bot Token + Chat ID, email администраторов филиала (привязка админов). Типы уведомлений: новые заказы, смена статуса, низкий остаток. Порог уведомления о низком запасе</td>
+    <td>Настройки уведомлений для каждого филиала: email для уведомлений, email администраторов филиала (привязка админов). Типы уведомлений: новые заказы, смена статуса, низкий остаток. Порог уведомления о низком запасе</td>
   </tr>
   <tr>
     <td><b>История действий</b></td>
@@ -355,7 +355,7 @@ CifraShop/
 | `GET` | `all` | — | `List<NotificationSettingsResponse>` | Все настройки |
 | `GET` | `by-id?id=X` | — | `NotificationSettingsResponse` | Настройки по ID |
 | `GET` | `by-branch?branch=X` | — | `NotificationSettingsResponse` | Настройки по филиалу |
-| `POST` | — | `{ Branch, Email, TelegramBotToken, TelegramChatId, AdminEmails, NotifyOnNewOrder, NotifyOnStatusChange, NotifyOnLowStock, LowStockThreshold }` | `NotificationSettingsResponse` | Создать настройки филиала |
+| `POST` | — | `{ Branch, Email, AdminEmails, NotifyOnNewOrder, NotifyOnStatusChange, NotifyOnLowStock, LowStockThreshold }` | `NotificationSettingsResponse` | Создать настройки филиала |
 | `PUT` | `?id=X` | То же тело | `NoContent` | Обновить настройки |
 | `DELETE` | `?id=X` | — | `NoContent` | Удалить настройки |
 
@@ -469,15 +469,14 @@ CifraShop/
 Настройки уведомлений для каждого филиала.
 
 **Что показывает:**
-- Список филиалов с иконками (email, Telegram, типы уведомлений)
+- Список филиалов с иконками (email, типы уведомлений)
 - Количество настроенных филиалов
 - Кнопка "Шестерёнка" → модалка настроек
 
 **Настройки каждого филиала:**
 - Название филиала
 - Email для уведомлений
-- Telegram Bot Token + Chat ID
-- Email администраторов филиала (какие админы отвечают за этот филиал)
+- - email администраторов филиала (какие админы отвечают за этот филиал)
 - Типы уведомлений: Новые заказы / Смена статуса / Низкий остаток
 - Порог уведомления о низком запасе (например, ≤5 штук)
 
@@ -731,7 +730,7 @@ http://localhost:5001/admin?ps=ноутбук&pf=0&os=ivan&of=2&us=admin&uf=1&od
 - [ ] Unit-тесты (MSTest) — покрытие сервисов и репозиториев
 - [ ] Страница каталога для студентов — публичный просмотр товаров
 - [ ] Корзина и оформление заказа — покупательский flow
-- [ ] Реальные уведомления (email/Telegram) — отправка по настройкам филиала
+- [ ] Реальные уведомления (email) — отправка по настройкам филиала
 - [ ] Серверная сортировка (sortBy/sortDir в API) — корректная глобальная сортировка
 
 ---
