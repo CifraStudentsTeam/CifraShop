@@ -1,0 +1,33 @@
+@inject IJSRuntime JS
+
+@if (!_consentGiven)
+{
+    <div class="cookie-consent-banner position-fixed bottom-0 start-0 w-100 bg-dark text-light p-3 shadow-lg" style="z-index: 1050;">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-cookie me-2 fs-4"></i>
+                <span>Мы используем cookies для улучшения работы сайта. Продолжая использовать сайт, вы соглашаетесь с использованием cookies.</span>
+            </div>
+            <button class="btn btn-primary btn-sm px-4" @onclick="AcceptCookies">
+                <i class="bi bi-check-circle me-1"></i>Принять
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _consentGiven = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var consent = await JS.InvokeAsync<string>("localStorage.getItem", "cookieConsent");
+        _consentGiven = consent == "accepted";
+    }
+
+    private async Task AcceptCookies()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "cookieConsent", "accepted");
+        _consentGiven = true;
+        StateHasChanged();
+    }
+}
