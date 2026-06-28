@@ -41,7 +41,7 @@ internal static class ConsoleUI
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.WriteLine("┌" + new string('─', W) + "┐");
         Console.WriteLine("│" + Center("Удобное управление контейнерами Docker") + "│");
-        Console.WriteLine("│" + Center("MS SQL Server,   Web API") + "│");
+        Console.WriteLine("│" + Center("MS SQL Server, Web API") + "│");
         Console.WriteLine("│" + Center("─ CifraShop ─") + "│");
         Console.WriteLine("└" + new string('─', W) + "┘");
         Console.ResetColor();
@@ -49,7 +49,6 @@ internal static class ConsoleUI
         var mode = quickMode ? " * быстрый режим" : "";
         if (skipDocker) mode += " * без Docker";
         Log($"  {Path.GetFileName(rootDir)}{mode}  |  {DateTime.Now:HH:mm:ss dd.MM.yyyy}");
-        Log($"  Флаги: --quick --skip-docker --port-api N --port-client N --port-db N --status --version --reset");
         Console.WriteLine();
     }
 
@@ -151,8 +150,7 @@ internal static class ConsoleUI
         MenuRow("8", "Очистить Docker-образы", ConsoleColor.DarkCyan);
         Separator();
         MenuRow("9", "Показать логи", ConsoleColor.Gray);
-        Separator();
-        MenuRow("10", "MailHog (������)", ConsoleColor.Green);
+        MenuRow("10", "MailHog (Почтовый сервер)", ConsoleColor.Green);
         MenuRow("0", "Выход", ConsoleColor.DarkGray);
 
         Console.ForegroundColor = ConsoleColor.DarkCyan;
