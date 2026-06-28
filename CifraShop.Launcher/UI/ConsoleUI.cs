@@ -1,16 +1,11 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 
 namespace CifraShop.Launcher.UI;
 
-/// <summary>
-/// Консольный UI: баннер, меню, рамки, статус-строки, логирование.
-/// </summary>
 internal static class ConsoleUI
 {
-    private const int W = 62;
-
-    // ── Логирование ──────────────────────────────────────────────
+    private const int TotalWidth = 64;
 
     internal static void Ok(string msg) => WriteColored("    [+] ", ConsoleColor.Green, ConsoleColor.Gray, msg);
     internal static void Created(string msg) => WriteColored("    [~] ", ConsoleColor.DarkCyan, ConsoleColor.Gray, msg);
@@ -33,18 +28,40 @@ internal static class ConsoleUI
         Console.ResetColor();
     }
 
+    // ── Универсальные рисовалки ──────────────────────────────────
+
+    private static void Line(ConsoleColor color, string content)
+    {
+        Debug.Assert(content.Length == TotalWidth, $"Line width {content.Length} != {TotalWidth}");
+        Console.ForegroundColor = color;
+        Console.WriteLine(content);
+        Console.ResetColor();
+    }
+
+    private static string P(string s) => s.PadRight(TotalWidth);
+
+    private static string BoxBorder(char left, char fill, char right) =>
+        $"{left}{new string(fill, TotalWidth - 2)}{right}";
+
+    private static string BoxInner(string text)
+    {
+        var pad = TotalWidth - 2 - text.Length;
+        if (pad < 0) { text = text[..(TotalWidth - 5)] + "..."; pad = 3; }
+        var lp = pad / 2;
+        return $"│{new string(' ', lp)}{text}{new string(' ', pad - lp)}│";
+    }
+
     // ── Баннер ───────────────────────────────────────────────────
 
     internal static void PrintBanner(bool quickMode, bool skipDocker, string rootDir)
     {
         try { Console.Clear(); } catch (IOException) { }
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("┌" + new string('─', W) + "┐");
-        Console.WriteLine("│" + Center("Удобное управление контейнерами Docker") + "│");
-        Console.WriteLine("│" + Center("MS SQL Server, Web API") + "│");
-        Console.WriteLine("│" + Center("─ CifraShop ─") + "│");
-        Console.WriteLine("└" + new string('─', W) + "┘");
-        Console.ResetColor();
+        var c = ConsoleColor.DarkCyan;
+        Line(c, BoxBorder('┌', '─', '┐'));
+        Line(c, BoxInner("Удобное управление контейнерами Docker"));
+        Line(c, BoxInner("MS SQL Server, Web API"));
+        Line(c, BoxInner("─ CifraShop ─"));
+        Line(c, BoxBorder('└', '─', '┘'));
         Console.WriteLine();
         var mode = quickMode ? " * быстрый режим" : "";
         if (skipDocker) mode += " * без Docker";
@@ -56,9 +73,8 @@ internal static class ConsoleUI
 
     internal static void PrintPhaseStart(int num, int total, string title)
     {
-        var phase = $"[{num}/{total}]";
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write($"  {phase} ");
+        Console.Write($"  [{num}/{total}] ");
         Console.ForegroundColor = ConsoleColor.White;
         Console.Write(title);
         Console.ResetColor();
@@ -70,17 +86,14 @@ internal static class ConsoleUI
     internal static async Task PrintLaunchResultAsync(string rootDir, bool dockerAvailable, bool apiInDocker, Process? apiProcess, int apiPort, Process? clientProcess, int clientPort)
     {
         Console.WriteLine();
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("┌" + new string('─', W) + "┐");
-        Console.WriteLine("│" + Center("ВСЁ ГОТОВО К РАБОТЕ") + "│");
-        Console.WriteLine("├" + new string('─', W) + "┤");
-        Console.ResetColor();
+        var c = ConsoleColor.DarkCyan;
+        Line(c, BoxBorder('┌', '─', '┐'));
+        Line(c, BoxInner("ВСЁ ГОТОВО К РАБОТЕ"));
+        Line(c, BoxBorder('├', '─', '┤'));
 
         await PrintServiceStatusesAsync(rootDir, dockerAvailable, apiInDocker, apiProcess, apiPort, clientProcess, clientPort);
 
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("└" + new string('─', W) + "┘");
-        Console.ResetColor();
+        Line(c, BoxBorder('└', '─', '┘'));
     }
 
     internal static async Task PrintServiceStatusesAsync(string rootDir, bool dockerAvailable, bool apiInDocker, Process? apiProcess, int apiPort, Process? clientProcess, int clientPort)
@@ -89,75 +102,78 @@ internal static class ConsoleUI
         {
             var dbPs = await Services.CommandRunner.RunDockerComposeAsync(rootDir, "ps db --format '{{.Status}}'");
             var dbOk = dbPs != null && dbPs.Contains("Up");
-            PrintStatusLine("БД", dbOk, dbOk ? "SQL Server (Docker)" : "не запущен");
+            StatusRow("БД", dbOk, dbOk ? "SQL Server (Docker)" : "не запущен");
         }
 
         if (apiInDocker)
         {
             var apiPs = await Services.CommandRunner.RunDockerComposeAsync(rootDir, "ps api --format '{{.Status}}'");
             var apiOk = apiPs != null && (apiPs.Contains("Up") || apiPs.Contains("running"));
-            PrintStatusLine("API", apiOk, apiOk ? $"http://localhost:{apiPort} (Docker)" : "не запущен");
+            StatusRow("API", apiOk, apiOk ? $"http://localhost:{apiPort} (Docker)" : "не запущен");
         }
         else
         {
             var apiOk = apiProcess is { HasExited: false };
-            PrintStatusLine("API", apiOk, apiOk ? $"https://localhost:{apiPort}" : "не запущен");
+            StatusRow("API", apiOk, apiOk ? $"https://localhost:{apiPort}" : "не запущен");
         }
 
         var clientOk = clientProcess is { HasExited: false };
-        PrintStatusLine("Клиент", clientOk, clientOk ? $"http://localhost:{clientPort}/admin" : "не запущен");
+        StatusRow("Клиент", clientOk, clientOk ? $"http://localhost:{clientPort}/admin" : "не запущен");
     }
 
-    private static void PrintStatusLine(string name, bool ok, string detail)
+    private static void StatusRow(string name, bool ok, string detail)
     {
+        var icon = ok ? "[+] " : "[-] ";
+        var tag = $"{name,-8}";
+        var content = $"│ {icon}{tag}{detail}";
+        var pad = TotalWidth - content.Length - 1;
+        if (pad < 0) pad = 0;
+        var line = content + new string(' ', pad) + "│";
+
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.Write("│ ");
         Console.ForegroundColor = ok ? ConsoleColor.Green : ConsoleColor.Red;
-        Console.Write(ok ? "  [+] " : "  [-] ");
+        Console.Write(icon);
         Console.ForegroundColor = ConsoleColor.White;
-        Console.Write($"{name,-8}");
+        Console.Write(tag);
         Console.ForegroundColor = ConsoleColor.Gray;
         Console.Write(detail);
         Console.ResetColor();
-        PadLine(W - 15 - detail.Length);
+        Console.Write(new string(' ', pad));
+        Console.ForegroundColor = ConsoleColor.DarkCyan;
+        Console.WriteLine("│");
+        Console.ResetColor();
     }
 
-    internal static void PrintStatusLinePublic(string name, bool ok, string detail) => PrintStatusLine(name, ok, detail);
+    internal static void PrintStatusLinePublic(string name, bool ok, string detail) => StatusRow(name, ok, detail);
 
     // ── Меню ─────────────────────────────────────────────────────
 
+    private const string Indent = "  ";
+
     internal static void DrawMenu(int apiPort, bool apiOn, int clientPort, bool clientOn)
     {
+        var c = ConsoleColor.DarkCyan;
         Console.WriteLine();
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.Write("  ╭─ ");
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.Write("МЕНЮ УПРАВЛЕНИЯ");
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine(" " + new string('─', W - 20) + "╮");
-        Console.ResetColor();
+        Line(c, $"{Indent}╭─ МЕНЮ УПРАВЛЕНИЯ {new string('─', TotalWidth - 22)}╮");
 
-        MenuRow("1", "Открыть админ-панель", ConsoleColor.Cyan);
-        MenuRow("2", "Открыть главную страницу", ConsoleColor.Cyan);
-        Separator();
-        MenuRow("3", "Перезапустить API", ConsoleColor.Yellow);
-        MenuRow("4", "Перезапустить клиент", ConsoleColor.Yellow);
-        MenuRow("5", "Перезапустить всё", ConsoleColor.Yellow);
-        Separator();
-        MenuRow("6", "Остановить всё", ConsoleColor.Red);
-        Separator();
-        MenuRow("7", "Пересобрать API (Docker)", ConsoleColor.Magenta);
-        MenuRow("8", "Очистить Docker-образы", ConsoleColor.DarkCyan);
-        Separator();
-        MenuRow("9", "Показать логи", ConsoleColor.Gray);
-        MenuRow("10", "MailHog (Почтовый сервер)", ConsoleColor.Green);
-        MenuRow("0", "Выход", ConsoleColor.DarkGray);
+        MRow("1", "Открыть админ-панель", ConsoleColor.Cyan);
+        MRow("2", "Открыть главную страницу", ConsoleColor.Cyan);
+        MSep();
+        MRow("3", "Перезапустить API", ConsoleColor.Yellow);
+        MRow("4", "Перезапустить клиент", ConsoleColor.Yellow);
+        MRow("5", "Перезапустить всё", ConsoleColor.Yellow);
+        MSep();
+        MRow("6", "Остановить всё", ConsoleColor.Red);
+        MSep();
+        MRow("7", "Пересобрать API (Docker)", ConsoleColor.Magenta);
+        MRow("8", "Очистить Docker-образы", ConsoleColor.DarkCyan);
+        MSep();
+        MRow("9", "Показать логи", ConsoleColor.Gray);
+        MRow("10", "MailHog (Почтовый сервер)", ConsoleColor.Green);
+        MRow("0", "Выход", ConsoleColor.DarkGray);
 
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.Write("  ╰");
-        Console.Write(new string('─', W - 2));
-        Console.WriteLine("╯");
-        Console.ResetColor();
+        Line(c, $"{Indent}╰{new string('─', TotalWidth - 4)}╯");
 
         Console.ForegroundColor = ConsoleColor.DarkGray;
         var apiStatus = apiOn ? " [ON]" : " [OFF]";
@@ -169,6 +185,30 @@ internal static class ConsoleUI
         Console.ForegroundColor = ConsoleColor.White;
         Console.Write("  ▸ ");
         Console.ResetColor();
+    }
+
+    private static void MRow(string key, string label, ConsoleColor color)
+    {
+        var inner = $"{Indent}│ [{key}] {label}";
+        var pad = TotalWidth - inner.Length - 1;
+        if (pad < 0) pad = 0;
+
+        Console.ForegroundColor = ConsoleColor.DarkCyan;
+        Console.Write($"{Indent}│ ");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write($"[{key}]");
+        Console.ForegroundColor = color;
+        Console.Write($" {label}");
+        Console.ResetColor();
+        Console.Write(new string(' ', pad));
+        Console.ForegroundColor = ConsoleColor.DarkCyan;
+        Console.WriteLine("│");
+        Console.ResetColor();
+    }
+
+    private static void MSep()
+    {
+        Line(ConsoleColor.DarkCyan, $"{Indent}│{new string('─', TotalWidth - 4)}│");
     }
 
     internal static void ShowLogsMenu()
@@ -191,22 +231,20 @@ internal static class ConsoleUI
                 Log($"  Логи {prefix} пусты");
                 return;
             }
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine("┌" + new string('─', W) + "┐");
-            Console.WriteLine("│" + Center($"ЛОГИ {prefix}") + "│");
-            Console.WriteLine("├" + new string('─', W) + "┤");
+            var c = ConsoleColor.DarkCyan;
+            Line(c, BoxBorder('┌', '─', '┐'));
+            Line(c, BoxInner($"ЛОГИ {prefix}"));
+            Line(c, BoxBorder('├', '─', '┤'));
             Console.ResetColor();
             foreach (var line in content.Split('\n').TakeLast(50))
             {
                 var trimmed = line.TrimEnd();
-                if (trimmed.Length > W - 2) trimmed = trimmed[..(W - 5)] + "...";
-                var pad = Math.Max(0, W - 2 - trimmed.Length);
+                if (trimmed.Length > TotalWidth - 3) trimmed = trimmed[..(TotalWidth - 6)] + "...";
+                var pad = TotalWidth - 3 - trimmed.Length;
                 Console.ForegroundColor = ConsoleColor.Gray;
-                Console.WriteLine("│ " + trimmed + new string(' ', pad) + "│");
+                Console.WriteLine("│ " + trimmed + new string(' ', Math.Max(0, pad)) + "│");
             }
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine("└" + new string('─', W) + "┘");
-            Console.ResetColor();
+            Line(c, BoxBorder('└', '─', '┘'));
         }
     }
 
@@ -222,63 +260,6 @@ internal static class ConsoleUI
                 Log($"    │ {line.TrimEnd()}");
             Log($"    ── конец логов ──");
         }
-    }
-
-    // ── Хелперы отрисовки ────────────────────────────────────────
-
-    private static void MenuRow(string key, string label, ConsoleColor color)
-    {
-        Console.Write("  │  ");
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.Write($"[{key}]");
-        Console.ForegroundColor = color;
-        Console.Write($" {label}");
-        Console.ResetColor();
-        var contentLen = 4 + key.Length + 2 + GetDisplayWidth(label);
-        var pad = Math.Max(0, W - contentLen);
-        Console.Write(new string(' ', pad));
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("│");
-        Console.ResetColor();
-    }
-
-    private static void Separator()
-    {
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("  │  " + new string('─', W - 4) + "│");
-        Console.ResetColor();
-    }
-
-    private static string Center(string s)
-    {
-        var displayWidth = GetDisplayWidth(s);
-        if (displayWidth >= W) return s[..(W - 3)] + "...";
-        var pad = W - displayWidth;
-        var left = pad / 2;
-        return new string(' ', left) + s + new string(' ', pad - left);
-    }
-
-    private static int GetDisplayWidth(string s)
-    {
-        int width = 0;
-        var enumerator = System.Globalization.StringInfo.GetTextElementEnumerator(s);
-        while (enumerator.MoveNext())
-        {
-            var element = enumerator.GetTextElement();
-            if (element.Length > 1 && char.IsHighSurrogate(element[0]))
-                width += 2;
-            else
-                width += element.Length;
-        }
-        return width;
-    }
-
-    private static void PadLine(int width)
-    {
-        if (width > 0) Console.Write(new string(' ', width));
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("│");
-        Console.ResetColor();
     }
 
     internal static void PressKey()
