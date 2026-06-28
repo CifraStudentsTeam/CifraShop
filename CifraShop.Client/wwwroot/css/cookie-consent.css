@@ -1,0 +1,14 @@
+.cookie-consent-banner {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+@media (max-width: 768px) {
+    .cookie-consent-banner {
+        text-align: center;
+    }
+    
+    .cookie-consent-banner .btn {
+        width: 100%;
+    }
+}
