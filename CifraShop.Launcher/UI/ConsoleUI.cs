@@ -234,7 +234,7 @@ internal static class ConsoleUI
         Console.ForegroundColor = color;
         Console.Write($" {label}");
         Console.ResetColor();
-        var contentLen = 4 + 3 + 1 + label.Length;
+        var contentLen = 4 + key.Length + 2 + GetDisplayWidth(label);
         var pad = Math.Max(0, W - contentLen);
         Console.Write(new string(' ', pad));
         Console.ForegroundColor = ConsoleColor.DarkCyan;
