@@ -21,9 +21,9 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new AdminActionRepositoryEfCore(context);
             await context.AdminActions.AddRangeAsync(
-                new AdminAction { Id = 1, ActionType = "Create", Details = "Создан товар", Branch = "Филиал 1", CreatedAt = new DateTime(2025, 1, 1) },
-                new AdminAction { Id = 2, ActionType = "Update", Details = "Обновлён товар", Branch = "Филиал 1", CreatedAt = new DateTime(2025, 6, 1) },
-                new AdminAction { Id = 3, ActionType = "Delete", Details = "Удалён товар", Branch = "Филиал 2", CreatedAt = new DateTime(2025, 3, 1) }
+                new AdminAction { Id = 1, ActionType = "Create", Details = "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = new DateTime(2025, 1, 1) },
+                new AdminAction { Id = 2, ActionType = "Update", Details = "РћР±РЅРѕРІР»С‘РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = new DateTime(2025, 6, 1) },
+                new AdminAction { Id = 3, ActionType = "Delete", Details = "РЈРґР°Р»С‘РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 2", CreatedAt = new DateTime(2025, 3, 1) }
             );
             await context.SaveChangesAsync();
 
@@ -39,15 +39,15 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new AdminActionRepositoryEfCore(context);
             await context.AdminActions.AddRangeAsync(
-                new AdminAction { Id = 1, ActionType = "Create", Details = "Создан товар", Branch = "Филиал 1", CreatedAt = new DateTime(2025, 1, 1) },
-                new AdminAction { Id = 2, ActionType = "Update", Details = "Обновлён товар", Branch = "Филиал 1", CreatedAt = new DateTime(2025, 6, 1) },
-                new AdminAction { Id = 3, ActionType = "Delete", Details = "Удалён товар", Branch = "Филиал 2", CreatedAt = new DateTime(2025, 3, 1) }
+                new AdminAction { Id = 1, ActionType = "Create", Details = "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = new DateTime(2025, 1, 1) },
+                new AdminAction { Id = 2, ActionType = "Update", Details = "РћР±РЅРѕРІР»С‘РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = new DateTime(2025, 6, 1) },
+                new AdminAction { Id = 3, ActionType = "Delete", Details = "РЈРґР°Р»С‘РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 2", CreatedAt = new DateTime(2025, 3, 1) }
             );
             await context.SaveChangesAsync();
 
-            var result = await repository.GetLastActions(10, "Филиал 1");
+            var result = await repository.GetLastActions(10, "Р¤РёР»РёР°Р» 1");
             Assert.Equal(2, result.Count);
-            Assert.All(result, a => Assert.Equal("Филиал 1", a.Branch));
+            Assert.All(result, a => Assert.Equal("Р¤РёР»РёР°Р» 1", a.Branch));
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace CifraShop.Tests.RepositoryTests
             var repository = new AdminActionRepositoryEfCore(context);
             for (int i = 1; i <= 5; i++)
             {
-                await context.AdminActions.AddAsync(new AdminAction { Id = i, ActionType = "Action", Details = $"Действие {i}", Branch = "Филиал", CreatedAt = DateTime.UtcNow.AddDays(-i) });
+                await context.AdminActions.AddAsync(new AdminAction { Id = i, ActionType = "Action", Details = $"Р”РµР№СЃС‚РІРёРµ {i}", Branch = "Р¤РёР»РёР°Р»", CreatedAt = DateTime.UtcNow.AddDays(-i) });
             }
             await context.SaveChangesAsync();
 
@@ -80,13 +80,13 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new AdminActionRepositoryEfCore(context);
-            var action = new AdminAction { Id = 1, ActionType = "Create", Details = "Создан новый товар", Branch = "Филиал 1", CreatedAt = DateTime.UtcNow };
+            var action = new AdminAction { Id = 1, ActionType = "Create", Details = "РЎРѕР·РґР°РЅ РЅРѕРІС‹Р№ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = DateTime.UtcNow };
             await repository.AddAction(action);
 
             var result = await context.AdminActions.FindAsync(1);
             Assert.NotNull(result);
             Assert.Equal("Create", result.ActionType);
-            Assert.Equal("Создан новый товар", result.Details);
+            Assert.Equal("РЎРѕР·РґР°РЅ РЅРѕРІС‹Р№ С‚РѕРІР°СЂ", result.Details);
         }
 
         [Fact]
@@ -94,8 +94,8 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new AdminActionRepositoryEfCore(context);
-            await repository.AddAction(new AdminAction { Id = 1, ActionType = "Create", Details = "Действие 1", Branch = "Филиал 1", CreatedAt = DateTime.UtcNow });
-            await repository.AddAction(new AdminAction { Id = 2, ActionType = "Update", Details = "Действие 2", Branch = "Филиал 2", CreatedAt = DateTime.UtcNow });
+            await repository.AddAction(new AdminAction { Id = 1, ActionType = "Create", Details = "Р”РµР№СЃС‚РІРёРµ 1", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = DateTime.UtcNow });
+            await repository.AddAction(new AdminAction { Id = 2, ActionType = "Update", Details = "Р”РµР№СЃС‚РІРёРµ 2", Branch = "Р¤РёР»РёР°Р» 2", CreatedAt = DateTime.UtcNow });
 
             var all = await context.AdminActions.ToListAsync();
             Assert.Equal(2, all.Count);

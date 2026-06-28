@@ -6,7 +6,7 @@ namespace CifraShop.Domain.Repositories
     public interface IUserRepository
     {
         Task<List<User>> GetAllUsers();
-        Task<(List<User> Items, int TotalCount)> GetAllUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null);
+        Task<(List<User> Items, int TotalCount)> GetAllUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null, string? branch = null);
         Task<List<User>> GetAllAdmins();
         Task<List<User>> GetAllStudents();
         Task<User?> GetUserById(int id);

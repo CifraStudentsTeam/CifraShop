@@ -16,14 +16,14 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<Product>> GetAllProducts()
             => _repository.GetAll();
 
-        public async Task<PagedResponse<Product>> GetProductsPaged(int page, int pageSize, string? search = null, StatusProduct? status = null)
+        public async Task<PagedResponse<Product>> GetProductsPaged(int page, int pageSize, string? search = null, StatusProduct? status = null, string? branch = null)
         {
             if (page < 0)
                 throw new ArgumentException("Номер страницы не может быть отрицательным");
             if (pageSize <= 0)
                 throw new ArgumentException("Размер страницы должен быть больше 0");
 
-            var (items, total) = await _repository.GetAllPaged(page, pageSize, search, status);
+            var (items, total) = await _repository.GetAllPaged(page, pageSize, search, status, branch);
             return new PagedResponse<Product> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
         }
 
@@ -42,7 +42,7 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<Product>> GetProductsByStatus(StatusProduct statusProduct)
             => _repository.GetProductsByStatus(statusProduct);
 
-        public async Task<Product> CreateProduct(string name, string description, int price, int quantity, string? imageUrl = null)
+        public async Task<Product> CreateProduct(string name, string description, int price, int quantity, string? imageUrl = null, string branch = "")
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Название товара обязательно");
@@ -58,7 +58,8 @@ namespace CifraShop.Application.Services.Implementations
                 Price = price,
                 Quantity = quantity,
                 Status = quantity > 0 ? StatusProduct.InStock : StatusProduct.OutOfStock,
-                ImageUrl = imageUrl
+                ImageUrl = imageUrl,
+                Branch = branch
             };
 
             await _repository.AddProduct(product);

@@ -123,7 +123,7 @@ namespace CifraShop.Tests.ServiceTests
             _repositoryMock.Setup(r => r.AddUser(It.IsAny<User>()))
                 .Returns(Task.CompletedTask);
 
-            var result = await _service.CreateAdmin("admin@email.com", "password123");
+            var result = await _service.CreateAdmin("admin@email.com", "password123", "");
 
             Assert.Equal("admin@email.com", result.Email);
             Assert.Equal(UserRole.Admin, result.Role);
@@ -139,14 +139,14 @@ namespace CifraShop.Tests.ServiceTests
                 .ReturnsAsync(existing);
 
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateAdmin("admin@email.com", "password123"));
+                _service.CreateAdmin("admin@email.com", "password123", ""));
         }
 
         [Fact]
         public async Task CreateAdmin_EmptyEmail_Throws()
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateAdmin("", "password123"));
+                _service.CreateAdmin("", "password123", ""));
         }
 
         [Fact]
@@ -156,7 +156,7 @@ namespace CifraShop.Tests.ServiceTests
                 .ReturnsAsync((User?)null);
 
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateAdmin("a@b.com", "123"));
+                _service.CreateAdmin("a@b.com", "123", ""));
         }
 
         [Fact]
@@ -167,7 +167,7 @@ namespace CifraShop.Tests.ServiceTests
             _repositoryMock.Setup(r => r.AddUser(It.IsAny<User>()))
                 .Returns(Task.CompletedTask);
 
-            var result = await _service.CreateStudent("student@email.com", "password123");
+            var result = await _service.CreateStudent("student@email.com", "password123", "");
 
             Assert.Equal(UserRole.Student, result.Role);
         }

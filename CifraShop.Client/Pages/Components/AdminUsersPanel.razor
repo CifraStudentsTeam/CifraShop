@@ -181,6 +181,7 @@
     [Parameter] public string Filter { get; set; } = "";
     [Parameter] public string SortField { get; set; } = "";
     [Parameter] public bool SortAsc { get; set; } = true;
+    [Parameter] public string Branch { get; set; } = "";
 
     [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
     [Parameter] public EventCallback<string> OnFilterChanged { get; set; }
@@ -223,7 +224,7 @@
         _creatingUser = true;
         try
         {
-            var body = new { Email = _newUserEmail, Password = _newUserPassword };
+            var body = new { Email = _newUserEmail, Password = _newUserPassword, Branch };
             var url = _newUserRole == "Admin" ? "api/User/create-admin" : "api/User/create-student";
             var r = await Http.PostAsJsonAsync(url, body);
             if (r.IsSuccessStatusCode)

@@ -15,7 +15,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<Order>> GetAll()
             => await _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images).ToListAsync();
 
-        public async Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusOrder? status = null, DateTime? dateFrom = null, DateTime? dateTo = null)
+        public async Task<(List<Order> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusOrder? status = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? branch = null)
         {
             var query = _context.Orders.Include(o => o.OrderItems).Include(o => o.Customer).Include(o => o.Images).AsQueryable();
 
@@ -30,6 +30,9 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
 
             if (dateTo.HasValue)
                 query = query.Where(o => o.DateOfPurchase <= dateTo.Value.AddDays(1));
+
+            if (!string.IsNullOrWhiteSpace(branch))
+                query = query.Where(o => o.Branch == branch);
 
             var total = await query.CountAsync();
             var items = await query.Skip(page * pageSize).Take(pageSize).ToListAsync();
@@ -80,6 +83,12 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         {
             _context.Orders.Remove(order);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteRange(List<int> ids)
+        {
+            var orders = _context.Orders.Where(o => ids.Contains(o.Id));
+            await orders.ExecuteDeleteAsync();
         }
 
         public async Task<Order> CreateOrderInTransaction(

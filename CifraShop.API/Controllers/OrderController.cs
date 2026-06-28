@@ -1,5 +1,6 @@
-using CifraShop.API.Hubs;
+﻿using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
+using CifraShop.Application.Services.Implementations;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Orders;
 using CifraShop.Contracts.Responses.Common;
@@ -20,12 +21,15 @@ namespace CifraShop.API.Controllers
         private readonly IOrderService _orderService;
         private readonly IOrderImageRepository _imageRepository;
         private readonly IHubContext<AdminHub> _hub;
+        private readonly NotificationDispatcher _dispatcher;
 
-        public OrderController(IOrderService orderService, IOrderImageRepository imageRepository, IHubContext<AdminHub> hub)
+        public OrderController(IOrderService orderService, IOrderImageRepository imageRepository, IHubContext<AdminHub> hub,
+            NotificationDispatcher dispatcher)
         {
             _orderService = orderService;
             _imageRepository = imageRepository;
             _hub = hub;
+            _dispatcher = dispatcher;
         }
 
         private OrderResponse ToResponseWithImage(Domain.Entities.Order order)
@@ -54,9 +58,10 @@ namespace CifraShop.API.Controllers
             [FromQuery] string? search = null,
             [FromQuery] StatusOrder? status = null,
             [FromQuery] DateTime? dateFrom = null,
-            [FromQuery] DateTime? dateTo = null)
+            [FromQuery] DateTime? dateTo = null,
+            [FromQuery] string? branch = null)
         {
-            var paged = await _orderService.GetOrdersPaged(page, pageSize, search, status, dateFrom, dateTo);
+            var paged = await _orderService.GetOrdersPaged(page, pageSize, search, status, dateFrom, dateTo, branch);
             return Ok(new PagedResponse<OrderResponse>
             {
                 Items = paged.Items.Select(o => ToResponseWithImage(o)).ToList(),
@@ -108,7 +113,7 @@ namespace CifraShop.API.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var items = request.Items.Select(i => (i.ProductId, i.Quantity)).ToList();
-            var order = await _orderService.CreateOrder(request.CustomerEmail, items);
+            var order = await _orderService.CreateOrder(request.CustomerEmail, items, request.Branch);
             await _hub.Clients.All.SendAsync("Notify", "order", "created");
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order.ToResponse());
         }
@@ -122,6 +127,7 @@ namespace CifraShop.API.Controllers
             if (request.Status.HasValue) order.Status = request.Status.Value;
 
             await _orderService.UpdateOrder(order);
+            _ = _dispatcher.NotifyStatusChange(order.Branch, order.Id, order.Status.ToString());
             await _hub.Clients.All.SendAsync("Notify", "order", "updated");
             return NoContent();
         }
@@ -146,6 +152,27 @@ namespace CifraShop.API.Controllers
             await _orderService.DeleteOrder(order);
             await _hub.Clients.All.SendAsync("Notify", "order", "deleted");
             return NoContent();
+        }
+
+        [HttpPost("batch-delete")]
+        public async Task<IActionResult> BatchDelete([FromBody] List<int> orderIds)
+        {
+            if (orderIds == null || !orderIds.Any())
+                return BadRequest("Список id пуст");
+
+            var existingIds = new List<int>();
+            foreach (var id in orderIds)
+            {
+                var order = await _orderService.GetOrderById(id);
+                if (order != null) existingIds.Add(id);
+            }
+
+            if (!existingIds.Any())
+                return NotFound("Ни один из указанных заказов не найден");
+
+            await _orderService.DeleteRange(existingIds);
+            await _hub.Clients.All.SendAsync("Notify", "order", "deleted");
+            return Ok(new { deleted = existingIds.Count, notFound = orderIds.Count - existingIds.Count });
         }
     }
 }

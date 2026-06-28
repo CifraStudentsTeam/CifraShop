@@ -17,7 +17,7 @@ namespace CifraShop.Tests.AuthTests
         private readonly Mock<IAuthService> _authServiceMock;
         private readonly AuthController _controller;
 
-        // Инициализация моков IUserService и IAuthService и создание экземпляр AuthController перед каждым тестом.
+        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РјРѕРєРѕРІ IUserService Рё IAuthService Рё СЃРѕР·РґР°РЅРёРµ СЌРєР·РµРјРїР»СЏСЂ AuthController РїРµСЂРµРґ РєР°Р¶РґС‹Рј С‚РµСЃС‚РѕРј.
         public AuthControllerTests()
         {
             _userServiceMock = new Mock<IUserService>();
@@ -25,7 +25,7 @@ namespace CifraShop.Tests.AuthTests
             _controller = new AuthController(_userServiceMock.Object, _authServiceMock.Object);
         }
 
-        // Создание тестового пользователя с указанными параметрами или значениями по умолчанию.
+        // РЎРѕР·РґР°РЅРёРµ С‚РµСЃС‚РѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ СѓРєР°Р·Р°РЅРЅС‹РјРё РїР°СЂР°РјРµС‚СЂР°РјРё РёР»Рё Р·РЅР°С‡РµРЅРёСЏРјРё РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ.
         private static User CreatingATestUserWithDefaultValues(
             int id = 1,
             string email = "test@email.com",
@@ -34,7 +34,7 @@ namespace CifraShop.Tests.AuthTests
             string? branch = null)
             => new() { Id = id, Email = email, Password = password, Balance = 0, Role = role, Branch = branch };
 
-        // Установка тестового пользователя с переданными утверждениями (claims)
+        // РЈСЃС‚Р°РЅРѕРІРєР° С‚РµСЃС‚РѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ РїРµСЂРµРґР°РЅРЅС‹РјРё СѓС‚РІРµСЂР¶РґРµРЅРёСЏРјРё (claims)
         private void InstallingAUserWithPassedStatements(params Claim[] claims)
         {
             var identity = new ClaimsIdentity(claims, "TestAuth");
@@ -45,7 +45,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при корректных учетных данных возвращается статус 200 OK с токеном и информацией о пользователе.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РєРѕСЂСЂРµРєС‚РЅС‹С… СѓС‡РµС‚РЅС‹С… РґР°РЅРЅС‹С… РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 200 OK СЃ С‚РѕРєРµРЅРѕРј Рё РёРЅС„РѕСЂРјР°С†РёРµР№ Рѕ РїРѕР»СЊР·РѕРІР°С‚РµР»Рµ.
         public async Task CheckingThatTheStatisIs200WhenTheCredentialsAreCorrect()
         {
             var user = CreatingATestUserWithDefaultValues();
@@ -68,7 +68,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что для администратора возвращается корректная роль Admin в ответе
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РґР»СЏ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РєРѕСЂСЂРµРєС‚РЅР°СЏ СЂРѕР»СЊ Admin РІ РѕС‚РІРµС‚Рµ
         public async Task CheckingThatTheCorrectRoleIsReturnedForTheAdministrator()
         {
             var user = CreatingATestUserWithDefaultValues(role: UserRole.Admin);
@@ -88,7 +88,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при несуществующем email возвращается статус 401 Unauthorized.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРј email РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 401 Unauthorized.
         public async Task CheckingThatNonExistentEmailReturnsA401Status()
         {
             _userServiceMock.Setup(s => s.GetUserByEmail("wrong@email.com"))
@@ -104,7 +104,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при неверном пароле возвращается статус 401 Unauthorized.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РЅРµРІРµСЂРЅРѕРј РїР°СЂРѕР»Рµ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 401 Unauthorized.
         public async Task CheckingThatA401StatusIsReturnedWhenThePasswordIsIncorrect()
         {
             var user = CreatingATestUserWithDefaultValues();
@@ -121,7 +121,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        //Проверка, что при не валидной модели запроса возвращается статус 400 Bad Request.
+        //РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РЅРµ РІР°Р»РёРґРЅРѕР№ РјРѕРґРµР»Рё Р·Р°РїСЂРѕСЃР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 400 Bad Request.
         public async Task CheckingThatANonValidModelReturnsA400Status()
         {
             _controller.ModelState.AddModelError("Email", "Required");
@@ -132,7 +132,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что метод VerifyPassword вызывается ровно один раз с переданным паролем и хешем пользователя.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РјРµС‚РѕРґ VerifyPassword РІС‹Р·С‹РІР°РµС‚СЃСЏ СЂРѕРІРЅРѕ РѕРґРёРЅ СЂР°Р· СЃ РїРµСЂРµРґР°РЅРЅС‹Рј РїР°СЂРѕР»РµРј Рё С…РµС€РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
         public async Task CheckingThatTheVerifyPasswordMethodIsCalledExactlyOnce()
         {
             var user = CreatingATestUserWithDefaultValues(password: "stored-hash");
@@ -146,7 +146,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что после успешной проверки пароля вызывается метод генерации токена ровно один раз.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕР№ РїСЂРѕРІРµСЂРєРё РїР°СЂРѕР»СЏ РІС‹Р·С‹РІР°РµС‚СЃСЏ РјРµС‚РѕРґ РіРµРЅРµСЂР°С†РёРё С‚РѕРєРµРЅР° СЂРѕРІРЅРѕ РѕРґРёРЅ СЂР°Р·.
         public async Task CheckingThatTheTokenGenerationMethodIsCalledExactlyOnce()
         {
             var user = CreatingATestUserWithDefaultValues();
@@ -160,7 +160,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при неудачном входе возвращается обобщённое сообщение без раскрытия деталей.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РЅРµСѓРґР°С‡РЅРѕРј РІС…РѕРґРµ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РѕР±РѕР±С‰С‘РЅРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ Р±РµР· СЂР°СЃРєСЂС‹С‚РёСЏ РґРµС‚Р°Р»РµР№.
         public async Task CheckingThatAGeneralizedMessageIsReturnedWithoutRevalingDetails()
         {
             _userServiceMock.Setup(s => s.GetUserByEmail("x@y.com"))
@@ -169,18 +169,18 @@ namespace CifraShop.Tests.AuthTests
             var result = await _controller.Login(new LoginRequest { Email = "x@y.com", Password = "pass" });
 
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result.Result);
-            Assert.Equal("Неверный email или пароль", unauthorized.Value);
+            Assert.Equal("РќРµРІРµСЂРЅС‹Р№ email РёР»Рё РїР°СЂРѕР»СЊ", unauthorized.Value);
         }
 
         [Fact]
-        // Проверка, что успешная регистрация нового студента возвращает статус 200 OK с токеном, email и ролью Student.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СѓСЃРїРµС€РЅР°СЏ СЂРµРіРёСЃС‚СЂР°С†РёСЏ РЅРѕРІРѕРіРѕ СЃС‚СѓРґРµРЅС‚Р° РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK СЃ С‚РѕРєРµРЅРѕРј, email Рё СЂРѕР»СЊСЋ Student.
         public async Task CheckingThatASuccessfulRegistrationOfANewStudentReturnsA200OKStatus()
         {
             var user = CreatingATestUserWithDefaultValues(email: "new@email.com");
             _userServiceMock.Setup(s => s.GetUserByEmail("new@email.com"))
                 .ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw")).ReturnsAsync(user);
+            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw", "")).ReturnsAsync(user);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("jwt-token-456");
 
@@ -198,13 +198,13 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что пароль хешируется ровно один раз с переданным значением.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїР°СЂРѕР»СЊ С…РµС€РёСЂСѓРµС‚СЃСЏ СЂРѕРІРЅРѕ РѕРґРёРЅ СЂР°Р· СЃ РїРµСЂРµРґР°РЅРЅС‹Рј Р·РЅР°С‡РµРЅРёРµРј.
         public async Task CheckingThatThePasswordIsHashedOnce()
         {
             var user = CreatingATestUserWithDefaultValues();
             _userServiceMock.Setup(s => s.GetUserByEmail("new@email.com")).ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw")).ReturnsAsync(user);
+            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw", "")).ReturnsAsync(user);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("token");
 
@@ -214,29 +214,29 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что создание студента вызывается с переданным email и уже захэшированным паролем.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЃРѕР·РґР°РЅРёРµ СЃС‚СѓРґРµРЅС‚Р° РІС‹Р·С‹РІР°РµС‚СЃСЏ СЃ РїРµСЂРµРґР°РЅРЅС‹Рј email Рё СѓР¶Рµ Р·Р°С…СЌС€РёСЂРѕРІР°РЅРЅС‹Рј РїР°СЂРѕР»РµРј.
         public async Task CheckingThatTheStudentCreationIsCalledWithAnEmailAndAPassword()
         {
             var user = CreatingATestUserWithDefaultValues();
             _userServiceMock.Setup(s => s.GetUserByEmail("new@email.com")).ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw")).ReturnsAsync(user);
+            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw", "")).ReturnsAsync(user);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("token");
 
             await _controller.RegisterStudent(new RegisterRequest { Email = "new@email.com", Password = "password123" });
 
-            _userServiceMock.Verify(s => s.CreateStudent("new@email.com", "hashed-pw"), Times.Once);
+            _userServiceMock.Verify(s => s.CreateStudent("new@email.com", "hashed-pw", ""), Times.Once);
         }
 
         [Fact]
-        // Проверка, что после создания студента вызывается метод UpdateUser ровно один раз.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїРѕСЃР»Рµ СЃРѕР·РґР°РЅРёСЏ СЃС‚СѓРґРµРЅС‚Р° РІС‹Р·С‹РІР°РµС‚СЃСЏ РјРµС‚РѕРґ UpdateUser СЂРѕРІРЅРѕ РѕРґРёРЅ СЂР°Р·.
         public async Task CheckingThatTheUpdateUserMethodIsCalledOnce()
         {
             var user = CreatingATestUserWithDefaultValues();
             _userServiceMock.Setup(s => s.GetUserByEmail("new@email.com")).ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw")).ReturnsAsync(user);
+            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw", "")).ReturnsAsync(user);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("token");
 
@@ -246,7 +246,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при регистрации с уже занятым email возвращается статус 409 Conflict с указанием этого email.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё СЂРµРіРёСЃС‚СЂР°С†РёРё СЃ СѓР¶Рµ Р·Р°РЅСЏС‚С‹Рј email РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 409 Conflict СЃ СѓРєР°Р·Р°РЅРёРµРј СЌС‚РѕРіРѕ email.
         public async Task CheckingThatABusyEmailReturnsA409Status()
         {
             var existing = CreatingATestUserWithDefaultValues();
@@ -263,7 +263,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при не валидной модели запроса возвращается статус 400 Bad Request.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РЅРµ РІР°Р»РёРґРЅРѕР№ РјРѕРґРµР»Рё Р·Р°РїСЂРѕСЃР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 400 Bad Request.
         public async Task CheckingThatA400StatusIsReturnedWhenTheRequestModeIisInvalid()
         {
             _controller.ModelState.AddModelError("Email", "Required");
@@ -274,13 +274,13 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что в ответе возвращается корректный идентификатор созданного пользователя.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РІ РѕС‚РІРµС‚Рµ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РєРѕСЂСЂРµРєС‚РЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СЃРѕР·РґР°РЅРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
         public async Task CheckingThatTheCorrectIDIsBeingReturned()
         {
             var user = CreatingATestUserWithDefaultValues(id: 42);
             _userServiceMock.Setup(s => s.GetUserByEmail("new@email.com")).ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw")).ReturnsAsync(user);
+            _userServiceMock.Setup(s => s.CreateStudent("new@email.com", "hashed-pw", "")).ReturnsAsync(user);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("token");
 
@@ -292,10 +292,10 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при слишком коротком пароле возвращается статус 400 Bad Request.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё СЃР»РёС€РєРѕРј РєРѕСЂРѕС‚РєРѕРј РїР°СЂРѕР»Рµ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 400 Bad Request.
         public async Task CheckingThatAShortPasswordReturnsA400Status()
         {
-            _controller.ModelState.AddModelError("Password", "Минимальная длина — 6 символов");
+            _controller.ModelState.AddModelError("Password", "РњРёРЅРёРјР°Р»СЊРЅР°СЏ РґР»РёРЅР° вЂ” 6 СЃРёРјРІРѕР»РѕРІ");
 
             var result = await _controller.RegisterStudent(new RegisterRequest { Email = "a@b.com", Password = "123" });
 
@@ -303,13 +303,13 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что успешная регистрация администратора возвращает статус 200 OK с токеном и ролью Admin.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СѓСЃРїРµС€РЅР°СЏ СЂРµРіРёСЃС‚СЂР°С†РёСЏ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK СЃ С‚РѕРєРµРЅРѕРј Рё СЂРѕР»СЊСЋ Admin.
         public async Task CheckingThatASuccessfulAdministratorRegistrationReturnsA200Status()
         {
             var admin = CreatingATestUserWithDefaultValues(email: "admin@email.com", role: UserRole.Admin);
             _userServiceMock.Setup(s => s.GetUserByEmail("admin@email.com")).ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "hashed-pw")).ReturnsAsync(admin);
+            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "hashed-pw", "")).ReturnsAsync(admin);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("jwt-admin-token");
 
@@ -326,7 +326,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при попытке повторной регистрации администратора с тем же email возвращается статус 409 Conflict.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РїРѕРїС‹С‚РєРµ РїРѕРІС‚РѕСЂРЅРѕР№ СЂРµРіРёСЃС‚СЂР°С†РёРё Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° СЃ С‚РµРј Р¶Рµ email РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 409 Conflict.
         public async Task CheckingThatTheStatusReturns409WhenYouTryToRegisteranAdministrator()
         {
             var existing = CreatingATestUserWithDefaultValues(role: UserRole.Admin);
@@ -343,7 +343,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при не валидной модели запроса возвращается статус 400 Bad Request.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РЅРµ РІР°Р»РёРґРЅРѕР№ РјРѕРґРµР»Рё Р·Р°РїСЂРѕСЃР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 400 Bad Request.
         public async Task CheckingThatABadRequestStatusIsReturnedWhenTheRequestModelIsInvalid()
         {
             _controller.ModelState.AddModelError("Email", "Required");
@@ -354,13 +354,13 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при регистрации администратора пароль хешируется ровно один раз.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё СЂРµРіРёСЃС‚СЂР°С†РёРё Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РїР°СЂРѕР»СЊ С…РµС€РёСЂСѓРµС‚СЃСЏ СЂРѕРІРЅРѕ РѕРґРёРЅ СЂР°Р·.
         public async Task CheckingThatTheAdministratorsPasswordIsHashedExactlyOnceDuringRegistration()
         {
             var admin = CreatingATestUserWithDefaultValues(role: UserRole.Admin);
             _userServiceMock.Setup(s => s.GetUserByEmail("admin@email.com")).ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "hashed-pw")).ReturnsAsync(admin);
+            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "hashed-pw", "")).ReturnsAsync(admin);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("token");
 
@@ -370,23 +370,23 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что создание администратора вызывается с переданным email и захэшированным паролем.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЃРѕР·РґР°РЅРёРµ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РІС‹Р·С‹РІР°РµС‚СЃСЏ СЃ РїРµСЂРµРґР°РЅРЅС‹Рј email Рё Р·Р°С…СЌС€РёСЂРѕРІР°РЅРЅС‹Рј РїР°СЂРѕР»РµРј.
         public async Task CheckingThatTheAdministratorCreationIsCalledWithThePassedEmailAndHashedPassword()
         {
             var admin = CreatingATestUserWithDefaultValues(role: UserRole.Admin);
             _userServiceMock.Setup(s => s.GetUserByEmail("admin@email.com")).ReturnsAsync((User?)null);
             _authServiceMock.Setup(s => s.HashPassword("password123")).Returns("hashed-pw");
-            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "hashed-pw")).ReturnsAsync(admin);
+            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "hashed-pw", "")).ReturnsAsync(admin);
             _userServiceMock.Setup(s => s.UpdateUser(It.IsAny<User>())).Returns(Task.CompletedTask);
             _authServiceMock.Setup(s => s.GenerateToken(It.IsAny<User>())).Returns("token");
 
             await _controller.RegisterAdmin(new RegisterRequest { Email = "admin@email.com", Password = "password123" });
 
-            _userServiceMock.Verify(s => s.CreateAdmin("admin@email.com", "hashed-pw"), Times.Once);
+            _userServiceMock.Verify(s => s.CreateAdmin("admin@email.com", "hashed-pw", ""), Times.Once);
         }
 
         [Fact]
-        // Проверка, что метод GetCurrentUser возвращает статус 200 OK с непустым телом, содержащим claims текущего пользователя.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РјРµС‚РѕРґ GetCurrentUser РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK СЃ РЅРµРїСѓСЃС‚С‹Рј С‚РµР»РѕРј, СЃРѕРґРµСЂР¶Р°С‰РёРј claims С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
         public void CheckingThatTheGetCurrentUserMethodReturnsAStatusOf200()
         {
             InstallingAUserWithPassedStatements(
@@ -402,7 +402,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что GetCurrentUser возвращает корректный идентификатор пользователя из claims.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ GetCurrentUser РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕСЂСЂРµРєС‚РЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· claims.
         public void CheckingThatGetCurrentUserReturnsAValidID()
         {
             InstallingAUserWithPassedStatements(
@@ -419,7 +419,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что GetCurrentUser возвращает корректный email из claims.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ GetCurrentUser РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕСЂСЂРµРєС‚РЅС‹Р№ email РёР· claims.
         public void CheckingThatGetCurrentUserReturnsAValidEmailAddress()
         {
             InstallingAUserWithPassedStatements(
@@ -436,7 +436,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что GetCurrentUser возвращает корректную роль из claims.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ GetCurrentUser РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕСЂСЂРµРєС‚РЅСѓСЋ СЂРѕР»СЊ РёР· claims.
         public void CheckingThatGetCurrentUserReturnsTheCorrectRole()
         {
             InstallingAUserWithPassedStatements(
@@ -453,7 +453,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при отсутствии claim Branch метод возвращает успешный результат с непустым телом.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё claim Branch РјРµС‚РѕРґ РІРѕР·РІСЂР°С‰Р°РµС‚ СѓСЃРїРµС€РЅС‹Р№ СЂРµР·СѓР»СЊС‚Р°С‚ СЃ РЅРµРїСѓСЃС‚С‹Рј С‚РµР»РѕРј.
         public void CheckingThatTheBranchMethodReturnsASuccessfulResultWhenThereIsNoClaim()
         {
             InstallingAUserWithPassedStatements(
@@ -469,7 +469,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что GetCurrentUser возвращает роль Student для пользователя с соответствующей claim.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ GetCurrentUser РІРѕР·РІСЂР°С‰Р°РµС‚ СЂРѕР»СЊ Student РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµР№ claim.
         public void CheckingThatGetCurrentUserReturnsTheStudentRole()
         {
             InstallingAUserWithPassedStatements(

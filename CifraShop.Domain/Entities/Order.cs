@@ -10,6 +10,7 @@ namespace CifraShop.Domain.Entities
         public DateTime DateOfPurchase { get; set; }
         public int CustomerId { get; set; }
         public User Customer { get; set; }
+        public string Branch { get; set; } = string.Empty;
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public ICollection<OrderImage> Images { get; set; } = new List<OrderImage>();
     }

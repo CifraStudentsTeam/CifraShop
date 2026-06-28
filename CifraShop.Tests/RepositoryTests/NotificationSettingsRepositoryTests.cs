@@ -21,8 +21,8 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new NotificationSettingsRepositoryEfCore(context);
             await context.NotificationSettings.AddRangeAsync(
-                new NotificationSettings { Id = 1, Branch = "Филиал 1", Email = "filial1@email.com", TelegramBotToken = "token1", TelegramChatId = "chat1" },
-                new NotificationSettings { Id = 2, Branch = "Филиал 2", Email = "filial2@email.com", TelegramBotToken = "token2", TelegramChatId = "chat2" }
+                new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1", Email = "filial1@email.com", },
+                new NotificationSettings { Id = 2, Branch = "Р¤РёР»РёР°Р» 2", Email = "filial2@email.com", }
             );
             await context.SaveChangesAsync();
 
@@ -45,13 +45,13 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new NotificationSettingsRepositoryEfCore(context);
-            var settings = new NotificationSettings { Id = 1, Branch = "Филиал 1", Email = "filial1@email.com", TelegramBotToken = "token1", TelegramChatId = "chat1", NotifyOnNewOrder = true };
+            var settings = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1", Email = "filial1@email.com", NotifyOnNewOrder = true };
             await context.NotificationSettings.AddAsync(settings);
             await context.SaveChangesAsync();
 
             var result = await repository.GetById(1);
             Assert.NotNull(result);
-            Assert.Equal("Филиал 1", result.Branch);
+            Assert.Equal("Р¤РёР»РёР°Р» 1", result.Branch);
             Assert.True(result.NotifyOnNewOrder);
         }
 
@@ -71,14 +71,14 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new NotificationSettingsRepositoryEfCore(context);
             await context.NotificationSettings.AddRangeAsync(
-                new NotificationSettings { Id = 1, Branch = "Филиал 1", Email = "filial1@email.com", TelegramBotToken = "token1", TelegramChatId = "chat1" },
-                new NotificationSettings { Id = 2, Branch = "Филиал 2", Email = "filial2@email.com", TelegramBotToken = "token2", TelegramChatId = "chat2" }
+                new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1", Email = "filial1@email.com", },
+                new NotificationSettings { Id = 2, Branch = "Р¤РёР»РёР°Р» 2", Email = "filial2@email.com", }
             );
             await context.SaveChangesAsync();
 
-            var result = await repository.GetByBranch("Филиал 2");
+            var result = await repository.GetByBranch("Р¤РёР»РёР°Р» 2");
             Assert.NotNull(result);
-            Assert.Equal("Филиал 2", result.Branch);
+            Assert.Equal("Р¤РёР»РёР°Р» 2", result.Branch);
             Assert.Equal("filial2@email.com", result.Email);
         }
 
@@ -88,7 +88,7 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new NotificationSettingsRepositoryEfCore(context);
 
-            var result = await repository.GetByBranch("Неизвестный филиал");
+            var result = await repository.GetByBranch("РќРµРёР·РІРµСЃС‚РЅС‹Р№ С„РёР»РёР°Р»");
             Assert.Null(result);
         }
 
@@ -97,12 +97,12 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new NotificationSettingsRepositoryEfCore(context);
-            var settings = new NotificationSettings { Id = 1, Branch = "Филиал 1", Email = "filial1@email.com", TelegramBotToken = "token1", TelegramChatId = "chat1" };
+            var settings = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1", Email = "filial1@email.com", };
             await repository.Add(settings);
 
             var result = await context.NotificationSettings.FindAsync(1);
             Assert.NotNull(result);
-            Assert.Equal("Филиал 1", result.Branch);
+            Assert.Equal("Р¤РёР»РёР°Р» 1", result.Branch);
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new NotificationSettingsRepositoryEfCore(context);
-            var settings = new NotificationSettings { Id = 1, Branch = "Филиал 1", Email = "old@email.com", TelegramBotToken = "old_token", TelegramChatId = "old_chat", LowStockThreshold = 5 };
+            var settings = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1", Email = "old@email.com", LowStockThreshold = 5 };
             await context.NotificationSettings.AddAsync(settings);
             await context.SaveChangesAsync();
 
@@ -128,7 +128,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new NotificationSettingsRepositoryEfCore(context);
-            var settings = new NotificationSettings { Id = 1, Branch = "Филиал 1", Email = "filial1@email.com", TelegramBotToken = "token1", TelegramChatId = "chat1" };
+            var settings = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1", Email = "filial1@email.com", };
             await context.NotificationSettings.AddAsync(settings);
             await context.SaveChangesAsync();
 

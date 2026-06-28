@@ -36,6 +36,11 @@ namespace CifraShop.Infrastructure.Data.Configurations
                    .HasColumnName("ImageUrl")
                    .HasMaxLength(500)
                    .IsRequired(false);
+            builder.Property(p => p.Branch)
+                   .HasColumnName("Branch")
+                   .HasMaxLength(100)
+                   .IsRequired()
+                   .HasDefaultValue(string.Empty);
 
             builder.HasMany(p => p.OrderItems)
                    .WithOne(oi => oi.Product)

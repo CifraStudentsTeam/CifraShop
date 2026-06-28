@@ -4,6 +4,7 @@ using CifraShop.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CifraShop.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20260628115942_AddBranchToProductAndOrder")]
+    partial class AddBranchToProductAndOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,6 +103,16 @@ namespace CifraShop.Infrastructure.Migrations
                     b.Property<bool>("NotifyOnStatusChange")
                         .HasColumnType("bit")
                         .HasColumnName("NotifyOnStatusChange");
+
+                    b.Property<string>("TelegramBotToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("TelegramBotToken");
+
+                    b.Property<string>("TelegramChatId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("TelegramChatId");
 
                     b.HasKey("Id");
 

@@ -11,7 +11,7 @@ namespace CifraShop.Tests.AuthTests
         private readonly AuthService _authService;
         private readonly IConfiguration _config;
 
-        // Инициализация JWT-конфигурацию через in-memory коллекцию и создание экземпляра AuthService перед каждым тестом.
+        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ JWT-РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ С‡РµСЂРµР· in-memory РєРѕР»Р»РµРєС†РёСЋ Рё СЃРѕР·РґР°РЅРёРµ СЌРєР·РµРјРїР»СЏСЂР° AuthService РїРµСЂРµРґ РєР°Р¶РґС‹Рј С‚РµСЃС‚РѕРј.
         public AuthServiceTests()
         {
             _config = new ConfigurationBuilder()
@@ -25,7 +25,7 @@ namespace CifraShop.Tests.AuthTests
                 .Build();
             _authService = new AuthService(_config);
         }
-        // Создание экземпляра AuthService с тестовой JWT-конфигурацией, с возможностью  переопределить отдельные параметры.
+        // РЎРѕР·РґР°РЅРёРµ СЌРєР·РµРјРїР»СЏСЂР° AuthService СЃ С‚РµСЃС‚РѕРІРѕР№ JWT-РєРѕРЅС„РёРіСѓСЂР°С†РёРµР№, СЃ РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊСЋ  РїРµСЂРµРѕРїСЂРµРґРµР»РёС‚СЊ РѕС‚РґРµР»СЊРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹.
         private static AuthService CreatinganAuthServiceInstanceWithATestJWTConfiguration(Dictionary<string, string?> overrides)
         {
             var defaults = new Dictionary<string, string?>
@@ -41,14 +41,14 @@ namespace CifraShop.Tests.AuthTests
             return new AuthService(config);
         }
 
-        // Статический экземпляр обработчика JWT-токенов, используемый в тестах.
+        // РЎС‚Р°С‚РёС‡РµСЃРєРёР№ СЌРєР·РµРјРїР»СЏСЂ РѕР±СЂР°Р±РѕС‚С‡РёРєР° JWT-С‚РѕРєРµРЅРѕРІ, РёСЃРїРѕР»СЊР·СѓРµРјС‹Р№ РІ С‚РµСЃС‚Р°С….
         private static readonly System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler TokenHandler = new();
 
-        // Создание тестового пользователя с заданными параметрами или значениями по умолчанию.
+        // РЎРѕР·РґР°РЅРёРµ С‚РµСЃС‚РѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ Р·Р°РґР°РЅРЅС‹РјРё РїР°СЂР°РјРµС‚СЂР°РјРё РёР»Рё Р·РЅР°С‡РµРЅРёСЏРјРё РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ.
         private static User CreatingATestUserWithSpecifiedParameters(int id = 1, string email = "a@b.com", UserRole role = UserRole.Student, string? branch = null)
             => new() { Id = id, Email = email, Password = "hashed", Balance = 0, Role = role, Branch = branch };
 
-        // Проверка, что GenerateToken возвращает непустой JWT-токен, содержащий точки-разделители.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ GenerateToken РІРѕР·РІСЂР°С‰Р°РµС‚ РЅРµРїСѓСЃС‚РѕР№ JWT-С‚РѕРєРµРЅ, СЃРѕРґРµСЂР¶Р°С‰РёР№ С‚РѕС‡РєРё-СЂР°Р·РґРµР»РёС‚РµР»Рё.
         [Fact]
         public void CheckingThatGenerateTokenReturnsANonEmptyJWTtoken()
         {
@@ -59,7 +59,7 @@ namespace CifraShop.Tests.AuthTests
             Assert.Contains(".", token);
         }
 
-        // Проверка, что сгенерированный JWT-токен успешно читается стандартным обработчиком.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹Р№ JWT-С‚РѕРєРµРЅ СѓСЃРїРµС€РЅРѕ С‡РёС‚Р°РµС‚СЃСЏ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Рј РѕР±СЂР°Р±РѕС‚С‡РёРєРѕРј.
         [Fact]
         public void CheckingThatTheGeneratedJWTtokenIsSuccessfullyRead()
         {
@@ -69,7 +69,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что сгенерированный JWT-токен содержит  NameIdentifier со значением 42.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹Р№ JWT-С‚РѕРєРµРЅ СЃРѕРґРµСЂР¶РёС‚  NameIdentifier СЃРѕ Р·РЅР°С‡РµРЅРёРµРј 42.
         public void CheckingThatTheGeneratedJWTTokenContainsTheNameIdentifierClaim()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(id: 42));
@@ -79,7 +79,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        //Проверка, что сгенерированный JWT - токен содержит  Email со значением "admin@email.com".
+        //РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹Р№ JWT - С‚РѕРєРµРЅ СЃРѕРґРµСЂР¶РёС‚  Email СЃРѕ Р·РЅР°С‡РµРЅРёРµРј "admin@email.com".
         public void CheckingThatTheGeneratedJWTTokenContainsTheEmailClaim()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(email: "admin@email.com"));
@@ -89,7 +89,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что сгенерированный JWT-токен содержит  Role со значением "Student".
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹Р№ JWT-С‚РѕРєРµРЅ СЃРѕРґРµСЂР¶РёС‚  Role СЃРѕ Р·РЅР°С‡РµРЅРёРµРј "Student".
         public void ChecksThatTheGeneratedJWTTokenContainsAClaimRoleWithTheValueStudent()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(role: UserRole.Student));
@@ -99,7 +99,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        //Проверка что сгенерированный JWT-токен содержит  Role со значением админ
+        //РџСЂРѕРІРµСЂРєР° С‡С‚Рѕ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹Р№ JWT-С‚РѕРєРµРЅ СЃРѕРґРµСЂР¶РёС‚  Role СЃРѕ Р·РЅР°С‡РµРЅРёРµРј Р°РґРјРёРЅ
         public void ChecksThatTheGeneraatedJWTTokenContainsAClaimRoleTheValueAdmin()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(role: UserRole.Admin));
@@ -109,17 +109,17 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что сгенерированный JWT-токен содержит  branch со значением "Филиал 1".
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹Р№ JWT-С‚РѕРєРµРЅ СЃРѕРґРµСЂР¶РёС‚  branch СЃРѕ Р·РЅР°С‡РµРЅРёРµРј "Р¤РёР»РёР°Р» 1".
         public void CheckingThatTheGeneratedJWTTokenContainsTheClaimBranch()
         {
-            var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(branch: "Филиал 1"));
+            var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(branch: "Р¤РёР»РёР°Р» 1"));
             var jwt = TokenHandler.ReadJwtToken(token);
 
-            Assert.Equal("Филиал 1", jwt.Claims.First(c => c.Type == "branch").Value);
+            Assert.Equal("Р¤РёР»РёР°Р» 1", jwt.Claims.First(c => c.Type == "branch").Value);
         }
 
         [Fact]
-        // Проверка, что при отсутствии филиала  соответствующий claim не добавляется в токен.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё С„РёР»РёР°Р»Р°  СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ claim РЅРµ РґРѕР±Р°РІР»СЏРµС‚СЃСЏ РІ С‚РѕРєРµРЅ.
         public void ChecksThatIfThereIsNoBranchTheCorrespondingClaimisNotAddedToTheToken()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(branch: null));
@@ -129,7 +129,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при пустой строке филиала  branch не добавляется в токен.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РїСѓСЃС‚РѕР№ СЃС‚СЂРѕРєРµ С„РёР»РёР°Р»Р°  branch РЅРµ РґРѕР±Р°РІР»СЏРµС‚СЃСЏ РІ С‚РѕРєРµРЅ.
         public void ChecksThatTheBranchIsNotAddedToTheTokenWhenTheBranchIsEmpty()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(branch: ""));
@@ -139,7 +139,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что если филиал состоит только из пробелов, branch не добавляется в токен.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РµСЃР»Рё С„РёР»РёР°Р» СЃРѕСЃС‚РѕРёС‚ С‚РѕР»СЊРєРѕ РёР· РїСЂРѕР±РµР»РѕРІ, branch РЅРµ РґРѕР±Р°РІР»СЏРµС‚СЃСЏ РІ С‚РѕРєРµРЅ.
         public void CheckingThatIfTheBranchConsistsOnlyOfSpacesTheBranchIsNotAddedToTheToken()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(branch: "   "));
@@ -149,7 +149,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что токен содержит корректного издателя, заданного в конфигурации.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ С‚РѕРєРµРЅ СЃРѕРґРµСЂР¶РёС‚ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ РёР·РґР°С‚РµР»СЏ, Р·Р°РґР°РЅРЅРѕРіРѕ РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё.
         public void CheckingThatTheTokenContainsAValidIssuer()
         {
             var jwt = TokenHandler.ReadJwtToken(_authService.GenerateToken(CreatingATestUserWithSpecifiedParameters()));
@@ -158,7 +158,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что токен содержит корректную аудиторию, заданную в конфигурации.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ С‚РѕРєРµРЅ СЃРѕРґРµСЂР¶РёС‚ РєРѕСЂСЂРµРєС‚РЅСѓСЋ Р°СѓРґРёС‚РѕСЂРёСЋ, Р·Р°РґР°РЅРЅСѓСЋ РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё.
         public void CheckingThatTheTokenContainsTheCorrectAudience()
         {
             var jwt = TokenHandler.ReadJwtToken(_authService.GenerateToken(CreatingATestUserWithSpecifiedParameters()));
@@ -167,7 +167,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что время истечения токена больше текущего и не превышает значение заданное в конфигурации (60 минут).
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РІСЂРµРјСЏ РёСЃС‚РµС‡РµРЅРёСЏ С‚РѕРєРµРЅР° Р±РѕР»СЊС€Рµ С‚РµРєСѓС‰РµРіРѕ Рё РЅРµ РїСЂРµРІС‹С€Р°РµС‚ Р·РЅР°С‡РµРЅРёРµ Р·Р°РґР°РЅРЅРѕРµ РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё (60 РјРёРЅСѓС‚).
         public void CheckingThatTheTokensExpirationTimeIsGreaterThanTheCurrentTimeAndDoesNotExceedTheValue()
         {
             var jwt = TokenHandler.ReadJwtToken(_authService.GenerateToken(CreatingATestUserWithSpecifiedParameters()));
@@ -177,7 +177,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что JWT-токен подписан алгоритмом HMAC SHA256 (HS256).
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ JWT-С‚РѕРєРµРЅ РїРѕРґРїРёСЃР°РЅ Р°Р»РіРѕСЂРёС‚РјРѕРј HMAC SHA256 (HS256).
         public void CheckingThatTheTokenIsSignedWithTheHMACSHA256Algorithm()
         {
             var jwt = TokenHandler.ReadJwtToken(_authService.GenerateToken(CreatingATestUserWithSpecifiedParameters()));
@@ -186,7 +186,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что разные пользователи получают разные JWT-токены.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЂР°Р·РЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РїРѕР»СѓС‡Р°СЋС‚ СЂР°Р·РЅС‹Рµ JWT-С‚РѕРєРµРЅС‹.
         public void ItChecksThatD0ifferentUsersReceiveDifferentTokens()
         {
             var token1 = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(id: 1, email: "a@b.com"));
@@ -196,7 +196,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что повторная генерация токена для одного и того же пользователя создаёт валидные JWT-токены
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїРѕРІС‚РѕСЂРЅР°СЏ РіРµРЅРµСЂР°С†РёСЏ С‚РѕРєРµРЅР° РґР»СЏ РѕРґРЅРѕРіРѕ Рё С‚РѕРіРѕ Р¶Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃРѕР·РґР°С‘С‚ РІР°Р»РёРґРЅС‹Рµ JWT-С‚РѕРєРµРЅС‹
         public void CheckingThatRegeneratingTheTokenCreatesValidTokens()
         {
             var u = CreatingATestUserWithSpecifiedParameters();
@@ -208,7 +208,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что даже при большом значении идентификатора (999999)  NameIdentifier сохраняется корректно.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РґР°Р¶Рµ РїСЂРё Р±РѕР»СЊС€РѕРј Р·РЅР°С‡РµРЅРёРё РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР° (999999)  NameIdentifier СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РєРѕСЂСЂРµРєС‚РЅРѕ.
         public void CheckingThatEvenWhenTheNameIdentifierValueIsLargeItIsStoredCorrectly()
         {
             var token = _authService.GenerateToken(CreatingATestUserWithSpecifiedParameters(id: 999999));
@@ -218,7 +218,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при отсутствии Issuer в конфигурации используется значение по умолчанию "CifraShop".
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё Issuer РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ "CifraShop".
         public void CheckingThatTheDefaultValueIsUsedWhenTheIssuerIsMissing()
         {
             var svc = CreatinganAuthServiceInstanceWithATestJWTConfiguration(new() { { "Jwt:Issuer", null } });
@@ -228,7 +228,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при отсутствии Audience в конфигурации используется значение по умолчанию "CifraShop".
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё Audience РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ "CifraShop".
         public void CheckingThatTheDefaultValueIsUsedWhenAudienceIsMissing()
         {
             var svc = CreatinganAuthServiceInstanceWithATestJWTConfiguration(new() { { "Jwt:Audience", null } });
@@ -238,7 +238,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при отсутствии ExpiryMinutes в конфигурации используется значение по умолчанию 1440 минут (сутки).
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё ExpiryMinutes РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 1440 РјРёРЅСѓС‚ (СЃСѓС‚РєРё).
         public void CheckingThatTheDefaultValueIsusedWhenExpiryMinutesIsMissing()
         {
             var svc = CreatinganAuthServiceInstanceWithATestJWTConfiguration(new() { { "Jwt:ExpiryMinutes", null } });
@@ -249,7 +249,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при отсутствии ключа (Jwt:Key) в конфигурации выбрасывается исключение InvalidOperationException.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё РєР»СЋС‡Р° (Jwt:Key) РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РІС‹Р±СЂР°СЃС‹РІР°РµС‚СЃСЏ РёСЃРєР»СЋС‡РµРЅРёРµ InvalidOperationException.
         public void CheckingThatAnExceptionIsThrownIfNoKeyIsPresent()
         {
             var svc = CreatinganAuthServiceInstanceWithATestJWTConfiguration(new() { { "Jwt:Key", null } });
@@ -258,7 +258,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что при установке времени жизни токена 5 минут, он истекает в пределах ожидаемого  (4–6 минут).
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё СѓСЃС‚Р°РЅРѕРІРєРµ РІСЂРµРјРµРЅРё Р¶РёР·РЅРё С‚РѕРєРµРЅР° 5 РјРёРЅСѓС‚, РѕРЅ РёСЃС‚РµРєР°РµС‚ РІ РїСЂРµРґРµР»Р°С… РѕР¶РёРґР°РµРјРѕРіРѕ  (4вЂ“6 РјРёРЅСѓС‚).
         public void CheckingThatWhenTheTokensLifetimeIsSetItExpiresWithinTheExpectedTime()
         {
             var svc = CreatinganAuthServiceInstanceWithATestJWTConfiguration(new() { { "Jwt:ExpiryMinutes", "5" } });
@@ -269,7 +269,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что хэширование одного и того же пароля всегда даёт одинаковый результат.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ С…СЌС€РёСЂРѕРІР°РЅРёРµ РѕРґРЅРѕРіРѕ Рё С‚РѕРіРѕ Р¶Рµ РїР°СЂРѕР»СЏ РІСЃРµРіРґР° РґР°С‘С‚ РѕРґРёРЅР°РєРѕРІС‹Р№ СЂРµР·СѓР»СЊС‚Р°С‚.
         public void ChecksThatPasswordHashingAlwaysProducesTheSameResult()
         {
             var hash1 = _authService.HashPassword("password123");
@@ -279,7 +279,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что разные пароли дают разные хэши.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЂР°Р·РЅС‹Рµ РїР°СЂРѕР»Рё РґР°СЋС‚ СЂР°Р·РЅС‹Рµ С…СЌС€Рё.
         public void CheckingThatDifferentPasswordsProduceDifferentHashes()
         {
             var hash1 = _authService.HashPassword("password123");
@@ -289,7 +289,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что HashPassword возвращает корректную Base64-строку длиной 32 байта (SHA256).
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ HashPassword РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕСЂСЂРµРєС‚РЅСѓСЋ Base64-СЃС‚СЂРѕРєСѓ РґР»РёРЅРѕР№ 32 Р±Р°Р№С‚Р° (SHA256).
         public void ChecksThatHashPasswordReturnsACorrectString()
         {
             var hash = _authService.HashPassword("test");
@@ -301,7 +301,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что хэширование пустой строки возвращает корректный непустой хэш.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ С…СЌС€РёСЂРѕРІР°РЅРёРµ РїСѓСЃС‚РѕР№ СЃС‚СЂРѕРєРё РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕСЂСЂРµРєС‚РЅС‹Р№ РЅРµРїСѓСЃС‚РѕР№ С…СЌС€.
         public void CheckingThatHashingAnEmptyStringReturnsAValidHash()
         {
             var hash = _authService.HashPassword("");
@@ -311,17 +311,17 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что хэширование строки с Unicode (кириллица) возвращает непустой хэш.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ С…СЌС€РёСЂРѕРІР°РЅРёРµ СЃС‚СЂРѕРєРё СЃ Unicode (РєРёСЂРёР»Р»РёС†Р°) РІРѕР·РІСЂР°С‰Р°РµС‚ РЅРµРїСѓСЃС‚РѕР№ С…СЌС€.
         public void CheckingThatHashingAUnicodeStringReturnsANonEmptyHash()
         {
-            var hash = _authService.HashPassword("пароль123");
+            var hash = _authService.HashPassword("РїР°СЂРѕР»СЊ123");
 
             Assert.NotNull(hash);
             Assert.NotEmpty(hash);
         }
 
         [Fact]
-        // Проверка, что хэширование очень длинной строки (10000 символов) возвращает корректный хэш длиной 32 байта.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ С…СЌС€РёСЂРѕРІР°РЅРёРµ РѕС‡РµРЅСЊ РґР»РёРЅРЅРѕР№ СЃС‚СЂРѕРєРё (10000 СЃРёРјРІРѕР»РѕРІ) РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕСЂСЂРµРєС‚РЅС‹Р№ С…СЌС€ РґР»РёРЅРѕР№ 32 Р±Р°Р№С‚Р°.
         public void Checking10kCharHashLength()
         {
             var longPassword = new string('a', 10000);
@@ -332,7 +332,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что хэш не содержит исходного пароля в открытом виде.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ С…СЌС€ РЅРµ СЃРѕРґРµСЂР¶РёС‚ РёСЃС…РѕРґРЅРѕРіРѕ РїР°СЂРѕР»СЏ РІ РѕС‚РєСЂС‹С‚РѕРј РІРёРґРµ.
         public void CheckingHashExcludesPlaintextPassword()
         {
             var password = "secret123";
@@ -342,7 +342,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что VerifyPassword возвращает true для корректного пароля.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ VerifyPassword РІРѕР·РІСЂР°С‰Р°РµС‚ true РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ РїР°СЂРѕР»СЏ.
         public void CheckingCorrectPasswordReturnsTrue()
         {
             var hash = _authService.HashPassword("secret123");
@@ -351,7 +351,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что VerifyPassword возвращает false для неверного пароля.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ VerifyPassword РІРѕР·РІСЂР°С‰Р°РµС‚ false РґР»СЏ РЅРµРІРµСЂРЅРѕРіРѕ РїР°СЂРѕР»СЏ.
         public void CheckingWrongPasswordReturnsFalse()
         {
             var hash = _authService.HashPassword("secret123");
@@ -360,7 +360,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что VerifyPassword возвращает false для пустого пароля.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ VerifyPassword РІРѕР·РІСЂР°С‰Р°РµС‚ false РґР»СЏ РїСѓСЃС‚РѕРіРѕ РїР°СЂРѕР»СЏ.
         public void CheckingEmptyPasswordReturnsFalse()
         {
             var hash = _authService.HashPassword("secret123");
@@ -369,7 +369,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что VerifyPassword чувствительна к регистру: пароли "password" и "PASSWORD" не проходят проверку.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ VerifyPassword С‡СѓРІСЃС‚РІРёС‚РµР»СЊРЅР° Рє СЂРµРіРёСЃС‚СЂСѓ: РїР°СЂРѕР»Рё "password" Рё "PASSWORD" РЅРµ РїСЂРѕС…РѕРґСЏС‚ РїСЂРѕРІРµСЂРєСѓ.
         public void CheckingCaseSensitivityRejectsWrongCaseVariants()
         {
             var hash = _authService.HashPassword("Password");
@@ -379,7 +379,7 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что VerifyPassword возвращает false при использовании хэша от другого пароля.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ VerifyPassword РІРѕР·РІСЂР°С‰Р°РµС‚ false РїСЂРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё С…СЌС€Р° РѕС‚ РґСЂСѓРіРѕРіРѕ РїР°СЂРѕР»СЏ.
         public void CheckingWrongHashReturnsFalse()
         {
             var otherHash = _authService.HashPassword("other");
@@ -388,20 +388,20 @@ namespace CifraShop.Tests.AuthTests
         }
 
         [Fact]
-        // Проверка, что VerifyPassword возвращает false при пустом хэше.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ VerifyPassword РІРѕР·РІСЂР°С‰Р°РµС‚ false РїСЂРё РїСѓСЃС‚РѕРј С…СЌС€Рµ.
         public void CheckingEmptyHashReturnsFalse()
         {
             Assert.False(_authService.VerifyPassword("secret123", ""));
         }
 
         [Fact]
-        // Проверка, что VerifyPassword корректно работает с Unicode-паролями (кириллица)
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ VerifyPassword РєРѕСЂСЂРµРєС‚РЅРѕ СЂР°Р±РѕС‚Р°РµС‚ СЃ Unicode-РїР°СЂРѕР»СЏРјРё (РєРёСЂРёР»Р»РёС†Р°)
         public void CheckingUnicodePasswordVerification()
         {
-            var hash = _authService.HashPassword("пароль");
+            var hash = _authService.HashPassword("РїР°СЂРѕР»СЊ");
 
-            Assert.True(_authService.VerifyPassword("пароль", hash));
-            Assert.False(_authService.VerifyPassword("пароль2", hash));
+            Assert.True(_authService.VerifyPassword("РїР°СЂРѕР»СЊ", hash));
+            Assert.False(_authService.VerifyPassword("РїР°СЂРѕР»СЊ2", hash));
         }
     }
 }

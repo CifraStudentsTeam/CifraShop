@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 
 namespace CifraShop.Launcher.UI;
@@ -151,6 +151,8 @@ internal static class ConsoleUI
         MenuRow("8", "Очистить Docker-образы", ConsoleColor.DarkCyan);
         Separator();
         MenuRow("9", "Показать логи", ConsoleColor.Gray);
+        Separator();
+        MenuRow("10", "MailHog (������)", ConsoleColor.Green);
         MenuRow("0", "Выход", ConsoleColor.DarkGray);
 
         Console.ForegroundColor = ConsoleColor.DarkCyan;

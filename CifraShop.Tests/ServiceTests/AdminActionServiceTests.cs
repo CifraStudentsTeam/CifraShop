@@ -21,8 +21,8 @@ namespace CifraShop.Tests.ServiceTests
         {
             var actions = new List<AdminAction>
             {
-                new() { Id = 1, ActionType = "Create", Details = "Создан товар", Branch = "Филиал 1" },
-                new() { Id = 2, ActionType = "Update", Details = "Обновлён товар", Branch = "Филиал 1" }
+                new() { Id = 1, ActionType = "Create", Details = "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1" },
+                new() { Id = 2, ActionType = "Update", Details = "РћР±РЅРѕРІР»С‘РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1" }
             };
             _repositoryMock.Setup(r => r.GetLastActions(2, null)).ReturnsAsync(actions);
 
@@ -36,14 +36,14 @@ namespace CifraShop.Tests.ServiceTests
         {
             var actions = new List<AdminAction>
             {
-                new() { Id = 1, Branch = "Филиал 1" }
+                new() { Id = 1, Branch = "Р¤РёР»РёР°Р» 1" }
             };
-            _repositoryMock.Setup(r => r.GetLastActions(10, "Филиал 1")).ReturnsAsync(actions);
+            _repositoryMock.Setup(r => r.GetLastActions(10, "Р¤РёР»РёР°Р» 1")).ReturnsAsync(actions);
 
-            var result = await _service.GetLastActions(10, "Филиал 1");
+            var result = await _service.GetLastActions(10, "Р¤РёР»РёР°Р» 1");
 
             Assert.Single(result);
-            Assert.Equal("Филиал 1", result[0].Branch);
+            Assert.Equal("Р¤РёР»РёР°Р» 1", result[0].Branch);
         }
 
         [Fact]
@@ -64,12 +64,12 @@ namespace CifraShop.Tests.ServiceTests
             _repositoryMock.Setup(r => r.AddAction(It.IsAny<AdminAction>()))
                 .Returns(Task.CompletedTask);
 
-            await _service.AddAction("Create", "Создан товар", "Филиал 1");
+            await _service.AddAction("Create", "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", "Р¤РёР»РёР°Р» 1");
 
             _repositoryMock.Verify(r => r.AddAction(It.Is<AdminAction>(a =>
                 a.ActionType == "Create" &&
-                a.Details == "Создан товар" &&
-                a.Branch == "Филиал 1" &&
+                a.Details == "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ" &&
+                a.Branch == "Р¤РёР»РёР°Р» 1" &&
                 a.CreatedAt != default)), Times.Once);
         }
 

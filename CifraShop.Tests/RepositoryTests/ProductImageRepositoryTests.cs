@@ -21,8 +21,8 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductImageRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
-            var product2 = new Product { Id = 2, Name = "Брелок", Description = "Описание", Price = 50, Quantity = 10, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product2 = new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РћРїРёСЃР°РЅРёРµ", Price = 50, Quantity = 10, Status = StatusProduct.InStock };
             await context.Products.AddRangeAsync(product, product2);
             await context.ProductImages.AddRangeAsync(
                 new ProductImage { Id = 1, ProductId = 1, Product = product, FileName = "img1.png", IsPrimary = true, SortOrder = 0 },
@@ -51,7 +51,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductImageRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             await context.ProductImages.AddRangeAsync(
                 new ProductImage { Id = 1, ProductId = 1, Product = product, FileName = "img1.png", SortOrder = 2 },
@@ -72,7 +72,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductImageRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             var image = new ProductImage { Id = 1, ProductId = 1, Product = product, FileName = "img1.png", IsPrimary = true, SortOrder = 0 };
             await context.ProductImages.AddAsync(image);
@@ -99,7 +99,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductImageRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
 
@@ -116,7 +116,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductImageRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             var image = new ProductImage { Id = 1, ProductId = 1, Product = product, FileName = "old.png", IsPrimary = false, SortOrder = 0 };
             await context.ProductImages.AddAsync(image);
@@ -136,7 +136,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductImageRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             var image = new ProductImage { Id = 1, ProductId = 1, Product = product, FileName = "img.png", IsPrimary = true, SortOrder = 0 };
             await context.ProductImages.AddAsync(image);
@@ -152,7 +152,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductImageRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             await context.ProductImages.AddRangeAsync(
                 new ProductImage { Id = 1, ProductId = 1, Product = product, FileName = "img1.png", SortOrder = 0 },

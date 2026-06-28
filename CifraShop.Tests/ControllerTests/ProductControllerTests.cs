@@ -16,11 +16,11 @@ namespace CifraShop.Tests.ControllerTests
         public ProductControllerTests()
         {
             _productServiceMock = new Mock<IProductService>();
-            _controller = new ProductController(_productServiceMock.Object);
+            _controller = new ProductController(_productServiceMock.Object, null!, null!, null!);
         }
 
-        private static Product CreateProduct(int id = 1, string name = "Кружка", int price = 100, int quantity = 5, StatusProduct status = StatusProduct.InStock)
-            => new() { Id = id, Name = name, Description = "Описание", Price = price, Quantity = quantity, Status = status };
+        private static Product CreateProduct(int id = 1, string name = "РљСЂСѓР¶РєР°", int price = 100, int quantity = 5, StatusProduct status = StatusProduct.InStock)
+            => new() { Id = id, Name = name, Description = "РћРїРёСЃР°РЅРёРµ", Price = price, Quantity = quantity, Status = status };
 
         [Fact]
         public async Task GetAllProducts_ReturnsOk()
@@ -76,10 +76,10 @@ namespace CifraShop.Tests.ControllerTests
         [Fact]
         public async Task GetProductsByName_ReturnsOk()
         {
-            _productServiceMock.Setup(s => s.GetProductsByName("Кружка"))
+            _productServiceMock.Setup(s => s.GetProductsByName("РљСЂСѓР¶РєР°"))
                 .ReturnsAsync(new List<Product> { CreateProduct() });
 
-            var result = await _controller.GetProductsByName("Кружка");
+            var result = await _controller.GetProductsByName("РљСЂСѓР¶РєР°");
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var list = Assert.IsAssignableFrom<List<Contracts.Responses.Products.ProductResponse>>(okResult.Value);
@@ -126,12 +126,12 @@ namespace CifraShop.Tests.ControllerTests
         public async Task CreateProduct_ValidData_ReturnsOk()
         {
             var product = CreateProduct();
-            _productServiceMock.Setup(s => s.CreateProduct("Кружка", "Описание", 100, 5, null))
+            _productServiceMock.Setup(s => s.CreateProduct("РљСЂСѓР¶РєР°", "РћРїРёСЃР°РЅРёРµ", 100, 5, null))
                 .ReturnsAsync(product);
 
             var result = await _controller.CreateProduct(new CreateProductRequest
             {
-                Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5
+                Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5
             });
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -145,10 +145,10 @@ namespace CifraShop.Tests.ControllerTests
             _productServiceMock.Setup(s => s.GetProductById(1)).ReturnsAsync(product);
             _productServiceMock.Setup(s => s.UpdateProduct(It.IsAny<Product>())).Returns(Task.CompletedTask);
 
-            var result = await _controller.UpdateProduct(new UpdateProductRequest { Name = "Новая" }, 1);
+            var result = await _controller.UpdateProduct(new UpdateProductRequest { Name = "РќРѕРІР°СЏ" }, 1);
 
             Assert.IsType<NoContentResult>(result);
-            Assert.Equal("Новая", product.Name);
+            Assert.Equal("РќРѕРІР°СЏ", product.Name);
         }
 
         [Fact]
@@ -170,11 +170,11 @@ namespace CifraShop.Tests.ControllerTests
 
             await _controller.UpdateProduct(new UpdateProductRequest
             {
-                Name = "Новая", Description = "Новое описание", Price = 200, Quantity = 10, Status = StatusProduct.OutOfStock
+                Name = "РќРѕРІР°СЏ", Description = "РќРѕРІРѕРµ РѕРїРёСЃР°РЅРёРµ", Price = 200, Quantity = 10, Status = StatusProduct.OutOfStock
             }, 1);
 
-            Assert.Equal("Новая", product.Name);
-            Assert.Equal("Новое описание", product.Description);
+            Assert.Equal("РќРѕРІР°СЏ", product.Name);
+            Assert.Equal("РќРѕРІРѕРµ РѕРїРёСЃР°РЅРёРµ", product.Description);
             Assert.Equal(200, product.Price);
             Assert.Equal(10, product.Quantity);
             Assert.Equal(StatusProduct.OutOfStock, product.Status);

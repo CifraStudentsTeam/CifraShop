@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# AI tools
+.mimocode/
+AGENTS.md
+IMPLEMENTATION_PLAN.md

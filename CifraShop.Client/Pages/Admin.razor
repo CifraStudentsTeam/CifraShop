@@ -1,4 +1,4 @@
-@page "/admin"
+﻿@page "/admin"
 @using System.Net.Http.Json
 @using CifraShop.Client.Models
 @using CifraShop.Client.Pages.Components
@@ -44,7 +44,7 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <small class="text-secondary">Филиал (фильтр):</small>
-            <select class="form-select form-select-sm w-auto" @bind="_selectedBranch">
+            <select class="form-select form-select-sm w-auto" value="@_selectedBranch" @onchange="OnBranchChanged">
                 <option value="">Все филиалы</option>
                 @foreach (var branch in _notificationSettings.Select(s => s.Branch).Distinct().OrderBy(b => b))
                 {
@@ -64,7 +64,7 @@
         <AdminProductsPanel Products="Products" TotalCount="_productTotalCount" Page="_productPage"
                             PageSize="_productPageSize" TotalPages="_productTotalPages" Loading="_loadingProducts"
                             Search="@_productSearch" Filter="@_productFilter" SortField="@_productSortField" SortAsc="_productSortAsc"
-                            TotalStockValue="_totalStockValue"
+                            TotalStockValue="_totalStockValue" LowStockThreshold="CurrentLowStockThreshold" Branch="@_selectedBranch"
                             OnSearchChanged="OnProductSearchChanged" OnFilterChanged="OnProductFilterChanged"
                             OnPageChanged="OnProductPageChanged" OnPageSizeChanged="OnProductPageSizeChanged"
                             OnSortToggle="ToggleProductSort"
@@ -76,6 +76,7 @@
                           Search="@_orderSearch" Filter="@_orderFilter" DateFrom="@_orderDateFrom" DateTo="@_orderDateTo"
                           SortField="@_orderSortField" SortAsc="_orderSortAsc" ExpandedOrderId="_expandedOrderId"
                           TotalRevenue="_totalRevenue" AllProducts="_allProductsForOrder" AllUsersCache="_allUsersCache"
+                          Branch="@_selectedBranch"
                           OnSearchChanged="OnOrderSearchChanged" OnFilterChanged="OnOrderFilterChanged"
                           OnDateFromChanged="OnOrderDateFromChanged" OnDateToChanged="OnOrderDateToChanged"
                           OnPageChanged="OnOrderPageChanged" OnPageSizeChanged="OnOrderPageSizeChanged"
@@ -91,12 +92,15 @@
                          OnSearchChanged="OnUserSearchChanged" OnFilterChanged="OnUserFilterChanged"
                          OnPageChanged="OnUserPageChanged" OnPageSizeChanged="OnUserPageSizeChanged"
                          OnSortToggle="ToggleUserSort"
-                         OnNotification="NotifyFromChild" OnConfirm="ConfirmFromChild" OnLogAction="LogFromChild" />
+                         OnNotification="NotifyFromChild" OnConfirm="ConfirmFromChild" OnLogAction="LogFromChild" Branch="@_selectedBranch" />
     </div>
 
     <div class="row g-3 mb-3">
         <AdminNotificationsPanel Settings="_notificationSettings" OnNotification="NotifyFromChild" />
-        <AdminHistoryPanel History="_actionHistory" AvailableBranches="_availableBranches" />
+        <AdminHistoryPanel History="_actionHistory" AvailableBranches="_availableBranches"
+                           HistoryTypeFilter="_historyTypeFilter" HistoryBranchFilter="_historyBranchFilter"
+                           HistoryTypeFilterChanged="OnHistoryTypeFilterChanged"
+                           HistoryBranchFilterChanged="OnHistoryBranchFilterChanged" />
     </div>
 
     @if (_showConfirmModal)
@@ -156,13 +160,15 @@
         }
     }
     private int _outOfStockCount;
-    private int _configuredFilials => _notificationSettings.Count(s => !string.IsNullOrEmpty(s.Email) || !string.IsNullOrEmpty(s.TelegramChatId));
+    private int _configuredFilials => _notificationSettings.Count(s => !string.IsNullOrEmpty(s.Email) );
+    private int CurrentLowStockThreshold => _notificationSettings.FirstOrDefault(s => s.Branch == _selectedBranch)?.LowStockThreshold ?? 5;
     private int _totalStockValue;
 
     private string _productSearch = "", _productFilter = "";
     private string _orderSearch = "", _orderFilter = "", _orderDateFrom = "", _orderDateTo = "";
     private string _userSearch = "", _userFilter = "";
     private string _selectedBranch = "";
+    private string _historyTypeFilter = "", _historyBranchFilter = "";
     private List<string> _availableBranches = new();
 
     private string _productSortField = "";
@@ -241,7 +247,7 @@
                 await LoadAllData();
                 await InvokeAsync(StateHasChanged);
             }
-            catch { }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
         }
     }
 
@@ -268,11 +274,11 @@
             var allProducts = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new();
             var allOrders = await Http.GetFromJsonAsync<List<OrderDto>>("api/Order/all") ?? new();
             _totalRevenue = allOrders.Sum(o => o.Sum);
-            _lowStockCount = allProducts.Count(p => p.Status == StatusProduct.InStock && p.Quantity <= 5);
+            _lowStockCount = allProducts.Count(p => p.Status == StatusProduct.InStock && p.Quantity <= CurrentLowStockThreshold);
             _outOfStockCount = allProducts.Count(p => p.Status == StatusProduct.OutOfStock);
             _totalStockValue = allProducts.Where(p => p.Status == StatusProduct.InStock).Sum(p => p.Price * p.Quantity);
         }
-        catch { }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
     }
 
     private async Task LoadUsersMetrics()
@@ -282,7 +288,7 @@
             await LoadAllUsers();
             _adminCount = _allUsersCache.Count(u => u.Role == UserRole.Admin);
         }
-        catch { }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
     }
 
     private async Task LoadProducts()
@@ -293,6 +299,7 @@
             var url = $"api/Product/paged?page={_productPage}&pageSize={_productPageSize}";
             if (!string.IsNullOrEmpty(_productSearch)) url += $"&search={Uri.EscapeDataString(_productSearch)}";
             if (!string.IsNullOrEmpty(_productFilter)) url += $"&status={_productFilter}";
+            if (!string.IsNullOrEmpty(_selectedBranch)) url += $"&branch={Uri.EscapeDataString(_selectedBranch)}";
             var r = await Http.GetFromJsonAsync<PagedProductResponse>(url);
             if (r != null) { Products = r.Items; _productTotalCount = r.TotalCount; }
         }
@@ -311,6 +318,7 @@
             if (!string.IsNullOrEmpty(_orderFilter)) url += $"&status={_orderFilter}";
             if (!string.IsNullOrEmpty(_orderDateFrom)) url += $"&dateFrom={_orderDateFrom}";
             if (!string.IsNullOrEmpty(_orderDateTo)) url += $"&dateTo={_orderDateTo}";
+            if (!string.IsNullOrEmpty(_selectedBranch)) url += $"&branch={Uri.EscapeDataString(_selectedBranch)}";
             var r = await Http.GetFromJsonAsync<PagedOrderResponse>(url);
             if (r != null) { Orders = r.Items; _orderTotalCount = r.TotalCount; }
         }
@@ -326,6 +334,7 @@
             var url = $"api/User/paged?page={_userPage}&pageSize={_userPageSize}";
             if (!string.IsNullOrEmpty(_userSearch)) url += $"&search={Uri.EscapeDataString(_userSearch)}";
             if (!string.IsNullOrEmpty(_userFilter)) url += $"&role={_userFilter}";
+            if (!string.IsNullOrEmpty(_selectedBranch)) url += $"&branch={Uri.EscapeDataString(_selectedBranch)}";
             var r = await Http.GetFromJsonAsync<PagedUserResponse>(url);
             if (r != null) { Users = r.Items; _userTotalCount = r.TotalCount; }
         }
@@ -341,7 +350,7 @@
 
     private async Task LoadAllProducts()
     {
-        try { _allProductsForOrder = await Http.GetFromJsonAsync<List<ProductDto>>("api/Product/all") ?? new(); }
+        try { var url = "api/Product/all"; if (!string.IsNullOrEmpty(_selectedBranch)) url += $"?branch={Uri.EscapeDataString(_selectedBranch)}"; _allProductsForOrder = await Http.GetFromJsonAsync<List<ProductDto>>(url) ?? new(); }
         catch { _allProductsForOrder = new(); }
     }
 
@@ -350,14 +359,11 @@
         try
         {
             _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=100") ?? new();
-            _availableBranches = _actionHistory
-                .Select(a => a.Branch)
-                .Where(b => !string.IsNullOrEmpty(b))
-                .Distinct()
-                .OrderBy(b => b)
-                .ToList();
+            var historyBranches = _actionHistory.Select(a => a.Branch).Where(b => !string.IsNullOrEmpty(b));
+            var settingsBranches = _notificationSettings.Select(s => s.Branch).Where(b => !string.IsNullOrEmpty(b));
+            _availableBranches = historyBranches.Concat(settingsBranches).Distinct().OrderBy(b => b).ToList();
         }
-        catch { }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
     }
 
     private async Task LoadNotificationSettings()
@@ -384,6 +390,28 @@
         _productPage = 0;
         UpdateUrlFilters();
         await LoadProducts();
+    }
+
+    private async Task OnBranchChanged(ChangeEventArgs e)
+    {
+        _selectedBranch = e.Value?.ToString() ?? "";
+        _productPage = 0;
+        _orderPage = 0;
+        _userPage = 0;
+        UpdateUrlFilters();
+        await Task.WhenAll(LoadProducts(), LoadOrders(), LoadUsers());
+    }
+
+    private void OnHistoryTypeFilterChanged(string value)
+    {
+        _historyTypeFilter = value;
+        UpdateUrlFilters();
+    }
+
+    private void OnHistoryBranchFilterChanged(string value)
+    {
+        _historyBranchFilter = value;
+        UpdateUrlFilters();
     }
 
     private async Task OnOrderSearchChanged(string value)
@@ -519,6 +547,9 @@
         _orderDateTo = query["odt"] ?? "";
         _userSearch = query["us"] ?? "";
         _userFilter = query["uf"] ?? "";
+        _selectedBranch = query["br"] ?? "";
+        _historyTypeFilter = query["ht"] ?? "";
+        _historyBranchFilter = query["hb"] ?? "";
     }
 
     private void UpdateUrlFilters()
@@ -532,6 +563,9 @@
         if (!string.IsNullOrEmpty(_orderDateTo)) query["odt"] = _orderDateTo;
         if (!string.IsNullOrEmpty(_userSearch)) query["us"] = _userSearch;
         if (!string.IsNullOrEmpty(_userFilter)) query["uf"] = _userFilter;
+        if (!string.IsNullOrEmpty(_selectedBranch)) query["br"] = _selectedBranch;
+        if (!string.IsNullOrEmpty(_historyTypeFilter)) query["ht"] = _historyTypeFilter;
+        if (!string.IsNullOrEmpty(_historyBranchFilter)) query["hb"] = _historyBranchFilter;
         var qs = string.Join("&", query.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value ?? "")}"));
         var baseUri = Nav.Uri.Split('?')[0];
         Nav.NavigateTo(string.IsNullOrEmpty(qs) ? baseUri : $"{baseUri}?{qs}", forceLoad: false, replace: true);
@@ -543,7 +577,7 @@
         if (string.IsNullOrEmpty(branch) && _notificationSettings.Any())
             branch = _notificationSettings.First().Branch;
         try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch }); }
-        catch { }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
         _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, Branch = branch ?? "", CreatedAt = DateTime.Now });
         if (_actionHistory.Count > 100) _actionHistory.RemoveAt(_actionHistory.Count - 1);
         await InvokeAsync(StateHasChanged);

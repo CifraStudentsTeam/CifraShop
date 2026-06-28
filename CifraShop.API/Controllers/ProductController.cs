@@ -1,11 +1,13 @@
 using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
+using CifraShop.Application.Services.Implementations;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Products;
 using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.Products;
 using CifraShop.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
+using CifraShop.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
@@ -18,11 +20,17 @@ namespace CifraShop.API.Controllers
     {
         private readonly IProductService _productService;
         private readonly IHubContext<AdminHub> _hub;
+        private readonly NotificationDispatcher _dispatcher;
+        private readonly INotificationSettingsRepository _settingsRepository;
 
-        public ProductController(IProductService productService, IHubContext<AdminHub> hub)
+        public ProductController(IProductService productService, IHubContext<AdminHub> hub,
+            NotificationDispatcher dispatcher,
+            INotificationSettingsRepository settingsRepository)
         {
             _productService = productService;
             _hub = hub;
+            _dispatcher = dispatcher;
+            _settingsRepository = settingsRepository;
         }
 
         private ProductResponse ToResponseWithUrl(Domain.Entities.Product p)
@@ -47,9 +55,10 @@ namespace CifraShop.API.Controllers
             [FromQuery] int page = 0,
             [FromQuery] int pageSize = 8,
             [FromQuery] string? search = null,
-            [FromQuery] StatusProduct? status = null)
+            [FromQuery] StatusProduct? status = null,
+            [FromQuery] string? branch = null)
         {
-            var paged = await _productService.GetProductsPaged(page, pageSize, search, status);
+            var paged = await _productService.GetProductsPaged(page, pageSize, search, status, branch);
             return Ok(new PagedResponse<ProductResponse>
             {
                 Items = paged.Items.Select(p => ToResponseWithUrl(p)).ToList(),
@@ -98,7 +107,7 @@ namespace CifraShop.API.Controllers
         [HttpPost("create-product")]
         public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
         {
-            var product = await _productService.CreateProduct(request.Name, request.Description, request.Price, request.Quantity, request.ImageUrl);
+            var product = await _productService.CreateProduct(request.Name, request.Description, request.Price, request.Quantity, request.ImageUrl, request.Branch);
             await _hub.Clients.All.SendAsync("Notify", "product", "created");
             return Ok(ToResponseWithUrl(product));
         }
@@ -125,7 +134,14 @@ namespace CifraShop.API.Controllers
         {
             var product = await _productService.GetProductById(id);
             if (product == null) return NotFound($"Товар с id {id} не найден");
-            await _productService.DeleteProduct(product);
+            try
+            {
+                await _productService.DeleteProduct(product);
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                return BadRequest(new { error = "Невозможно удалить товар, так как он используется в заказах. Сначала удалите связанные заказы." });
+            }
             await _hub.Clients.All.SendAsync("Notify", "product", "deleted");
             return NoContent();
         }
@@ -146,7 +162,14 @@ namespace CifraShop.API.Controllers
             if (!existingIds.Any())
                 return NotFound("Ни один из указанных товаров не найден");
 
-            await _productService.DeleteRange(existingIds);
+            try
+            {
+                await _productService.DeleteRange(existingIds);
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                return BadRequest(new { error = "Невозможно удалить некоторые товары, так как они используются в заказах." });
+            }
             await _hub.Clients.All.SendAsync("Notify", "product", "deleted");
             return Ok(new { deleted = existingIds.Count, notFound = request.ProductIds.Count - existingIds.Count });
         }

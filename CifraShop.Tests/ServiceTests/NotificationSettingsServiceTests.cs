@@ -21,8 +21,8 @@ namespace CifraShop.Tests.ServiceTests
         {
             var settings = new List<NotificationSettings>
             {
-                new() { Id = 1, Branch = "Филиал 1" },
-                new() { Id = 2, Branch = "Филиал 2" }
+                new() { Id = 1, Branch = "Р¤РёР»РёР°Р» 1" },
+                new() { Id = 2, Branch = "Р¤РёР»РёР°Р» 2" }
             };
             _repositoryMock.Setup(r => r.GetAll()).ReturnsAsync(settings);
 
@@ -34,13 +34,13 @@ namespace CifraShop.Tests.ServiceTests
         [Fact]
         public async Task GetById_ReturnsSettings()
         {
-            var settings = new NotificationSettings { Id = 1, Branch = "Филиал 1" };
+            var settings = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1" };
             _repositoryMock.Setup(r => r.GetById(1)).ReturnsAsync(settings);
 
             var result = await _service.GetById(1);
 
             Assert.NotNull(result);
-            Assert.Equal("Филиал 1", result.Branch);
+            Assert.Equal("Р¤РёР»РёР°Р» 1", result.Branch);
         }
 
         [Fact]
@@ -57,10 +57,10 @@ namespace CifraShop.Tests.ServiceTests
         [Fact]
         public async Task GetByBranch_ReturnsSettings()
         {
-            var settings = new NotificationSettings { Id = 1, Branch = "Филиал 1" };
-            _repositoryMock.Setup(r => r.GetByBranch("Филиал 1")).ReturnsAsync(settings);
+            var settings = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1" };
+            _repositoryMock.Setup(r => r.GetByBranch("Р¤РёР»РёР°Р» 1")).ReturnsAsync(settings);
 
-            var result = await _service.GetByBranch("Филиал 1");
+            var result = await _service.GetByBranch("Р¤РёР»РёР°Р» 1");
 
             Assert.NotNull(result);
         }
@@ -68,16 +68,16 @@ namespace CifraShop.Tests.ServiceTests
         [Fact]
         public async Task Create_ValidData_CreatesSettings()
         {
-            _repositoryMock.Setup(r => r.GetByBranch("Филиал 1"))
+            _repositoryMock.Setup(r => r.GetByBranch("Р¤РёР»РёР°Р» 1"))
                 .ReturnsAsync((NotificationSettings?)null);
             _repositoryMock.Setup(r => r.Add(It.IsAny<NotificationSettings>()))
                 .Returns(Task.CompletedTask);
 
             var result = await _service.Create(
-                "email@test.com", "token", "chatId", "Филиал 1",
+                "email@test.com", "Р¤РёР»РёР°Р» 1",
                 true, true, true, 5);
 
-            Assert.Equal("Филиал 1", result.Branch);
+            Assert.Equal("Р¤РёР»РёР°Р» 1", result.Branch);
             Assert.Equal("email@test.com", result.Email);
             Assert.True(result.NotifyOnNewOrder);
             Assert.Equal(5, result.LowStockThreshold);
@@ -88,47 +88,44 @@ namespace CifraShop.Tests.ServiceTests
         public async Task Create_EmptyBranch_Throws()
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.Create("email@test.com", "token", "chatId", "", true, true, true, 5));
+                _service.Create("email@test.com", "", true, true, true, 5));
         }
 
         [Fact]
         public async Task Create_NegativeThreshold_Throws()
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.Create("email@test.com", "token", "chatId", "Филиал 1", true, true, true, -1));
+                _service.Create("email@test.com", "Р¤РёР»РёР°Р» 1", true, true, true, -1));
         }
 
         [Fact]
         public async Task Create_DuplicateBranch_Throws()
         {
-            var existing = new NotificationSettings { Id = 1, Branch = "Филиал 1" };
-            _repositoryMock.Setup(r => r.GetByBranch("Филиал 1")).ReturnsAsync(existing);
+            var existing = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1" };
+            _repositoryMock.Setup(r => r.GetByBranch("Р¤РёР»РёР°Р» 1")).ReturnsAsync(existing);
 
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.Create("email@test.com", "token", "chatId", "Филиал 1", true, true, true, 5));
+                _service.Create("email@test.com", "Р¤РёР»РёР°Р» 1", true, true, true, 5));
         }
 
         [Fact]
         public async Task Create_NullEmail_DefaultsEmpty()
         {
-            _repositoryMock.Setup(r => r.GetByBranch("Филиал 1"))
+            _repositoryMock.Setup(r => r.GetByBranch("Р¤РёР»РёР°Р» 1"))
                 .ReturnsAsync((NotificationSettings?)null);
             _repositoryMock.Setup(r => r.Add(It.IsAny<NotificationSettings>()))
                 .Returns(Task.CompletedTask);
 
-            var result = await _service.Create(
-                null, null, null, "Филиал 1",
+            var result = await _service.Create(null, "Р¤РёР»РёР°Р» 1",
                 false, false, false, 0);
 
             Assert.Equal(string.Empty, result.Email);
-            Assert.Equal(string.Empty, result.TelegramBotToken);
-            Assert.Equal(string.Empty, result.TelegramChatId);
-        }
+                                }
 
         [Fact]
         public async Task Update_UpdatesSettings()
         {
-            var settings = new NotificationSettings { Id = 1, Branch = "Филиал 1", LowStockThreshold = 10 };
+            var settings = new NotificationSettings { Id = 1, Branch = "Р¤РёР»РёР°Р» 1", LowStockThreshold = 10 };
             _repositoryMock.Setup(r => r.Update(settings)).Returns(Task.CompletedTask);
 
             await _service.Update(settings);

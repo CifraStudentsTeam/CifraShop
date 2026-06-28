@@ -19,5 +19,7 @@ namespace CifraShop.Contracts.Requests.Products
         public int Quantity { get; set; }
 
         public string? ImageUrl { get; set; }
+
+        public string Branch { get; set; } = string.Empty;
     }
 }

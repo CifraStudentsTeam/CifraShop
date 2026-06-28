@@ -16,7 +16,7 @@ namespace CifraShop.Tests.ControllerTests
         public UserControllerTests()
         {
             _userServiceMock = new Mock<IUserService>();
-            _controller = new UserController(_userServiceMock.Object);
+            _controller = new UserController(_userServiceMock.Object, null!);
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace CifraShop.Tests.ControllerTests
         public async Task CreateAdmin_ValidData_ReturnsOk()
         {
             var user = new User { Id = 1, Email = "admin@email.com", Password = "123456", Balance = 0, Role = UserRole.Admin };
-            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "password123")).ReturnsAsync(user);
+            _userServiceMock.Setup(s => s.CreateAdmin("admin@email.com", "password123", "")).ReturnsAsync(user);
 
             var result = await _controller.CreateAdmin(new CreateUserRequest { Email = "admin@email.com", Password = "password123" });
 
@@ -144,7 +144,7 @@ namespace CifraShop.Tests.ControllerTests
         public async Task CreateStudent_ValidData_ReturnsOk()
         {
             var user = new User { Id = 1, Email = "s@b.com", Password = "123456", Balance = 0, Role = UserRole.Student };
-            _userServiceMock.Setup(s => s.CreateStudent("s@b.com", "password123")).ReturnsAsync(user);
+            _userServiceMock.Setup(s => s.CreateStudent("s@b.com", "password123", "")).ReturnsAsync(user);
 
             var result = await _controller.CreateStudent(new CreateUserRequest { Email = "s@b.com", Password = "password123" });
 

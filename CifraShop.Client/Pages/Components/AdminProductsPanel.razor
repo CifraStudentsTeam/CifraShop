@@ -1,4 +1,4 @@
-@using CifraShop.Client.Models
+﻿@using CifraShop.Client.Models
 @inject HttpClient Http
 
 <div class="col-lg-6">
@@ -87,7 +87,7 @@
                         <tbody>
                             @foreach (var p in Products)
                             {
-                                var isLowStock = p.Status == StatusProduct.InStock && p.Quantity <= 5;
+                                var isLowStock = p.Status == StatusProduct.InStock && p.Quantity <= LowStockThreshold;
                                 var isOutOfStock = p.Status == StatusProduct.OutOfStock;
                                 <tr class="@(isOutOfStock ? "opacity-50" : "") @(isLowStock ? "table-warning" : "")">
                                     <td><input type="checkbox" class="form-check-input" @bind="p.IsSelected" /></td>
@@ -206,37 +206,34 @@
                             <input type="number" class="form-control" @bind="_formQuantity" min="0" step="1" placeholder="0" disabled="@_saving" />
                         </div>
                     </div>
-                    @if (_editingProduct != null)
-                    {
-                        <div class="mt-3">
-                            <label class="form-label small fw-medium">Фотографии товара</label>
-                            <div class="d-flex gap-2 flex-wrap mb-2">
-                                @foreach (var img in _productImages)
-                                {
-                                    <div class="position-relative" style="width:5rem;height:5rem;">
-                                        <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
-                                             alt="Фото" />
-                                        <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
-                                                style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
-                                                @onclick="() => DeleteProductImage(img)" title="Удалить">×</button>
-                                        @if (!img.IsPrimary)
-                                        {
-                                            <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
-                                                    style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
-                                                    @onclick="() => SetPrimaryImage(img)" title="Сделать главной">★</button>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                            <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
-                                   style="cursor:pointer;" for="imageFileInput">
-                                <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
-                                <small class="text-secondary">Нажмите для выбора изображения</small>
-                                <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
-                            </label>
-                            <InputFile id="imageFileInput" OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
+                    <div class="mt-3">
+                        <label class="form-label small fw-medium">Фотографии товара</label>
+                        <div class="d-flex gap-2 flex-wrap mb-2">
+                            @foreach (var img in _productImages)
+                            {
+                                <div class="position-relative" style="width:5rem;height:5rem;" @key="img.Id">
+                                    <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
+                                         alt="Фото" />
+                                    <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
+                                            style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                            @onclick="() => DeleteProductImage(img)" title="Удалить">×</button>
+                                    @if (!img.IsPrimary)
+                                    {
+                                        <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
+                                                style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                                @onclick="() => SetPrimaryImage(img)" title="Сделать главной">★</button>
+                                    }
+                                </div>
+                            }
                         </div>
-                    }
+                        <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
+                               style="cursor:pointer;" for="imageFileInput">
+                            <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
+                            <small class="text-secondary">Нажмите для выбора изображения</small>
+                            <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
+                        </label>
+                        <InputFile id="imageFileInput" OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-secondary btn-sm" @onclick="CloseProductModal" disabled="@_saving">Отмена</button>
@@ -265,6 +262,8 @@
     [Parameter] public string SortField { get; set; } = "";
     [Parameter] public bool SortAsc { get; set; } = true;
     [Parameter] public int TotalStockValue { get; set; }
+    [Parameter] public int LowStockThreshold { get; set; } = 5;
+    [Parameter] public string Branch { get; set; } = "";
 
     [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
     [Parameter] public EventCallback<string> OnFilterChanged { get; set; }
@@ -281,6 +280,7 @@
     private string _formName = "", _formDescription = "";
     private int? _formPrice, _formQuantity;
     private List<ProductImageDto> _productImages = new();
+    private List<PendingImage> _pendingImages = new();
 
     private bool IsAllSelected => Products.Any() && Products.All(p => p.IsSelected);
     private bool IsPartialSelected => Products.Any(p => p.IsSelected) && !IsAllSelected;
@@ -305,24 +305,40 @@
         foreach (var p in Products) p.IsSelected = v;
     }
 
-    private void OpenProductModal(ProductDto? product = null)
+    private async Task OpenProductModal(ProductDto? product = null)
     {
+        foreach (var p in _pendingImages) p.Stream.Dispose();
+        _pendingImages.Clear();
         _editingProduct = product;
         _formName = product?.Name ?? ""; _formDescription = product?.Description ?? "";
         _formPrice = product?.Price; _formQuantity = product?.Quantity;
         _productImages = new();
         _showModal = true;
-        if (product != null) _ = LoadProductImages(product.Id);
+        if (product != null)
+        {
+            await LoadProductImages(product.Id);
+        }
     }
 
     private async Task LoadProductImages(int productId)
     {
-        try { _productImages = await Http.GetFromJsonAsync<List<ProductImageDto>>($"api/ProductImage/by-product?productId={productId}") ?? new(); }
-        catch { _productImages = new(); }
+        try
+        {
+            var images = await Http.GetFromJsonAsync<List<ProductImageDto>>(
+                $"api/ProductImage/by-product?productId={productId}");
+            _productImages = images ?? new();
+        }
+        catch
+        {
+            _productImages = new();
+        }
+        StateHasChanged();
     }
 
     private async Task CloseProductModal()
     {
+        foreach (var p in _pendingImages) p.Stream.Dispose();
+        _pendingImages.Clear();
         _showModal = false; _saving = false;
         await OnPageChanged.InvokeAsync(Page);
         await OnMetricsChanged.InvokeAsync();
@@ -335,13 +351,18 @@
         {
             if (_formPrice is null || _formPrice < 1) { await OnNotification.InvokeAsync("Цена должна быть не менее 1 "); return; }
             if (_formQuantity is null || _formQuantity < 0) { await OnNotification.InvokeAsync("Количество не может быть отрицательным"); return; }
-            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice.Value, Quantity = _formQuantity.Value };
+            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice.Value, Quantity = _formQuantity.Value, Branch };
             if (_editingProduct == null)
             {
                 var r = await Http.PostAsJsonAsync("api/Product/create-product", body);
                 if (r.IsSuccessStatusCode)
                 {
                     var created = await r.Content.ReadFromJsonAsync<ProductDto>();
+                    if (created != null && _pendingImages.Any())
+                    {
+                        _editingProduct = created;
+                        await UploadPendingImages();
+                    }
                     await OnLogAction.InvokeAsync(("Создание", $"Товар «{_formName}»"));
                     await OnNotification.InvokeAsync("Товар создан");
                     await CloseProductModal();
@@ -459,38 +480,78 @@
 
     private async Task OnImageUpload(InputFileChangeEventArgs e)
     {
-        if (_editingProduct == null) return;
         var file = e.File;
         if (file == null) return;
 
-        using var content = new MultipartFormDataContent();
-        var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-        var fileContent = new StreamContent(stream);
-        content.Add(fileContent, "file", file.Name);
-        content.Add(new StringContent(_editingProduct.Id.ToString()), "productId");
-        content.Add(new StringContent((_productImages.Count == 0).ToString()), "isPrimary");
-
-        var r = await Http.PostAsync("api/ProductImage/upload", content);
-        if (r.IsSuccessStatusCode)
+        try
         {
-            var result = await r.Content.ReadFromJsonAsync<UploadResult>();
-            if (result != null)
+            if (_editingProduct == null)
             {
-                _productImages.Add(new ProductImageDto
-                {
-                    Id = result.Id, Url = result.Url, FileName = result.FileName,
-                    IsPrimary = result.IsPrimary, SortOrder = result.SortOrder
-                });
-                if (result.IsPrimary) _editingProduct.ImageUrl = result.Url;
+                using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                ms.Position = 0;
+                var dataUrl = await ToDataUrlAsync(ms, file.ContentType);
+                ms.Position = 0;
+
+                var isFirst = _pendingImages.Count == 0;
+                _pendingImages.Add(new PendingImage { Name = file.Name, ContentType = file.ContentType, Stream = ms, IsPrimary = isFirst, DataUrl = dataUrl });
+                RebuildPendingImagesList();
+                await OnNotification.InvokeAsync("Изображение будет загружено после сохранения товара");
+                StateHasChanged();
+                return;
             }
-            await OnNotification.InvokeAsync("Изображение загружено");
-            StateHasChanged();
+
+            using var content = new MultipartFormDataContent();
+            var fileStream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            var fileContent = new StreamContent(fileStream);
+            content.Add(fileContent, "file", file.Name);
+            content.Add(new StringContent(_editingProduct.Id.ToString()), "productId");
+            content.Add(new StringContent((_productImages.Count == 0).ToString().ToLowerInvariant()), "isPrimary");
+
+            var r = await Http.PostAsync("api/ProductImage/upload", content);
+            if (r.IsSuccessStatusCode)
+            {
+                var result = await r.Content.ReadFromJsonAsync<UploadResult>();
+                if (result != null)
+                {
+                    _productImages.Add(new ProductImageDto
+                    {
+                        Id = result.Id, Url = result.Url, FileName = result.FileName,
+                        IsPrimary = result.IsPrimary, SortOrder = result.SortOrder
+                    });
+                    if (result.IsPrimary) _editingProduct.ImageUrl = result.Url;
+                }
+                await OnNotification.InvokeAsync("Изображение загружено");
+                StateHasChanged();
+            }
+            else await OnNotification.InvokeAsync($"Ошибка загрузки: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
         }
-        else await OnNotification.InvokeAsync($"Ошибка загрузки: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+        catch (Exception ex)
+        {
+            var msg = ex.Message.Contains("exceeds the maximum allowed size") || ex.Message.Contains("length")
+                ? "Файл слишком большой. Максимальный размер — 5 МБ"
+                : $"Ошибка чтения файла: {ex.Message}";
+            await OnNotification.InvokeAsync(msg);
+        }
     }
 
     private async Task SetPrimaryImage(ProductImageDto img)
     {
+        if (img.Id < 0)
+        {
+            var idx = -img.Id - 1;
+            if (idx >= 0 && idx < _pendingImages.Count)
+            {
+                foreach (var p in _pendingImages) p.IsPrimary = false;
+                _pendingImages[idx].IsPrimary = true;
+                RebuildPendingImagesList();
+            }
+            await OnNotification.InvokeAsync("Главное изображение изменено");
+            StateHasChanged();
+            return;
+        }
+
         var r = await Http.PostAsJsonAsync($"api/ProductImage/set-primary?imageId={img.Id}", new { });
         if (r.IsSuccessStatusCode && _editingProduct != null)
         {
@@ -503,6 +564,23 @@
 
     private async Task DeleteProductImage(ProductImageDto img)
     {
+        if (img.Id < 0)
+        {
+            var idx = -img.Id - 1;
+            if (idx >= 0 && idx < _pendingImages.Count)
+            {
+                var wasPrimary = _pendingImages[idx].IsPrimary;
+                _pendingImages[idx].Stream.Dispose();
+                _pendingImages.RemoveAt(idx);
+                if (wasPrimary && _pendingImages.Count > 0)
+                    _pendingImages[0].IsPrimary = true;
+                RebuildPendingImagesList();
+                await OnNotification.InvokeAsync("Изображение удалено");
+                StateHasChanged();
+            }
+            return;
+        }
+
         var r = await Http.DeleteAsync($"api/ProductImage?id={img.Id}");
         if (r.IsSuccessStatusCode && _editingProduct != null)
         {
@@ -523,6 +601,55 @@
     }
 
     private class UploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
+
+    private class PendingImage { public string Name { get; set; } = ""; public string ContentType { get; set; } = ""; public MemoryStream Stream { get; set; } = new(); public bool IsPrimary { get; set; } public string DataUrl { get; set; } = ""; }
+
+    private void RebuildPendingImagesList()
+    {
+        _productImages.Clear();
+        for (var i = 0; i < _pendingImages.Count; i++)
+        {
+            var p = _pendingImages[i];
+            _productImages.Add(new ProductImageDto
+            {
+                Id = -(i + 1),
+                Url = p.DataUrl,
+                FileName = p.Name,
+                IsPrimary = p.IsPrimary,
+                SortOrder = i
+            });
+        }
+    }
+
+    private static async Task<string> ToDataUrlAsync(MemoryStream ms, string contentType)
+    {
+        var bytes = ms.ToArray();
+        var base64 = Convert.ToBase64String(bytes);
+        return $"data:{contentType};base64,{base64}";
+    }
+
+    private async Task UploadPendingImages()
+    {
+        if (_editingProduct == null) return;
+        for (var i = 0; i < _pendingImages.Count; i++)
+        {
+            var pending = _pendingImages[i];
+            pending.Stream.Position = 0;
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(pending.Stream);
+            content.Add(fileContent, "file", pending.Name);
+            content.Add(new StringContent(_editingProduct.Id.ToString()), "productId");
+            content.Add(new StringContent(pending.IsPrimary.ToString().ToLowerInvariant()), "isPrimary");
+            var r = await Http.PostAsync("api/ProductImage/upload", content);
+            if (r.IsSuccessStatusCode)
+            {
+                var result = await r.Content.ReadFromJsonAsync<UploadResult>();
+                if (result != null && result.IsPrimary)
+                    _editingProduct.ImageUrl = result.Url;
+            }
+        }
+        _pendingImages.Clear();
+    }
 
     private static string StatusBadge(StatusProduct s) => s switch
     {

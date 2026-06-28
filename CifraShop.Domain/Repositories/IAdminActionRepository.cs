@@ -6,5 +6,6 @@ namespace CifraShop.Domain.Repositories
     {
         Task<List<AdminAction>> GetLastActions(int count, string? branch = null);
         Task AddAction(AdminAction action);
+        Task TrimOldActions(int keepCount);
     }
 }

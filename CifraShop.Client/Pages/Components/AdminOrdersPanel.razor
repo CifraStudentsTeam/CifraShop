@@ -1,4 +1,4 @@
-@using CifraShop.Client.Models
+﻿@using CifraShop.Client.Models
 @inject HttpClient Http
 
 <div class="col-lg-6">
@@ -42,6 +42,9 @@
                             <option value="@s.Key">@s.Value</option>
                         }
                     </select>
+                    <button class="btn btn-outline-danger btn-sm" @onclick="DeleteSelected">
+                        <i class="bi bi-trash me-1"></i>Удалить
+                    </button>
                 </div>
             }
 
@@ -93,6 +96,7 @@
                                     Сумма <i class="bi @SortIcon("sum") small"></i>
                                 </th>
                                 <th>Статус</th>
+                                <th style="width:3rem;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -119,6 +123,12 @@
                                                 <option value="@s.Key">@s.Value</option>
                                             }
                                         </select>
+                                    </td>
+                                    <td @onclick:stopPropagation="true" class="text-nowrap">
+                                        <button class="btn btn-sm btn-outline-danger" title="Удалить"
+                                                @onclick="() => DeleteOrder(o)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                                 @if (isExpanded)
@@ -234,7 +244,7 @@
                                     <option value="0">Выберите товар</option>
                                     @foreach (var p in AllProducts.Where(p => p.Status == StatusProduct.InStock))
                                     {
-                                        <option value="@p.Id">@p.Name (@p.Price ЦФК)</option>
+                                        <option value="@p.Id">@p.Name (@p.Price ЦФК, склад: @p.Quantity)</option>
                                     }
                                 </select>
                                 <input type="number" class="form-control form-control-sm" style="width:4rem;" @bind="item.Quantity" min="1" />
@@ -339,6 +349,7 @@
     [Parameter] public bool SortAsc { get; set; } = true;
     [Parameter] public int? ExpandedOrderId { get; set; }
     [Parameter] public int TotalRevenue { get; set; }
+    [Parameter] public string Branch { get; set; } = "";
     [Parameter] public List<ProductDto> AllProducts { get; set; } = new();
     [Parameter] public List<UserDto> AllUsersCache { get; set; } = new();
 
@@ -424,7 +435,7 @@
             var items = _newOrderItems.Where(i => i.ProductId > 0 && i.Quantity > 0)
                 .Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList();
             if (!items.Any()) { await OnNotification.InvokeAsync("Добавьте хотя бы один товар с количеством > 0"); return; }
-            var body = new { CustomerEmail = _newOrderEmail, Items = items };
+            var body = new { CustomerEmail = _newOrderEmail, Items = items, Branch };
             var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
             if (r.IsSuccessStatusCode)
             {
@@ -473,6 +484,37 @@
         StateHasChanged();
     }
 
+    private void DeleteOrder(OrderDto order)
+    {
+        _ = OnConfirm.InvokeAsync(($"Удалить заказ #{order.Id}?", async () =>
+        {
+            var r = await Http.DeleteAsync($"api/Order/delete-order?id={order.Id}");
+            if (r.IsSuccessStatusCode)
+            {
+                Orders.Remove(order);
+                await OnLogAction.InvokeAsync(("Удаление", $"Заказ #{order.Id}"));
+                await OnNotification.InvokeAsync("Заказ удалён");
+                await OnPageChanged.InvokeAsync(Page);
+            }
+        }));
+    }
+
+    private void DeleteSelected()
+    {
+        var sel = Orders.Where(o => o.IsSelected).ToList();
+        _ = OnConfirm.InvokeAsync(($"Удалить {sel.Count} заказ(ов)?", async () =>
+        {
+            var ids = sel.Select(o => o.Id).ToList();
+            var r = await Http.PostAsJsonAsync("api/Order/batch-delete", ids);
+            if (r.IsSuccessStatusCode)
+            {
+                await OnLogAction.InvokeAsync(("Удаление", $"{sel.Count} заказ(ов)"));
+                await OnNotification.InvokeAsync($"Удалено: {sel.Count} заказ(ов)");
+                await OnPageChanged.InvokeAsync(Page);
+            }
+        }));
+    }
+
     private async Task OnOrderImageUpload(InputFileChangeEventArgs e)
     {
         var file = e.File;
@@ -482,7 +524,7 @@
         var fileContent = new StreamContent(stream);
         content.Add(fileContent, "file", file.Name);
         content.Add(new StringContent(_orderImagesOrderId.ToString()), "orderId");
-        content.Add(new StringContent((_orderImages.Count == 0).ToString()), "isPrimary");
+        content.Add(new StringContent((_orderImages.Count == 0).ToString().ToLowerInvariant()), "isPrimary");
         var r = await Http.PostAsync("api/OrderImage/upload", content);
         if (r.IsSuccessStatusCode)
         {

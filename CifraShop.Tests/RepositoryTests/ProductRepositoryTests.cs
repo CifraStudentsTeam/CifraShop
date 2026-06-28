@@ -24,8 +24,8 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Кружка с логотипом", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Брелок с логотипом", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РљСЂСѓР¶РєР° СЃ Р»РѕРіРѕС‚РёРїРѕРј", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "Р‘СЂРµР»РѕРє СЃ Р»РѕРіРѕС‚РёРїРѕРј", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
             );
             await context.SaveChangesAsync();
 
@@ -50,7 +50,7 @@ namespace CifraShop.Tests.RepositoryTests
             var repository = new ProductRepositoryEfCore(context);
             for (int i = 1; i <= 6; i++)
             {
-                await context.Products.AddAsync(new Product { Id = i, Name = $"Товар {i}", Description = "Описание", Price = i * 10, Quantity = i, Status = StatusProduct.InStock });
+                await context.Products.AddAsync(new Product { Id = i, Name = $"РўРѕРІР°СЂ {i}", Description = "РћРїРёСЃР°РЅРёРµ", Price = i * 10, Quantity = i, Status = StatusProduct.InStock });
             }
             await context.SaveChangesAsync();
 
@@ -65,14 +65,14 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Белая", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Металлический", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "Р‘РµР»Р°СЏ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РњРµС‚Р°Р»Р»РёС‡РµСЃРєРёР№", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
             );
             await context.SaveChangesAsync();
 
-            var (items, totalCount) = await repository.GetAllPaged(0, 10, search: "Кружка");
+            var (items, totalCount) = await repository.GetAllPaged(0, 10, search: "РљСЂСѓР¶РєР°");
             Assert.Single(items);
-            Assert.Equal("Кружка", items[0].Name);
+            Assert.Equal("РљСЂСѓР¶РєР°", items[0].Name);
         }
 
         [Fact]
@@ -81,12 +81,12 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Белая керамическая", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Металлический", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "Р‘РµР»Р°СЏ РєРµСЂР°РјРёС‡РµСЃРєР°СЏ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РњРµС‚Р°Р»Р»РёС‡РµСЃРєРёР№", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
             );
             await context.SaveChangesAsync();
 
-            var (items, _) = await repository.GetAllPaged(0, 10, search: "керамическая");
+            var (items, _) = await repository.GetAllPaged(0, 10, search: "РєРµСЂР°РјРёС‡РµСЃРєР°СЏ");
             Assert.Single(items);
         }
 
@@ -96,8 +96,8 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Описание", Price = 50, Quantity = 0, Status = StatusProduct.OutOfStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РћРїРёСЃР°РЅРёРµ", Price = 50, Quantity = 0, Status = StatusProduct.OutOfStock }
             );
             await context.SaveChangesAsync();
 
@@ -111,13 +111,13 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
 
             var result = await repository.GetProductById(1);
             Assert.NotNull(result);
-            Assert.Equal("Кружка", result.Name);
+            Assert.Equal("РљСЂСѓР¶РєР°", result.Name);
         }
 
         [Fact]
@@ -136,15 +136,15 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Белая", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Кружка", Description = "Чёрная", Price = 120, Quantity = 3, Status = StatusProduct.InStock },
-                new Product { Id = 3, Name = "Брелок", Description = "Металл", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "Р‘РµР»Р°СЏ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "РљСЂСѓР¶РєР°", Description = "Р§С‘СЂРЅР°СЏ", Price = 120, Quantity = 3, Status = StatusProduct.InStock },
+                new Product { Id = 3, Name = "Р‘СЂРµР»РѕРє", Description = "РњРµС‚Р°Р»Р»", Price = 50, Quantity = 10, Status = StatusProduct.InStock }
             );
             await context.SaveChangesAsync();
 
-            var result = await repository.GetProductsByName("Кружка");
+            var result = await repository.GetProductsByName("РљСЂСѓР¶РєР°");
             Assert.Equal(2, result.Count);
-            Assert.All(result, p => Assert.Equal("Кружка", p.Name));
+            Assert.All(result, p => Assert.Equal("РљСЂСѓР¶РєР°", p.Name));
         }
 
         [Fact]
@@ -153,9 +153,9 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Описание", Price = 100, Quantity = 10, Status = StatusProduct.InStock },
-                new Product { Id = 3, Name = "Футболка", Description = "Описание", Price = 200, Quantity = 3, Status = StatusProduct.InStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 10, Status = StatusProduct.InStock },
+                new Product { Id = 3, Name = "Р¤СѓС‚Р±РѕР»РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 200, Quantity = 3, Status = StatusProduct.InStock }
             );
             await context.SaveChangesAsync();
 
@@ -169,9 +169,9 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Описание", Price = 50, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 3, Name = "Футболка", Description = "Описание", Price = 200, Quantity = 10, Status = StatusProduct.InStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РћРїРёСЃР°РЅРёРµ", Price = 50, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 3, Name = "Р¤СѓС‚Р±РѕР»РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 200, Quantity = 10, Status = StatusProduct.InStock }
             );
             await context.SaveChangesAsync();
 
@@ -185,8 +185,8 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Описание", Price = 50, Quantity = 0, Status = StatusProduct.OutOfStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РћРїРёСЃР°РЅРёРµ", Price = 50, Quantity = 0, Status = StatusProduct.OutOfStock }
             );
             await context.SaveChangesAsync();
 
@@ -200,12 +200,12 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Новый товар", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РќРѕРІС‹Р№ С‚РѕРІР°СЂ", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await repository.AddProduct(product);
 
             var result = await context.Products.FindAsync(1);
             Assert.NotNull(result);
-            Assert.Equal("Новый товар", result.Name);
+            Assert.Equal("РќРѕРІС‹Р№ С‚РѕРІР°СЂ", result.Name);
         }
 
         [Fact]
@@ -213,16 +213,16 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
 
-            product.Name = "Обновлённая кружка";
+            product.Name = "РћР±РЅРѕРІР»С‘РЅРЅР°СЏ РєСЂСѓР¶РєР°";
             product.Price = 150;
             await repository.UpdateProduct(product);
 
             var updated = await context.Products.FindAsync(1);
-            Assert.Equal("Обновлённая кружка", updated.Name);
+            Assert.Equal("РћР±РЅРѕРІР»С‘РЅРЅР°СЏ РєСЂСѓР¶РєР°", updated.Name);
             Assert.Equal(150, updated.Price);
         }
 
@@ -231,7 +231,7 @@ namespace CifraShop.Tests.RepositoryTests
         {
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
 
@@ -240,15 +240,15 @@ namespace CifraShop.Tests.RepositoryTests
             Assert.Null(deleted);
         }
 
-        [Fact(Skip = "ExecuteDeleteAsync не поддерживается InMemory-провайдером. Тест требует реальную БД (SQL Server).")]
+        [Fact(Skip = "ExecuteDeleteAsync РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ InMemory-РїСЂРѕРІР°Р№РґРµСЂРѕРј. РўРµСЃС‚ С‚СЂРµР±СѓРµС‚ СЂРµР°Р»СЊРЅСѓСЋ Р‘Р” (SQL Server).")]
         public async Task DeleteRange_DeletesMultipleProducts()
         {
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Описание", Price = 50, Quantity = 10, Status = StatusProduct.InStock },
-                new Product { Id = 3, Name = "Футболка", Description = "Описание", Price = 200, Quantity = 3, Status = StatusProduct.InStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РћРїРёСЃР°РЅРёРµ", Price = 50, Quantity = 10, Status = StatusProduct.InStock },
+                new Product { Id = 3, Name = "Р¤СѓС‚Р±РѕР»РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 200, Quantity = 3, Status = StatusProduct.InStock }
             );
             await context.SaveChangesAsync();
 
@@ -258,15 +258,15 @@ namespace CifraShop.Tests.RepositoryTests
             Assert.Equal(2, remaining[0].Id);
         }
 
-        [Fact(Skip = "ExecuteUpdateAsync не поддерживается InMemory-провайдером. Тест требует реальную БД (SQL Server).")]
+        [Fact(Skip = "ExecuteUpdateAsync РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ InMemory-РїСЂРѕРІР°Р№РґРµСЂРѕРј. РўРµСЃС‚ С‚СЂРµР±СѓРµС‚ СЂРµР°Р»СЊРЅСѓСЋ Р‘Р” (SQL Server).")]
         public async Task UpdateStatusRange_UpdatesStatusForMultipleProducts()
         {
             using var context = CreateContext();
             var repository = new ProductRepositoryEfCore(context);
             await context.Products.AddRangeAsync(
-                new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
-                new Product { Id = 2, Name = "Брелок", Description = "Описание", Price = 50, Quantity = 10, Status = StatusProduct.InStock },
-                new Product { Id = 3, Name = "Футболка", Description = "Описание", Price = 200, Quantity = 0, Status = StatusProduct.OutOfStock }
+                new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock },
+                new Product { Id = 2, Name = "Р‘СЂРµР»РѕРє", Description = "РћРїРёСЃР°РЅРёРµ", Price = 50, Quantity = 10, Status = StatusProduct.InStock },
+                new Product { Id = 3, Name = "Р¤СѓС‚Р±РѕР»РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 200, Quantity = 0, Status = StatusProduct.OutOfStock }
             );
             await context.SaveChangesAsync();
 

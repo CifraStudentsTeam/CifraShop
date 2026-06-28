@@ -10,6 +10,7 @@ public class ProductDto
     public int Quantity { get; set; }
     public StatusProduct Status { get; set; }
     public string? ImageUrl { get; set; }
+    public string Branch { get; set; } = "";
     public bool IsSelected { get; set; }
 }
 
@@ -35,6 +36,7 @@ public class OrderDto
     public string CustomerEmail { get; set; } = "";
     public int CustomerId { get; set; }
     public string? ImageUrl { get; set; }
+    public string Branch { get; set; } = "";
     public List<OrderItemDto> Items { get; set; } = new();
 }
 

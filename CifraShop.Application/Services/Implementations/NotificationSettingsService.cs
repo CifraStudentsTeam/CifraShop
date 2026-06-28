@@ -20,7 +20,7 @@ namespace CifraShop.Application.Services.Implementations
         public Task<NotificationSettings?> GetByBranch(string branch)
             => _repository.GetByBranch(branch);
 
-        public async Task<NotificationSettings> Create(string email, string telegramBotToken, string telegramChatId, string branch, bool notifyOnNewOrder, bool notifyOnStatusChange, bool notifyOnLowStock, int lowStockThreshold)
+        public async Task<NotificationSettings> Create(string email, string branch, bool notifyOnNewOrder, bool notifyOnStatusChange, bool notifyOnLowStock, int lowStockThreshold)
         {
             if (string.IsNullOrWhiteSpace(branch))
                 throw new ArgumentException("Филиал обязателен");
@@ -34,8 +34,6 @@ namespace CifraShop.Application.Services.Implementations
             var settings = new NotificationSettings
             {
                 Email = email ?? string.Empty,
-                TelegramBotToken = telegramBotToken ?? string.Empty,
-                TelegramChatId = telegramChatId ?? string.Empty,
                 Branch = branch,
                 NotifyOnNewOrder = notifyOnNewOrder,
                 NotifyOnStatusChange = notifyOnStatusChange,

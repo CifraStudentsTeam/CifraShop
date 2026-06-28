@@ -15,7 +15,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<Product>> GetAll()
             => await _context.Products.ToListAsync();
 
-        public async Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusProduct? status = null)
+        public async Task<(List<Product> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search = null, StatusProduct? status = null, string? branch = null)
         {
             var query = _context.Products.AsQueryable();
 
@@ -24,6 +24,9 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
 
             if (status.HasValue)
                 query = query.Where(p => p.Status == status.Value);
+
+            if (!string.IsNullOrWhiteSpace(branch))
+                query = query.Where(p => p.Branch == branch);
 
             var total = await query.CountAsync();
             var items = await query.Skip(page * pageSize).Take(pageSize).ToListAsync();

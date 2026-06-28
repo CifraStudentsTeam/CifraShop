@@ -12,7 +12,7 @@ namespace CifraShop.Tests.ControllerTests
         private readonly Mock<IAdminActionService> _serviceMock;
         private readonly AdminActionController _controller;
 
-        // Инициализирует мок IAdminActionService и создаёт экземпляр AdminActionController перед каждым тестом.
+        // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚ РјРѕРє IAdminActionService Рё СЃРѕР·РґР°С‘С‚ СЌРєР·РµРјРїР»СЏСЂ AdminActionController РїРµСЂРµРґ РєР°Р¶РґС‹Рј С‚РµСЃС‚РѕРј.
         public AdminActionControllerTests()
         {
             _serviceMock = new Mock<IAdminActionService>();
@@ -20,13 +20,13 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
-        // Проверка, что метод GetLast возвращает стаус 200 OK и список из двух действий администратора.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РјРµС‚РѕРґ GetLast РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°СѓСЃ 200 OK Рё СЃРїРёСЃРѕРє РёР· РґРІСѓС… РґРµР№СЃС‚РІРёР№ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°.
         public async Task CheckingGetLastReturnsOKWith2Actions()
         {
             var actions = new List<AdminAction>
             {
-                new() { Id = 1, ActionType = "Create", Details = "Создан товар", Branch = "Филиал 1", CreatedAt = DateTime.UtcNow },
-                new() { Id = 2, ActionType = "Update", Details = "Обновлён товар", Branch = "Филиал 1", CreatedAt = DateTime.UtcNow }
+                new() { Id = 1, ActionType = "Create", Details = "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = DateTime.UtcNow },
+                new() { Id = 2, ActionType = "Update", Details = "РћР±РЅРѕРІР»С‘РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = DateTime.UtcNow }
             };
             _serviceMock.Setup(s => s.GetLastActions(50, null)).ReturnsAsync(actions);
 
@@ -38,25 +38,25 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
-        // Проверка, что GetLast с параметром филиала возвращает только действия этого филиала.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ GetLast СЃ РїР°СЂР°РјРµС‚СЂРѕРј С„РёР»РёР°Р»Р° РІРѕР·РІСЂР°С‰Р°РµС‚ С‚РѕР»СЊРєРѕ РґРµР№СЃС‚РІРёСЏ СЌС‚РѕРіРѕ С„РёР»РёР°Р»Р°.
         public async Task CheckingFilteredByBranchReturnsSingleAction()
         {
             var actions = new List<AdminAction>
             {
-                new() { Id = 1, ActionType = "Create", Details = "Details", Branch = "Филиал 1", CreatedAt = DateTime.UtcNow }
+                new() { Id = 1, ActionType = "Create", Details = "Details", Branch = "Р¤РёР»РёР°Р» 1", CreatedAt = DateTime.UtcNow }
             };
-            _serviceMock.Setup(s => s.GetLastActions(10, "Филиал 1")).ReturnsAsync(actions);
+            _serviceMock.Setup(s => s.GetLastActions(10, "Р¤РёР»РёР°Р» 1")).ReturnsAsync(actions);
 
-            var result = await _controller.GetLast(10, "Филиал 1");
+            var result = await _controller.GetLast(10, "Р¤РёР»РёР°Р» 1");
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var list = Assert.IsAssignableFrom<List<Contracts.Responses.AdminAction.AdminActionResponse>>(okResult.Value);
             Assert.Single(list);
-            Assert.Equal("Филиал 1", list[0].Branch);
+            Assert.Equal("Р¤РёР»РёР°Р» 1", list[0].Branch);
         }
 
         [Fact]
-        // Проверка, что при отсутствии действий возвращается статус 200 OK с пустым списком.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё РґРµР№СЃС‚РІРёР№ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 200 OK СЃ РїСѓСЃС‚С‹Рј СЃРїРёСЃРєРѕРј.
         public async Task CheckingEmptyListReturnsOKWithEmptyList()
         {
             _serviceMock.Setup(s => s.GetLastActions(50, null)).ReturnsAsync(new List<AdminAction>());
@@ -69,19 +69,19 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
-        // Проверка, что при валидных данных создание действия возвращает статус 200 OK и вызывает AddAction с корректными параметрами.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РІР°Р»РёРґРЅС‹С… РґР°РЅРЅС‹С… СЃРѕР·РґР°РЅРёРµ РґРµР№СЃС‚РІРёСЏ РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK Рё РІС‹Р·С‹РІР°РµС‚ AddAction СЃ РєРѕСЂСЂРµРєС‚РЅС‹РјРё РїР°СЂР°РјРµС‚СЂР°РјРё.
         public async Task CheckingValidCreationReturnsOKAndCallsAddActionOnce()
         {
-            _serviceMock.Setup(s => s.AddAction("Create", "Создан товар", "Филиал 1"))
+            _serviceMock.Setup(s => s.AddAction("Create", "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", "Р¤РёР»РёР°Р» 1"))
                 .Returns(Task.CompletedTask);
 
             var result = await _controller.Create(new CreateAdminActionRequest
             {
-                ActionType = "Create", Details = "Создан товар", Branch = "Филиал 1"
+                ActionType = "Create", Details = "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", Branch = "Р¤РёР»РёР°Р» 1"
             });
 
             Assert.IsType<OkResult>(result);
-            _serviceMock.Verify(s => s.AddAction("Create", "Создан товар", "Филиал 1"), Times.Once);
+            _serviceMock.Verify(s => s.AddAction("Create", "РЎРѕР·РґР°РЅ С‚РѕРІР°СЂ", "Р¤РёР»РёР°Р» 1"), Times.Once);
         }
     }
 }

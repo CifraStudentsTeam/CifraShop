@@ -6,5 +6,6 @@ namespace CifraShop.Application.Services.Interfaces
     {
         Task<List<AdminAction>> GetLastActions(int count, string? branch = null);
         Task AddAction(string type, string details, string branch);
+        Task TrimOldActions(int keepCount);
     }
 }

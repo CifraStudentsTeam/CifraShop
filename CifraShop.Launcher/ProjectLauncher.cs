@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 using CifraShop.Launcher.Services;
 
@@ -47,6 +47,16 @@ public class ProjectLauncher : IDisposable
             UI.ConsoleUI.Ok("SQL Server уже доступен (--quick)");
 
         await RunPhaseAsync(4, "Применение миграций", () => _migrationRunner.ApplyAsync());
+
+        if (_dependencyChecker.DockerAvailable)
+        {
+            await RunPhaseAsync(5, "Запуск MailHog", async () =>
+            {
+                await CommandRunner.RunDockerComposeAsync(_config.RootDir, "up -d mailhog");
+                if (await CommandRunner.WaitForPortAsync(1025)) UI.ConsoleUI.Ok("MailHog запущен");
+                else UI.ConsoleUI.Warn("MailHog не запустился");
+            });
+        }
 
         Process? apiProcess = null;
         bool apiInDocker = false;
@@ -141,6 +151,8 @@ public class ProjectLauncher : IDisposable
                     case "7": await SafeCallAsync(RebuildDockerApiAsync); break;
                     case "8": await SafeCallAsync(AskAndCleanupDockerAsync); break;
                     case "9": await SafeCallAsync(ShowLogsMenuAsync); break;
+                    case "10": SafeCall(() => ProcessLauncher.OpenBrowser("http://localhost:8025")); break;
+                    
                     case "0": await SafeStopAllAsync(); Console.WriteLine("\n  До свидания!\n"); return;
                     default: if (!string.IsNullOrEmpty(choice)) UI.ConsoleUI.Fail("Используйте цифры 0-9."); break;
                 }

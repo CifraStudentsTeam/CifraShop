@@ -1,15 +1,14 @@
-<<<<<<< HEAD
 using System.Text;
-=======
 using CifraShop.API;
 using CifraShop.API.Hubs;
->>>>>>> 335e25be17000b709c97c1610d615b28dfc15e82
 using CifraShop.API.Middleware;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Domain.Auth;
 using CifraShop.Infrastructure.Auth;
 using CifraShop.Infrastructure.Data;
+using CifraShop.Application.Models;
+using CifraShop.Infrastructure.Services;
 using CifraShop.Domain.Repositories;
 using CifraShop.Infrastructure.Data.Repositories.Implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,7 +17,11 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(o =>
+{
+    o.JsonSerializerOptions.PropertyNamingPolicy = null;
+    o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+});
 
 builder.Services.AddSignalR();
 
@@ -41,6 +44,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminActionService, AdminActionService>();
 builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepositoryEfCore>();
 builder.Services.AddScoped<INotificationSettingsService, NotificationSettingsService>();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddSingleton<IEmailService, EmailService>();
+builder.Services.AddScoped<NotificationDispatcher>();
 builder.Services.AddScoped<IOrderImageRepository, OrderImageRepositoryEfCore>();
 builder.Services.AddScoped<IOrderImageService, OrderImageService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -101,8 +107,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapGet("/", () => Results.Ok("OK"));
+
 app.MapHub<AdminHub>("/hubs/admin");
 
 app.MapHub<ShopHub>("/hubs/shop");
 
 app.Run();
+

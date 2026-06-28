@@ -20,8 +20,24 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8086
       - ConnectionStrings__DefaultConnection=Server=db;Database=CifraShopDb;User Id=sa;Password=Your_strong_Password123;TrustServerCertificate=True;
+      - SmtpSettings__Host=mailhog
+      - SmtpSettings__Port=1025
+      - SmtpSettings__Username=
+      - SmtpSettings__Password=
+      - SmtpSettings__FromEmail=noreply@cifrashop.com
+      - SmtpSettings__FromName=CifraShop
+    volumes:
+      - api-images:/app/wwwroot/images
     depends_on:
       - db
+      - mailhog
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   sqlserver-data:
+  api-images:

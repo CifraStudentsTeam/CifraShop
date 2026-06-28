@@ -20,6 +20,11 @@ namespace CifraShop.Infrastructure.Data.Configurations
             builder.Property(o => o.Sum)
                    .HasColumnName("Sum")
                    .IsRequired();
+            builder.Property(o => o.Branch)
+                   .HasColumnName("Branch")
+                   .HasMaxLength(100)
+                   .IsRequired()
+                   .HasDefaultValue(string.Empty);
             builder.HasOne(o => o.Customer)
                    .WithMany(u => u.Orders)
                    .HasForeignKey(o => o.CustomerId)

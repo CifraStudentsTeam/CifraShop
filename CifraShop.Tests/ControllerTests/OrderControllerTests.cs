@@ -15,19 +15,19 @@ namespace CifraShop.Tests.ControllerTests
         private readonly Mock<IOrderImageRepository> _imageRepositoryMock;
         private readonly OrderController _controller;
 
-        // Инициализирует моки IOrderService и IOrderImageRepository и создаёт экземпляр OrderController перед каждым тестом.
+        // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚ РјРѕРєРё IOrderService Рё IOrderImageRepository Рё СЃРѕР·РґР°С‘С‚ СЌРєР·РµРјРїР»СЏСЂ OrderController РїРµСЂРµРґ РєР°Р¶РґС‹Рј С‚РµСЃС‚РѕРј.
         public OrderControllerTests()
         {
             _orderServiceMock = new Mock<IOrderService>();
             _imageRepositoryMock = new Mock<IOrderImageRepository>();
-            _controller = new OrderController(_orderServiceMock.Object, _imageRepositoryMock.Object);
+            _controller = new OrderController(_orderServiceMock.Object, _imageRepositoryMock.Object, null!, null!);
         }
 
         private static Order CreateOrder(int id = 1, StatusOrder status = StatusOrder.Pending, int sum = 100)
             => new() { Id = id, Status = status, Sum = sum, DateOfPurchase = DateTime.UtcNow, CustomerId = 1, Customer = new User { Id = 1, Email = "test@email.com" } };
 
         [Fact]
-        //Проверка, что GetAll возвращает статус 200 OK со списком из двух заказов.
+        //РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ GetAll РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK СЃРѕ СЃРїРёСЃРєРѕРј РёР· РґРІСѓС… Р·Р°РєР°Р·РѕРІ.
         public async Task CheckingGetAllReturnsOkWith2Orders()
         {
             _orderServiceMock.Setup(s => s.GetAllOrders())
@@ -41,7 +41,7 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
-        // Проверка, что постраничное получение заказов (страница 0, размер 10) возвращает статус 200 OK с непустым телом
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїРѕСЃС‚СЂР°РЅРёС‡РЅРѕРµ РїРѕР»СѓС‡РµРЅРёРµ Р·Р°РєР°Р·РѕРІ (СЃС‚СЂР°РЅРёС†Р° 0, СЂР°Р·РјРµСЂ 10) РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK СЃ РЅРµРїСѓСЃС‚С‹Рј С‚РµР»РѕРј
         public async Task CheckingPagedOrdersReturnsOk()
         {
             var paged = new Contracts.Responses.Common.PagedResponse<Order>
@@ -58,7 +58,7 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
-        // Проверка, что при нахождении заказа по ID возвращается статус 200 OK с непустым телом
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РЅР°С…РѕР¶РґРµРЅРёРё Р·Р°РєР°Р·Р° РїРѕ ID РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 200 OK СЃ РЅРµРїСѓСЃС‚С‹Рј С‚РµР»РѕРј
         public async Task CheckingFoundOrderReturnsOKWithNonEmptyBody()
         {
             _orderServiceMock.Setup(s => s.GetOrderById(1)).ReturnsAsync(CreateOrder(1));
@@ -70,7 +70,7 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
-        // Проверка, что при отсутствии заказа с ID 99 возвращается статус 404 Not Found
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё Р·Р°РєР°Р·Р° СЃ ID 99 РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ СЃС‚Р°С‚СѓСЃ 404 Not Found
         public async Task CheckingMissingOrderReturnsNotFound()
         {
             _orderServiceMock.Setup(s => s.GetOrderById(99)).ReturnsAsync((Order?)null);
@@ -81,7 +81,7 @@ namespace CifraShop.Tests.ControllerTests
         }
     
         [Fact]
-        //Проверка, что получение заказов по email клиента возвращает статус 200 OK с непустым телом
+        //РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїРѕР»СѓС‡РµРЅРёРµ Р·Р°РєР°Р·РѕРІ РїРѕ email РєР»РёРµРЅС‚Р° РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK СЃ РЅРµРїСѓСЃС‚С‹Рј С‚РµР»РѕРј
         public async Task CheckingOrdersByEmailReturnsOk()
         {
             _orderServiceMock.Setup(s => s.GetOrdersByCustomerEmail("a@b.com"))
@@ -94,7 +94,7 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
-        // Проверка, что получение заказов по статусу Completed возвращает статус 200 OK с непустым телом.
+        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїРѕР»СѓС‡РµРЅРёРµ Р·Р°РєР°Р·РѕРІ РїРѕ СЃС‚Р°С‚СѓСЃСѓ Completed РІРѕР·РІСЂР°С‰Р°РµС‚ СЃС‚Р°С‚СѓСЃ 200 OK СЃ РЅРµРїСѓСЃС‚С‹Рј С‚РµР»РѕРј.
         public async Task CheckingStatusCompletedReturnsOk()
         {
             _orderServiceMock.Setup(s => s.GetOrdersByStatus(StatusOrder.Completed))

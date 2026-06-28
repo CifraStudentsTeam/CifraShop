@@ -39,10 +39,6 @@
                                 {
                                     <span class="badge bg-light text-dark border"><i class="bi bi-envelope me-1"></i>Email</span>
                                 }
-                                @if (!string.IsNullOrEmpty(s.TelegramChatId))
-                                {
-                                    <span class="badge bg-light text-dark border"><i class="bi bi-telegram me-1"></i>Telegram</span>
-                                }
                                 @if (s.NotifyOnNewOrder)
                                 {
                                     <span class="badge bg-primary bg-opacity-10 text-primary">Заказы</span>
@@ -105,14 +101,6 @@
                                     <label class="form-label small">Email для уведомлений</label>
                                     <input type="email" class="form-control form-control-sm" @bind="s.Email" placeholder="admin@example.com" />
                                 </div>
-                                <div class="col-6">
-                                    <label class="form-label small">Telegram Bot Token</label>
-                                    <input type="text" class="form-control form-control-sm" @bind="s.TelegramBotToken" placeholder="123456:ABC..." />
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small">Telegram Chat ID</label>
-                                    <input type="text" class="form-control form-control-sm" @bind="s.TelegramChatId" placeholder="-100123..." />
-                                </div>
                                 <div class="col-12">
                                     <label class="form-label small">Email администраторов филиала</label>
                                     <input type="text" class="form-control form-control-sm" @bind="s.AdminEmails" placeholder="admin1@example.com, admin2@example.com" />
@@ -158,7 +146,7 @@
 
     private bool _showModal;
 
-    private int ConfiguredCount => Settings.Count(s => !string.IsNullOrEmpty(s.Email) || !string.IsNullOrEmpty(s.TelegramChatId));
+    private int ConfiguredCount => Settings.Count(s => !string.IsNullOrEmpty(s.Email));
 
     private void AddNew()
     {
@@ -167,7 +155,7 @@
 
     private async Task SaveSettings(NotificationSettingsDto settings)
     {
-        var body = new { settings.Email, settings.TelegramBotToken, settings.TelegramChatId, settings.Branch, settings.AdminEmails, settings.NotifyOnNewOrder, settings.NotifyOnStatusChange, settings.NotifyOnLowStock, settings.LowStockThreshold };
+        var body = new { settings.Email, settings.Branch, settings.AdminEmails, settings.NotifyOnNewOrder, settings.NotifyOnStatusChange, settings.NotifyOnLowStock, settings.LowStockThreshold };
         try
         {
             if (settings.Id == 0)

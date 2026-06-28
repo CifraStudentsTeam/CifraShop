@@ -49,7 +49,7 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<NotificationSettingsResponse>> Create([FromBody] CreateNotificationSettingsRequest request)
         {
             var settings = await _service.Create(
-                request.Email, request.TelegramBotToken, request.TelegramChatId,
+                request.Email,
                 request.Branch, request.NotifyOnNewOrder, request.NotifyOnStatusChange,
                 request.NotifyOnLowStock, request.LowStockThreshold);
             settings.AdminEmails = request.AdminEmails;
@@ -65,8 +65,6 @@ namespace CifraShop.API.Controllers
             if (settings == null) return NotFound($"Настройка с id {id} не найдена");
 
             settings.Email = request.Email;
-            settings.TelegramBotToken = request.TelegramBotToken;
-            settings.TelegramChatId = request.TelegramChatId;
             settings.Branch = request.Branch;
             settings.AdminEmails = request.AdminEmails;
             settings.NotifyOnNewOrder = request.NotifyOnNewOrder;
@@ -93,8 +91,6 @@ namespace CifraShop.API.Controllers
         {
             Id = s.Id,
             Email = s.Email,
-            TelegramBotToken = s.TelegramBotToken,
-            TelegramChatId = s.TelegramChatId,
             Branch = s.Branch,
             AdminEmails = s.AdminEmails,
             NotifyOnNewOrder = s.NotifyOnNewOrder,

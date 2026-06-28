@@ -11,6 +11,7 @@ namespace CifraShop.Domain.Entities
         public int Quantity { get; set; }
         public StatusProduct Status { get; set; }
         public string? ImageUrl { get; set; }
+        public string Branch { get; set; } = string.Empty;
         public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

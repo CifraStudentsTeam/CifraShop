@@ -21,7 +21,7 @@ namespace CifraShop.Tests.ServiceTests
         [Fact]
         public async Task GetAllProducts_ReturnsProducts()
         {
-            var products = new List<Product> { new() { Id = 1, Name = "Кружка" } };
+            var products = new List<Product> { new() { Id = 1, Name = "РљСЂСѓР¶РєР°" } };
             _repositoryMock.Setup(r => r.GetAll()).ReturnsAsync(products);
 
             var result = await _service.GetAllProducts();
@@ -32,13 +32,13 @@ namespace CifraShop.Tests.ServiceTests
         [Fact]
         public async Task GetProductById_ReturnsProduct()
         {
-            var product = new Product { Id = 1, Name = "Кружка" };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°" };
             _repositoryMock.Setup(r => r.GetProductById(1)).ReturnsAsync(product);
 
             var result = await _service.GetProductById(1);
 
             Assert.NotNull(result);
-            Assert.Equal("Кружка", result.Name);
+            Assert.Equal("РљСЂСѓР¶РєР°", result.Name);
         }
 
         [Fact]
@@ -54,10 +54,10 @@ namespace CifraShop.Tests.ServiceTests
         [Fact]
         public async Task GetProductsByName_ReturnsProducts()
         {
-            var products = new List<Product> { new() { Id = 1, Name = "Кружка" } };
-            _repositoryMock.Setup(r => r.GetProductsByName("Кружка")).ReturnsAsync(products);
+            var products = new List<Product> { new() { Id = 1, Name = "РљСЂСѓР¶РєР°" } };
+            _repositoryMock.Setup(r => r.GetProductsByName("РљСЂСѓР¶РєР°")).ReturnsAsync(products);
 
-            var result = await _service.GetProductsByName("Кружка");
+            var result = await _service.GetProductsByName("РљСЂСѓР¶РєР°");
 
             Assert.Single(result);
         }
@@ -128,10 +128,10 @@ namespace CifraShop.Tests.ServiceTests
             _repositoryMock.Setup(r => r.AddProduct(It.IsAny<Product>()))
                 .Returns(Task.CompletedTask);
 
-            var result = await _service.CreateProduct("Кружка", "Описание", 100, 5);
+            var result = await _service.CreateProduct("РљСЂСѓР¶РєР°", "РћРїРёСЃР°РЅРёРµ", 100, 5);
 
-            Assert.Equal("Кружка", result.Name);
-            Assert.Equal("Описание", result.Description);
+            Assert.Equal("РљСЂСѓР¶РєР°", result.Name);
+            Assert.Equal("РћРїРёСЃР°РЅРёРµ", result.Description);
             Assert.Equal(100, result.Price);
             Assert.Equal(5, result.Quantity);
             Assert.Equal(StatusProduct.InStock, result.Status);
@@ -144,7 +144,7 @@ namespace CifraShop.Tests.ServiceTests
             _repositoryMock.Setup(r => r.AddProduct(It.IsAny<Product>()))
                 .Returns(Task.CompletedTask);
 
-            var result = await _service.CreateProduct("Кружка", "Описание", 100, 5, "http://img.png");
+            var result = await _service.CreateProduct("РљСЂСѓР¶РєР°", "РћРїРёСЃР°РЅРёРµ", 100, 5, "http://img.png");
 
             Assert.Equal("http://img.png", result.ImageUrl);
         }
@@ -155,7 +155,7 @@ namespace CifraShop.Tests.ServiceTests
             _repositoryMock.Setup(r => r.AddProduct(It.IsAny<Product>()))
                 .Returns(Task.CompletedTask);
 
-            var result = await _service.CreateProduct("Кружка", "Описание", 100, 0);
+            var result = await _service.CreateProduct("РљСЂСѓР¶РєР°", "РћРїРёСЃР°РЅРёРµ", 100, 0);
 
             Assert.Equal(StatusProduct.OutOfStock, result.Status);
         }
@@ -164,21 +164,21 @@ namespace CifraShop.Tests.ServiceTests
         public async Task CreateProduct_EmptyName_Throws()
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateProduct("", "Описание", 100, 5));
+                _service.CreateProduct("", "РћРїРёСЃР°РЅРёРµ", 100, 5));
         }
 
         [Fact]
         public async Task CreateProduct_NegativePrice_Throws()
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateProduct("Кружка", "Описание", -1, 5));
+                _service.CreateProduct("РљСЂСѓР¶РєР°", "РћРїРёСЃР°РЅРёРµ", -1, 5));
         }
 
         [Fact]
         public async Task CreateProduct_NegativeQuantity_Throws()
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateProduct("Кружка", "Описание", 100, -1));
+                _service.CreateProduct("РљСЂСѓР¶РєР°", "РћРїРёСЃР°РЅРёРµ", 100, -1));
         }
 
         [Fact]
@@ -187,7 +187,7 @@ namespace CifraShop.Tests.ServiceTests
             _repositoryMock.Setup(r => r.UpdateProduct(It.IsAny<Product>()))
                 .Returns(Task.CompletedTask);
 
-            var product = new Product { Id = 1, Name = "Кружка", Quantity = 5 };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Quantity = 5 };
             await _service.UpdateProduct(product);
 
             _repositoryMock.Verify(r => r.UpdateProduct(product), Times.Once);
@@ -211,7 +211,7 @@ namespace CifraShop.Tests.ServiceTests
         public async Task UpdateProduct_NegativeQuantity_Throws()
         {
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.UpdateProduct(new Product { Id = 1, Name = "Кружка", Quantity = -1 }));
+                _service.UpdateProduct(new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Quantity = -1 }));
         }
 
         [Fact]

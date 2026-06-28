@@ -5,12 +5,16 @@ namespace CifraShop.Contracts.Requests.Orders
 {
     public class CreateOrderRequest
     {
-        [Required(ErrorMessage = "Email покупателя обязателен")]
-        [EmailAddress(ErrorMessage = "Некорректный формат email")]
+        [Required]
+        [EmailAddress]
         public string CustomerEmail { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Список товаров обязателен")]
-        [MinLength(1, ErrorMessage = "Заказ должен содержать хотя бы один товар")]
+        [Required]
+        [MinLength(1)]
+        public string Branch { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(1)]
         public List<OrderItemRequest> Items { get; set; } = new();
     }
 }

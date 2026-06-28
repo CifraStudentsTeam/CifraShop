@@ -38,9 +38,10 @@ namespace CifraShop.API.Controllers
             [FromQuery] int page = 0,
             [FromQuery] int pageSize = 8,
             [FromQuery] string? search = null,
-            [FromQuery] UserRole? role = null)
+            [FromQuery] UserRole? role = null,
+            [FromQuery] string? branch = null)
         {
-            var paged = await _userService.GetUsersPaged(page, pageSize, search, role);
+            var paged = await _userService.GetUsersPaged(page, pageSize, search, role, branch);
             return Ok(new PagedResponse<UserResponse>
             {
                 Items = paged.Items.Select(u => u.ToResponse()).ToList(),
@@ -83,7 +84,7 @@ namespace CifraShop.API.Controllers
         [HttpPost("create-admin")]
         public async Task<ActionResult<UserResponse>> CreateAdmin([FromBody] CreateUserRequest request)
         {
-            var admin = await _userService.CreateAdmin(request.Email, request.Password);
+            var admin = await _userService.CreateAdmin(request.Email, request.Password, request.Branch);
             await _hub.Clients.All.SendAsync("Notify", "user", "created");
             return Ok(admin.ToResponse());
         }
@@ -91,7 +92,7 @@ namespace CifraShop.API.Controllers
         [HttpPost("create-student")]
         public async Task<ActionResult<UserResponse>> CreateStudent([FromBody] CreateUserRequest request)
         {
-            var student = await _userService.CreateStudent(request.Email, request.Password);
+            var student = await _userService.CreateStudent(request.Email, request.Password, request.Branch);
             await _hub.Clients.All.SendAsync("Notify", "user", "created");
             return Ok(student.ToResponse());
         }

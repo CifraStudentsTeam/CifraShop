@@ -22,14 +22,14 @@ namespace CifraShop.Application.Services.Implementations
         public Task<List<User>> GetAllUsers()
             => _repository.GetAllUsers();
 
-        public async Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null)
+        public async Task<PagedResponse<User>> GetUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null, string? branch = null)
         {
             if (page < 0)
                 throw new ArgumentException("Номер страницы не может быть отрицательным");
             if (pageSize <= 0)
                 throw new ArgumentException("Размер страницы должен быть больше 0");
 
-            var (items, total) = await _repository.GetAllUsersPaged(page, pageSize, search, role);
+            var (items, total) = await _repository.GetAllUsersPaged(page, pageSize, search, role, branch);
             return new PagedResponse<User> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
         }
 
@@ -39,7 +39,7 @@ namespace CifraShop.Application.Services.Implementations
         public Task<User?> GetUserByEmail(string email)
             => _repository.GetUserByEmail(email);
 
-        public async Task<User> CreateAdmin(string email, string password)
+        public async Task<User> CreateAdmin(string email, string password, string branch)
         {
             await ValidateUniqueEmail(email);
             ValidateCredentials(email, password);
@@ -49,14 +49,15 @@ namespace CifraShop.Application.Services.Implementations
                 Email = email,
                 Password = password,
                 Role = UserRole.Admin,
-                Balance = 0
+                Balance = 0,
+                Branch = branch
             };
 
             await _repository.AddUser(admin);
             return admin;
         }
 
-        public async Task<User> CreateStudent(string email, string password)
+        public async Task<User> CreateStudent(string email, string password, string branch)
         {
             await ValidateUniqueEmail(email);
             ValidateCredentials(email, password);
@@ -66,7 +67,8 @@ namespace CifraShop.Application.Services.Implementations
                 Email = email,
                 Password = password,
                 Balance = 0,
-                Role = UserRole.Student
+                Role = UserRole.Student,
+                Branch = branch
             };
 
             await _repository.AddUser(student);

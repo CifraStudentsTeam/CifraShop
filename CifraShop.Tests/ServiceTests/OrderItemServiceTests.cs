@@ -62,7 +62,7 @@ namespace CifraShop.Tests.ServiceTests
         public async Task CreateOrderItem_ValidData_CreatesItem()
         {
             var order = new Order { Id = 1 };
-            var product = new Product { Id = 1, Name = "Кружка", Price = 100, Quantity = 5 };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Price = 100, Quantity = 5 };
 
             _orderRepositoryMock.Setup(r => r.GetOrderById(1)).ReturnsAsync(order);
             _productRepositoryMock.Setup(r => r.GetProductById(1)).ReturnsAsync(product);
@@ -121,7 +121,7 @@ namespace CifraShop.Tests.ServiceTests
         public async Task CreateOrderItem_InsufficientStock_Throws()
         {
             var order = new Order { Id = 1 };
-            var product = new Product { Id = 1, Name = "Кружка", Quantity = 2 };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Quantity = 2 };
             _orderRepositoryMock.Setup(r => r.GetOrderById(1)).ReturnsAsync(order);
             _productRepositoryMock.Setup(r => r.GetProductById(1)).ReturnsAsync(product);
 
@@ -133,7 +133,7 @@ namespace CifraShop.Tests.ServiceTests
         public async Task CreateOrderItem_ExactStock_SetsOutOfStock()
         {
             var order = new Order { Id = 1 };
-            var product = new Product { Id = 1, Name = "Кружка", Price = 100, Quantity = 3 };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Price = 100, Quantity = 3 };
             _orderRepositoryMock.Setup(r => r.GetOrderById(1)).ReturnsAsync(order);
             _productRepositoryMock.Setup(r => r.GetProductById(1)).ReturnsAsync(product);
             _orderItemRepositoryMock.Setup(r => r.AddOrderItem(It.IsAny<OrderItem>()))

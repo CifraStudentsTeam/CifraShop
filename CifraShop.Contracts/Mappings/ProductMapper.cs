@@ -15,7 +15,8 @@ namespace CifraShop.Contracts.Mappings
                 Price = product.Price,
                 Quantity = product.Quantity,
                 Status = product.Status,
-                ImageUrl = product.ImageUrl
+                ImageUrl = product.ImageUrl,
+                Branch = product.Branch
             };
         }
     }

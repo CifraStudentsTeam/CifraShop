@@ -4,8 +4,6 @@ namespace CifraShop.Contracts.Responses.Notifications
     {
         public int Id { get; set; }
         public string Email { get; set; } = string.Empty;
-        public string TelegramBotToken { get; set; } = string.Empty;
-        public string TelegramChatId { get; set; } = string.Empty;
         public string Branch { get; set; } = string.Empty;
         public string? AdminEmails { get; set; }
         public bool NotifyOnNewOrder { get; set; }

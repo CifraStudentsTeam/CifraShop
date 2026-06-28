@@ -271,7 +271,7 @@ namespace CifraShop.Tests.RepositoryTests
             Assert.Equal(250, updated.Sum);
         }
 
-        [Fact(Skip = "ExecuteUpdateAsync не поддерживается InMemory-провайдером. Тест требует реальную БД (SQL Server).")]
+        [Fact(Skip = "ExecuteUpdateAsync РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ InMemory-РїСЂРѕРІР°Р№РґРµСЂРѕРј. РўРµСЃС‚ С‚СЂРµР±СѓРµС‚ СЂРµР°Р»СЊРЅСѓСЋ Р‘Р” (SQL Server).")]
         public async Task UpdateStatusRange_UpdatesMultipleOrders()
         {
             using var context = CreateContext();
@@ -317,7 +317,7 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new OrderRepositoryEfCore(context);
             var customer = new User { Id = 1, Email = "test@email.com", Password = "12345678", Balance = 0, Role = UserRole.Student };
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Users.AddAsync(customer);
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
@@ -329,7 +329,7 @@ namespace CifraShop.Tests.RepositoryTests
             };
             var stockUpdates = new List<(int ProductId, int Quantity)> { (1, 2) };
 
-            var result = await repository.CreateOrderInTransaction(order, items, stockUpdates);
+            var result = await repository.CreateOrderInTransaction(order, items, stockUpdates, 1, 100);
 
             Assert.NotNull(result);
             Assert.True(result.Id > 0);
@@ -350,7 +350,7 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new OrderRepositoryEfCore(context);
             var customer = new User { Id = 1, Email = "test@email.com", Password = "12345678", Balance = 0, Role = UserRole.Student };
-            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 2, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 2, Status = StatusProduct.InStock };
             await context.Users.AddAsync(customer);
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
@@ -362,7 +362,7 @@ namespace CifraShop.Tests.RepositoryTests
             };
             var stockUpdates = new List<(int ProductId, int Quantity)> { (1, 2) };
 
-            await repository.CreateOrderInTransaction(order, items, stockUpdates);
+            await repository.CreateOrderInTransaction(order, items, stockUpdates, 1, 100);
 
             var updatedProduct = await context.Products.FindAsync(1);
             Assert.Equal(0, updatedProduct.Quantity);

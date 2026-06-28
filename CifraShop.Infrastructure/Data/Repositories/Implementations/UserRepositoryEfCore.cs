@@ -15,7 +15,7 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<List<User>> GetAllUsers()
             => await _context.Users.ToListAsync();
 
-        public async Task<(List<User> Items, int TotalCount)> GetAllUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null)
+        public async Task<(List<User> Items, int TotalCount)> GetAllUsersPaged(int page, int pageSize, string? search = null, UserRole? role = null, string? branch = null)
         {
             var query = _context.Users.AsQueryable();
 
@@ -24,6 +24,9 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
 
             if (role.HasValue)
                 query = query.Where(u => u.Role == role.Value);
+
+            if (!string.IsNullOrWhiteSpace(branch))
+                query = query.Where(u => u.Branch == branch);
 
             var total = await query.CountAsync();
             var items = await query.Skip(page * pageSize).Take(pageSize).ToListAsync();

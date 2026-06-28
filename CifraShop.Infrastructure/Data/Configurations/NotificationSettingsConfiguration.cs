@@ -17,14 +17,6 @@ namespace CifraShop.Infrastructure.Data.Configurations
                    .HasColumnName("Email")
                    .HasMaxLength(100)
                    .IsRequired(false);
-            builder.Property(n => n.TelegramBotToken)
-                   .HasColumnName("TelegramBotToken")
-                   .HasMaxLength(100)
-                   .IsRequired(false);
-            builder.Property(n => n.TelegramChatId)
-                   .HasColumnName("TelegramChatId")
-                   .HasMaxLength(50)
-                   .IsRequired(false);
             builder.Property(n => n.Branch)
                    .HasColumnName("Branch")
                    .HasMaxLength(50)

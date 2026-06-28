@@ -15,7 +15,8 @@ namespace CifraShop.Contracts.Mappings
                 DateOfPurchase = order.DateOfPurchase,
                 CustomerEmail = order.Customer?.Email ?? "",
                 CustomerId = order.CustomerId,
-                Items = order.OrderItems?.Select(i => i.ToResponse()).ToList() ?? new()
+                Items = order.OrderItems?.Select(i => i.ToResponse()).ToList() ?? new(),
+                Branch = order.Branch
             };
         }
     }

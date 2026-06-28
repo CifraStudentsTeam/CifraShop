@@ -34,5 +34,10 @@ namespace CifraShop.Application.Services.Implementations
             };
             await _repository.AddAction(action);
         }
+
+        public Task TrimOldActions(int keepCount)
+        {
+            return _repository.TrimOldActions(keepCount);
+        }
     }
 }
