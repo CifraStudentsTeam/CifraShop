@@ -4,11 +4,12 @@
   <br>
 </h1>
 
-<h4 align="center">Запускай и управляй — интернет-магазин на .NET 10</h4>
+<h4 align="center">Полнофункциональный интернет-магазин на .NET 10 с реалтайм-обновлениями</h4>
 
 <p align="center">
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10">
   <img src="https://img.shields.io/badge/Blazor-WASM-512BD4?style=for-the-badge&logo=blazor&logoColor=white" alt="Blazor WASM">
+  <img src="https://img.shields.io/badge/SignalR-0078D4?style=for-the-badge&logo=microsoft&logoColor=white" alt="SignalR">
   <img src="https://img.shields.io/badge/SQL_Server-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white" alt="SQL Server">
   <img src="https://img.shields.io/badge/EF_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="EF Core">
   <img src="https://img.shields.io/badge/Bootstrap_5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap 5.3">
@@ -16,13 +17,14 @@
 </p>
 
 <p align="center">
-  <a href="#возможности">Возможности</a> •
-  <a href="#быстрый-старт">Быстрый старт</a> •
-  <a href="#структура-решения">Структура</a> •
-  <a href="#api-эндпоинты">API</a> •
-  <a href="#админ-панель">Админ-панель</a> •
-  <a href="#архитектура">Архитектура</a> •
-  <a href="#лаунчер">Лаунчер</a>
+  <a href="#возможности">Возможности</a> &bull;
+  <a href="#быстрый-старт">Быстрый старт</a> &bull;
+  <a href="#структура-проекта">Структура</a> &bull;
+  <a href="#api-эндпоинты">API</a> &bull;
+  <a href="#админ-панель">Админ-панель</a> &bull;
+  <a href="#архитектура">Архитектура</a> &bull;
+  <a href="#лаунчер">Лаунчер</a> &bull;
+  <a href="#конвенции">Конвенции</a>
 </p>
 
 ---
@@ -31,36 +33,40 @@
 
 <table>
   <tr>
+    <td><b>Обновления в реальном времени</b></td>
+    <td>SignalR — все изменения (товары, заказы, пользователи) отображаются мгновенно на всех подключённых вкладках админки без перезагрузки страницы. Если один админ изменил статус заказа — второй админ увидит это сразу. Автопереподключение при обрыве связи с fallback-опросом каждые 5 минут</td>
+  </tr>
+  <tr>
     <td><b>Товары</b></td>
-    <td>Каталог с поиском, фильтрами, серверной пагинацией. Управление остатками, статусами, фотографиями. Batch-операции (смена статуса, удаление) — один HTTP-запрос</td>
+    <td>Полный CRUD: добавление, редактирование, удаление. Управление фотографиями (загрузка, выбор главного, удаление). Инлайн-редактирование количества прямо в таблице. Переключение статуса кликом по бейджу (В наличии → Нет в наличии → Скоро в продаже). Batch-операции: массовая смена статуса и массовое удаление через чекбоксы. Серверный поиск с debounce 300мс, фильтр по статусу, серверная пагинация</td>
   </tr>
   <tr>
     <td><b>Заказы</b></td>
-    <td>Создание (автокомплит email, выбор товаров), смена статуса, просмотр состава. Фильтр по дате и статусу. Batch-смена статуса</td>
+    <td>Создание заказов с автокомплитом email покупателя (подсказки из базы). Выбор товаров из каталога. Развёрнутый состав заказа с изображениями товаров и итоговой суммой. Управление статусами: Ожидание → Ожидает оплаты → Оплачен → В производстве → Выполнен. Batch-смена статуса. Фильтр по дате и статусу</td>
   </tr>
   <tr>
     <td><b>Пользователи</b></td>
-    <td>CRUD, редактирование баланса, назначение ролей (Студент/Админ)</td>
+    <td>CRUD с назначением ролей (Студент/Админ). Редактирование баланса через модалку. Поиск по email, фильтр по роли. Серверная пагинация</td>
   </tr>
   <tr>
-    <td><b>Филиалы</b></td>
-    <td>Настройки уведомлений по филиалам: email, Telegram, порог остатков. Привязка админов к филиалам</td>
+    <td><b>Уведомления по филиалам</b></td>
+    <td>Настройки уведомлений для каждого филиала: email для уведомлений, Telegram Bot Token + Chat ID, email администраторов филиала (привязка админов). Типы уведомлений: новые заказы, смена статуса, низкий остаток. Порог уведомления о низком запасе</td>
   </tr>
   <tr>
-    <td><b>История</b></td>
-    <td>Лог всех действий с фильтрацией по типу и филиалу. Автопривязка к филиалу</td>
+    <td><b>История действий</b></td>
+    <td>Полный аудит-лог: каждое действие (создание, изменение, удаление) записывается с временной меткой, типом и описанием. Фильтрация по типу действия и филиалу. Сворачиваемая панель для экономии места</td>
   </tr>
   <tr>
-    <td><b>Подсветка поиска</b></td>
-    <td>Найденный текст выделяется жирным с подчёркиванием во всех таблицах</td>
+    <td><b>Поиск и фильтры</b></td>
+    <td>Подсветка найденного текста жирным с подчёркиванием. Все фильтры и поисковые запросы сохраняются в URL query-параметрах — можно поделиться ссылкой с результатами поиска. При обновлении страницы фильтры восстанавливаются автоматически</td>
   </tr>
   <tr>
-    <td><b>URL-фильтры</b></td>
-    <td>Все поисковые запросы и фильтры сохраняются в URL — можно поделиться ссылкой с результатами</td>
+    <td><b>Лаунчер</b></td>
+    <td>Запуск одной командой: проверка зависимостей, настройка Docker, запуск SQL Server, миграции БД, запуск API и клиента. Интерактивное меню управления с мониторингом процессов и авто-рестартом при падении</td>
   </tr>
   <tr>
-    <td><b>Лаунчер</b></b></td>
-    <td>Консольный лаунчер: автоматизация запуска, Docker, миграции, мониторинг с авто-рестартом</td>
+    <td><b>Обработка ошибок</b></td>
+    <td>Единая точка обработки исключений на сервере (ExceptionHandlerMiddleware). На клиенте: парсинг JSON-ошибок API в читаемые сообщения. Toast-уведомления об успехе/ошибке с авто-скрытием</td>
   </tr>
 </table>
 
@@ -68,555 +74,628 @@
 
 ## Быстрый старт
 
-### Установка
+### Что нужно установить
 
-1. **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**
-2. **SQL Server** (локальный или через Docker)
+1. **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)** — среда выполнения для C# и .NET проектов
+2. **[Docker Desktop](https://docker.com/products/docker-desktop)** — для запуска SQL Server в контейнере (если нет локального SQL Server)
 
-### Запуск через Launcher (рекомендуется)
+### Способ А: Через лаунчер (рекомендуется)
 
 ```bash
 dotnet run --project CifraShop.Launcher
 ```
 
-Лаунчер автоматически:
-- Проверит .NET SDK и Docker
-- Создаст `docker-compose.yml` и строку подключения
-- Запустит SQL Server в Docker
-- Применит EF Core миграции (с авто-синхронизацией модели)
-- Запустит API и клиент
-- Предоставит интерактивное меню управления
+**Что делает лаунчер автоматически:**
 
-Быстрый режим (пропуск завершённых фаз):
+| Шаг | Что происходит | Зачем нужно |
+|-----|---------------|-------------|
+| 1 | Проверяет наличие .NET SDK и Docker | Убеждается что всё установлено |
+| 2 | Создаёт `docker-compose.yml` и строку подключения | Конфигурация для Docker и БД |
+| 3 | Запуск SQL Server в Docker | База данных нужна для хранения товаров, заказов и т.д. |
+| 4 | Применение EF Core миграций | Создание/обновление таблиц в БД |
+| 5 | Запуск API (порт 5000) | Серверная часть — обрабатывает запросы |
+| 6 | Запуск Blazor-клиента (порт 5001) | Веб-интерфейс для управления |
+
+**Быстрый режим** — пропускает шаги, которые уже выполнены (БД запущена, миграции применены):
 ```bash
 dotnet run --project CifraShop.Launcher -- --quick
 ```
 
-### Ручной запуск
+### Способ Б: Ручной запуск
+
+Если не хотите использовать лаунчер, можно запустить всё вручную:
 
 ```bash
-# Настройка строки подключения
-cd CifraShop.API
-dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=.;Database=CifraShopDb;Trusted_Connection=True;TrustServerCertificate=True"
+# Шаг 1: Запустить SQL Server в Docker
+docker compose up -d db
 
-# Миграция
+# Шаг 2: Применить миграции (создать таблицы в БД)
 dotnet ef database update --project CifraShop.Infrastructure --startup-project CifraShop.API
 
-# Запуск API (порт 5000)
-dotnet run --project CifraShop.API
+# Шаг 3: Запустить API-сервер (порт 5000)
+dotnet run --project CifraShop.API --urls http://localhost:5000
 
-# Запуск клиента (порт 5001)
+# Шаг 4: Запустить клиент (порт 5001, в отдельном терминале)
 dotnet run --project CifraShop.Client
 ```
 
-Откройте `http://localhost:5001/admin` — админ-панель.
+После запуска откройте **http://localhost:5001/admin** — это админ-панель.
+
+### Порты
+
+| Сервис | Зачем нужен | Порт | URL |
+|--------|-------------|------|-----|
+| API | Обработка запросов от клиента, работа с БД | 5000 | `http://localhost:5000` |
+| Клиент | Веб-интерфейс админ-панели | 5001 | `http://localhost:5001` |
+| SQL Server | Хранение данных (товары, заказы, пользователи) | 1433 | `localhost:1433` |
+
+> **Почему API работает на HTTP, а не HTTPS?** Docker-контейнер использует самоподписанный сертификат, которому браузер не доверяет. По HTTP все запросы работают без ошибок SSL.
 
 ---
 
-## Структура решения
+## Структура проекта
+
+Проект построен по принципу **Clean Architecture** (Чистая архитектура): каждый слой зависит только от нижележащего и не знает о вышележащем.
 
 ```
 CifraShop/
-├── CifraShop.slnx                         XML-формат решения (.NET 10)
+├── CifraShop.slnx                        Решение (.NET 10, XML-формат)
 │
-├── CifraShop.Domain/                      Ядро — сущности, перечисления, интерфейсы репозиториев
-│   ├── Entities/                          User, Product, Order, OrderItem, AdminAction, NotificationSettings, ProductImage, OrderImage
-│   ├── Enums/                             UserRole, StatusProduct, StatusOrder
-│   └── Repositories/                      IProductRepository, IOrderRepository, IUserRepository, IOrderImageRepository, ...
+├── CifraShop.Domain/                     ЯДРО — сущности, перечисления, интерфейсы
+│   ├── Entities/                         Что хранится в БД
+│   │   ├── User.cs                       Пользователь (email, пароль, баланс, роль)
+│   │   ├── Product.cs                    Товар (название, цена, количество, статус)
+│   │   ├── Order.cs                      Заказ (статус, сумма, дата покупки)
+│   │   ├── OrderItem.cs                  Позиция заказа (товар, количество, цена)
+│   │   ├── AdminAction.cs                Действие администратора (аудит)
+│   │   ├── NotificationSettings.cs       Настройки уведомлений филиала
+│   │   ├── ProductImage.cs               Фото товара
+│   │   └── OrderImage.cs                 Фото заказа
+│   ├── Enums/
+│   │   ├── UserRole.cs                   Student(0), Admin(1)
+│   │   ├── StatusProduct.cs              InStock(0), OutOfStock(1), ComingSoon(2)
+│   │   └── StatusOrder.cs                Pending(0) → Completed(4)
+│   └── Repositories/                     Интерфейсы (контракты) для доступа к БД
+│       ├── IProductRepository.cs         Что можно делать с товарами
+│       ├── IOrderRepository.cs           Что можно делать с заказами
+│       ├── IUserRepository.cs            Что можно делать с пользователями
+│       └── ...                           Аналогично для других сущностей
 │
-├── CifraShop.Infrastructure/              Инфраструктура — EF Core, SQL Server, реализации репозиториев
+├── CifraShop.Infrastructure/             ИНФРАСТРУКТУРА — EF Core, SQL Server
 │   └── Data/
-│       ├── ApplicationDbContext.cs        ApplicationContext (DbContext)
-│       ├── Configurations/                Fluent API: все сущности (User, Product, Order, OrderItem, AdminAction, NotificationSettings, OrderImage)
-│       └── Repositories/Implementations/  EF Core реализации репозиториев
+│       ├── ApplicationDbContext.cs       Контекст БД (связь C# с SQL)
+│       ├── Configurations/               Правила связей между таблицами
+│       │   ├── UserConfiguration.cs      User: Email уникален, Balance nullable
+│       │   ├── ProductConfiguration.cs   Product: Price/Quantity = int
+│       │   ├── OrderConfiguration.cs     Order: Sum = int, Status = enum
+│       │   └── ...
+│       └── Repositories/
+│           ├── Interfaces/               Интерфейсы (тоже здесь для удобства)
+│           └── Implementations/          Реализация на EF Core
+│               ├── ProductRepositoryEfCore.cs
+│               ├── OrderRepositoryEfCore.cs
+│               └── ...
 │
-├── CifraShop.Application/                 Бизнес-логика — сервисы и их интерфейсы
+├── CifraShop.Application/                БИЗНЕС-ЛОГИКА — сервисы
 │   └── Services/
-│       ├── Interfaces/                    IOrderService, IProductService, IUserService, ...
-│       └── Implementations/               OrderService, ProductService, UserService, ...
+│       ├── Interfaces/                   Что умеет каждый сервис
+│       │   ├── IProductService.cs        Создать/обновить/удалить товар
+│       │   ├── IOrderService.cs          Создать/обновить заказ + списание баланса
+│       │   ├── IUserService.cs           CRUD пользователей
+│       │   └── ...
+│       └── Implementations/              Бизнес-правила (валидация, расчёты)
+│           ├── ProductService.cs
+│           ├── OrderService.cs           Проверка баланса, списание, обновление склада
+│           └── ...
 │
-├── CifraShop.Contracts/                   DTO (Request/Response) + маппинг
-│   ├── Requests/                          CreateProductRequest, BatchUpdateProductStatusRequest, ...
-│   ├── Responses/                         ProductResponse, OrderResponse, OrderImageResponse, PagedResponse<T>, ...
-│   └── Mappings/                          Extension-методы: ToResponse()
+├── CifraShop.Contracts/                  DTO — объекты передачи данных
+│   ├── Requests/                         Что клиент отправляет на сервер
+│   │   ├── Products/CreateProductRequest.cs
+│   │   ├── Orders/CreateOrderRequest.cs
+│   │   └── ...
+│   ├── Responses/                        Что сервер возвращает клиенту
+│   │   ├── Products/ProductResponse.cs
+│   │   ├── Common/PagedResponse.cs       Обёртка для пагинации
+│   │   └── ...
+│   └── Mappings/                         Как конвертировать Entity → DTO
+│       ├── ProductMapper.cs              Product → ProductResponse
+│       └── ...
 │
-├── CifraShop.API/                         ASP.NET Core Web API — точка входа
-│   ├── Program.cs                         DI, CORS, middleware pipeline
-│   ├── Controllers/                       7 контроллеров + ExceptionHandlerMiddleware
-│   ├── Middleware/                         Единая обработка ошибок
-│   └── Dockerfile                         multi-stage сборка для Docker
+├── CifraShop.API/                        API-СЕРВЕР — точка входа
+│   ├── Program.cs                        DI (регистрация сервисов), CORS, SignalR
+│   ├── Controllers/                      REST-эндпоинты
+│   │   ├── ProductController.cs          /api/Product/*
+│   │   ├── OrderController.cs            /api/Order/*
+│   │   ├── UserController.cs             /api/User/*
+│   │   ├── AdminActionController.cs      /api/AdminAction/*
+│   │   ├── NotificationSettingsController.cs
+│   │   ├── ProductImageController.cs     /api/ProductImage/*
+│   │   └── OrderImageController.cs       /api/OrderImage/*
+│   ├── Hubs/
+│   │   └── AdminHub.cs                   SignalR-хаб для реалтайм-обновлений
+│   ├── Middleware/
+│   │   └── ExceptionHandlerMiddleware.cs Единая обработка ошибок
+│   └── Dockerfile                        Сборка Docker-образа API
 │
-├── CifraShop.Client/                      Blazor WebAssembly — SPA-клиент
-│   ├── Pages/Admin.razor                  Админ-панель (1900+ строк)
-│   ├── Pages/Home.razor                   Главная страница
-│   ├── Components/                        MetricCard, SearchBar, Pagination, Spinner, EmptyState
-│   ├── Models/ApiModels.cs                Клиентские DTO (ProductDto, OrderDto, UserDto, ...)
-│   ├── Models/Enums.cs                    Клиентские перечисления (зеркалит Domain)
-│   └── wwwroot/                           Bootstrap 5.3.8 + Bootstrap Icons (локально)
+├── CifraShop.Client/                     КЛИЕНТ — веб-интерфейс (Blazor WASM)
+│   ├── Pages/
+│   │   ├── Admin.razor                   Главная страница админки (оркестратор)
+│   │   ├── Home.razor                    Главная страница сайта
+│   │   └── Components/                   Дочерние компоненты админки
+│   │       ├── AdminProductsPanel.razor  Раздел "Товары" — таблица + модалки
+│   │       ├── AdminOrdersPanel.razor    Раздел "Заказы" — таблица + модалки
+│   │       ├── AdminUsersPanel.razor     Раздел "Пользователи" — таблица + модалки
+│   │       ├── AdminNotificationsPanel.razor  Настройки уведомлений
+│   │       └── AdminHistoryPanel.razor   История действий
+│   ├── Components/                       Переиспользуемые UI-компоненты
+│   │   ├── MetricCard.razor              Карточка метрики (Товаров, Заказы и т.д.)
+│   │   ├── SearchBar.razor               Строка поиска с debounce + фильтр
+│   │   ├── Pagination.razor              Навигация по страницам
+│   │   └── Spinner.razor                 Индикатор загрузки
+│   ├── Services/
+│   │   └── SignalRService.cs             SignalR-клиент с автопереподключением
+│   ├── Models/
+│   │   ├── ApiModels.cs                  Клиентские DTO (зеркалит API-ответы)
+│   │   └── Enums.cs                      Перечисления (зеркалит Domain)
+│   ├── wwwroot/                          Статические файлы
+│   │   ├── css/                          Bootstrap 5.3.8 (локально)
+│   │   └── img/                          Иконки (Bootstrap Icons)
+│   └── Program.cs                        Регистрация сервисов (HttpClient, SignalR)
 │
-├── CifraShop.Launcher/                    Консольный лаунчер — автоматизация запуска
-│   └── Program.cs                         1600+ строк: 6 фаз + меню + мониторинг
+├── CifraShop.Launcher/                   ЛАУНЧЕР — автоматизация запуска
+│   └── Program.cs                        6 фаз + интерактивное меню + мониторинг
 │
-├── CifraShop.Tests/                       MSTest (заготовка)
-└── README.md                              Эта документация
+├── CifraShop.Tests/                      Тесты (заготовка)
+└── README.md                             Эта документация
 ```
 
-### Поток данных
+### Поток данных (как запросы проходят от клиента до БД)
 
 ```
-┌─────────────┐    HTTP     ┌─────────────┐
-│  Client     │ ──────────> │  API        │
-│  (Blazor)   │             │  Controllers│
-└─────────────┘             └──────┬──────┘
-                                   │
-                            ┌──────▼──────┐
-                            │ Application  │
-                            │  Services    │
-                            └──────┬──────┘
-                                   │
-                     ┌─────────────┼─────────────┐
-              ┌──────▼──────┐           ┌──────▼──────┐
-              │  Domain      │           │Infrastructure│
-              │  Entities    │           │  EF Core    │
-              └─────────────┘           └──────┬──────┘
-                                               │
-                                        ┌──────▼──────┐
-                                        │  SQL Server  │
-                                        └─────────────┘
+┌──────────────┐   HTTP-запрос    ┌──────────────┐
+│   Клиент     │ ───────────────> │   API        │
+│   (Blazor)   │ <─────────────── │  Контроллеры │
+│              │   HTTP-ответ     │              │
+│   SignalR    │ <══════════════> │  SignalR Hub │
+│  (реалтайм)  │  WebSocket      │              │
+└──────────────┘                  └──────┬───────┘
+                                         │
+                              ┌──────────▼──────────┐
+                              │    Application       │
+                              │    (Сервисы)         │
+                              │                      │
+                              │  Бизнес-логика:      │
+                              │  - проверка баланса  │
+                              │  - списание средств  │
+                              │  - валидация данных  │
+                              └──────────┬──────────┘
+                                         │
+                          ┌──────────────┼──────────────┐
+                   ┌──────▼──────┐               ┌──────▼──────┐
+                   │   Domain    │               │Infrastructure│
+                   │  (Ядро)     │               │  (EF Core)   │
+                   │             │               │              │
+                   │  Сущности:  │               │  Репозитории:│
+                   │  User       │               │  SQL-запросы  │
+                   │  Product    │               │  Миграции     │
+                   │  Order      │               │              │
+                   └─────────────┘               └──────┬───────┘
+                                                        │
+                                                 ┌──────▼───────┐
+                                                 │  SQL Server   │
+                                                 │  (Данные)     │
+                                                 └──────────────┘
 ```
+
+**Пример:** когда админ нажимает "Создать заказ":
+1. Клиент отправляет `POST /api/Order/create-order` с email покупателя и списком товаров
+2. Контроллер `OrderController` вызывает `IOrderService.CreateOrder()`
+3. Сервис проверяет баланс пользователя, списывает средства, уменьшает количество товаров
+4. Репозиторий сохраняет заказ в SQL Server
+5. Контроллер через `IHubContext<AdminHub>` отправляет `SendAsync("Notify", "order", "created")`
+6. SignalR доставляет уведомление всем подключённым клиентам
+7. Все админки автоматически обновляют список заказов
 
 ---
 
-## Описание проектов
+## API Эндпоинты
 
-### Domain — Ядро
+### Товары (`/api/Product`)
 
-Не зависит ни от одного проекта. Описывает данные и бизнес-правила.
+| Метод | Роут | Тело запроса | Ответ | Описание |
+|-------|------|-------------|-------|----------|
+| `GET` | `all` | — | `List<ProductResponse>` | Все товары (для выпадающих списков и метрик) |
+| `GET` | `paged?page=0&pageSize=8&search=&status=` | — | `PagedResponse<ProductResponse>` | Постраничная выдача с поиском и фильтром |
+| `GET` | `by-id?id=X` | — | `ProductResponse` | Товар по ID |
+| `GET` | `by-name?name=X` | — | `List<ProductResponse>` | Товары по названию |
+| `GET` | `by-price?price=X` | — | `List<ProductResponse>` | Товары по цене |
+| `GET` | `by-quantity?quantity=X` | — | `List<ProductResponse>` | Товары по количеству |
+| `GET` | `by-status?statusProduct=X` | — | `List<ProductResponse>` | Товары по статусу |
+| `POST` | `create-product` | `{ Name, Description, Price, Quantity }` | `ProductResponse` | Создать новый товар |
+| `PUT` | `update-product?id=X` | `{ Name?, Description?, Price?, Quantity?, Status? }` | `NoContent` | Обновить товар (обязательны только нужные поля) |
+| `DELETE` | `delete-product?id=X` | — | `NoContent` | Удалить товар |
+| `POST` | `batch-delete` | `{ ProductIds: [1,2,3] }` | `{ deleted, notFound }` | Массовое удаление (один SQL-запрос) |
+| `POST` | `batch-update-status` | `{ ProductIds: [1,2], NewStatus: 1 }` | `{ updated }` | Массовая смена статуса (один SQL-запрос) |
 
-**Сущности:**
+### Заказы (`/api/Order`)
 
-| Сущность | Описание | Ключевые поля |
-|----------|----------|---------------|
-| `User` | Пользователь | Email, Password, Balance (int?), Role, Branch? |
-| `Product` | Товар (INotifyPropertyChanged для Blazor) | Name, Description, Price (int), Quantity (int), Status, ImageUrl |
-| `Order` | Заказ | Status, Sum (int), DateOfPurchase, CustomerId |
-| `OrderItem` | Позиция заказа | OrderId, ProductId, Quantity (int), Price (int) |
-| `AdminAction` | Действие администратора | ActionType, Details, Branch, CreatedAt |
-| `NotificationSettings` | Настройки филиала | Branch, Email, TelegramBotToken, AdminEmails, NotifyOnNewOrder/StatusChange/LowStock |
-| `ProductImage` | Фото товара | ProductId, FileName, IsPrimary, SortOrder |
-| `OrderImage` | Фото заказа | OrderId, FileName, IsPrimary, SortOrder |
+| Метод | Роут | Тело запроса | Ответ | Описание |
+|-------|------|-------------|-------|----------|
+| `GET` | `all` | — | `List<OrderResponse>` | Все заказы |
+| `GET` | `paged?page=0&pageSize=8&search=&status=&dateFrom=&dateTo=` | — | `PagedResponse<OrderResponse>` | Постраничная выдача с фильтрами |
+| `GET` | `by-id?id=X` | — | `OrderResponse` | Заказ по ID |
+| `GET` | `by-email?email=X` | — | `List<OrderResponse>` | Заказы по email покупателя |
+| `GET` | `by-status?status=X` | — | `List<OrderResponse>` | Заказы по статусу |
+| `GET` | `by-sum?sum=X` | — | `List<OrderResponse>` | Заказы по сумме |
+| `GET` | `by-date?from=&to=` | — | `List<OrderResponse>` | Заказы за период |
+| `POST` | `create-order` | `{ CustomerEmail, Items: [{ ProductId, Quantity }] }` | `OrderResponse` | Создать заказ (списывает баланс + уменьшает склад) |
+| `PUT` | `update-order?id=X` | `{ Status: 2 }` | `NoContent` | Сменить статус заказа |
+| `POST` | `batch-update-status` | `{ OrderIds: [1,2], NewStatus: 3 }` | `{ updated }` | Массовая смена статуса |
+| `DELETE` | `delete-order?id=X` | — | `NoContent` | Удалить заказ |
 
-**Перечисления:**
+### Пользователи (`/api/User`)
 
-| Enum | Значения |
-|------|----------|
-| `UserRole` | Student (0), Admin (1) |
-| `StatusProduct` | InStock (0), OutOfStock (1), ComingSoon (2) |
-| `StatusOrder` | Pending (0), AwaitingPayment (1), Paid (2), Manufactured (3), Completed (4) |
+| Метод | Роут | Тело запроса | Ответ | Описание |
+|-------|------|-------------|-------|----------|
+| `GET` | `all` | — | `List<UserResponse>` | Все пользователи |
+| `GET` | `paged?page=0&pageSize=8&search=&role=` | — | `PagedResponse<UserResponse>` | Постраничная выдача с фильтром по роли |
+| `GET` | `all-admins` | — | `List<UserResponse>` | Только админы |
+| `GET` | `all-students` | — | `List<UserResponse>` | Только студенты |
+| `GET` | `by-id?id=X` | — | `UserResponse` | Пользователь по ID |
+| `GET` | `by-email?email=X` | — | `UserResponse` | Пользователь по email |
+| `POST` | `create-admin` | `{ Email, Password }` | `UserResponse` | Создать администратора |
+| `POST` | `create-student` | `{ Email, Password }` | `UserResponse` | Создать студента |
+| `PUT` | `?id=X` | `{ Email?, Password?, Balance? }` | `NoContent` | Обновить пользователя |
+| `DELETE` | `?id=X` | — | `NoContent` | Удалить пользователя |
 
-### Infrastructure — Инфраструктура
+### Уведомления по филиалам (`/api/NotificationSettings`)
 
-Repository pattern: каждая сущность имеет интерфейс + EF Core реализацию. Ключевые методы:
+| Метод | Роут | Тело запроса | Ответ | Описание |
+|-------|------|-------------|-------|----------|
+| `GET` | `all` | — | `List<NotificationSettingsResponse>` | Все настройки |
+| `GET` | `by-id?id=X` | — | `NotificationSettingsResponse` | Настройки по ID |
+| `GET` | `by-branch?branch=X` | — | `NotificationSettingsResponse` | Настройки по филиалу |
+| `POST` | — | `{ Branch, Email, TelegramBotToken, TelegramChatId, AdminEmails, NotifyOnNewOrder, NotifyOnStatusChange, NotifyOnLowStock, LowStockThreshold }` | `NotificationSettingsResponse` | Создать настройки филиала |
+| `PUT` | `?id=X` | То же тело | `NoContent` | Обновить настройки |
+| `DELETE` | `?id=X` | — | `NoContent` | Удалить настройки |
 
-```csharp
-// Серверная пагинация
-Task<(List<T> Items, int TotalCount)> GetAllPaged(int page, int pageSize, string? search, Status? status);
+### Фотографии товаров (`/api/ProductImage`)
 
-// Batch-операции (один SQL запрос вместо N)
-Task UpdateStatusRange(List<int> ids, Status newStatus);  // ExecuteUpdateAsync
-Task DeleteRange(List<int> ids);                          // ExecuteDeleteAsync
+| Метод | Роут | Параметры | Описание |
+|-------|------|-----------|----------|
+| `GET` | `by-product?productId=X` | — | Все фото товара |
+| `GET` | `file/{fileName}` | — | Получить файл изображения (отдаёт браузеру) |
+| `POST` | `upload` | multipart: `file`, `productId`, `isPrimary` | Загрузить фото (макс. 5 МБ, форматы: jpg/png/webp/gif) |
+| `POST` | `set-primary?imageId=X` | — | Сделать фото главным (обновляет `ImageUrl` товара) |
+| `DELETE` | `?id=X` | — | Удалить фото (если было главным — назначает следующее) |
+
+### Фотографии заказов (`/api/OrderImage`)
+
+Аналогично товарам, но для заказов.
+
+### История действий (`/api/AdminAction`)
+
+| Метод | Роут | Тело запроса | Ответ | Описание |
+|-------|------|-------------|-------|----------|
+| `GET` | `last?count=50&branch=X` | — | `List<AdminActionResponse>` | Последние N действий (с фильтром по филиалу) |
+| `POST` | — | `{ ActionType, Details, Branch }` | `AdminActionResponse` | Записать действие |
+
+### Форматы ошибок API
+
+Сервер возвращает ошибки в трёх форматах (клиент парсит все три):
+
+```json
+// 1. Custom middleware (ExceptionHandlerMiddleware)
+{ "error": "Текст ошибки" }
+
+// 2. Problem Details (встроенный ASP.NET)
+{ "title": "Текст ошибки" }
+
+// 3. Валидация (DataAnnotations / FluentValidation)
+{ "errors": { "Email": ["Email обязателен"], "Password": ["Минимум 6 символов"] } }
 ```
-
-### Application — Бизнес-логика
-
-Сервисы содержат валидацию и бизнес-правила. Контроллеры вызывают только сервисы (контроллер → сервис → репозиторий).
-
-### Contracts — DTO
-
-Клиент не знает про сущности — работает с DTO. Маппинг через extension-методы (`ToResponse()`).
-
-| Request DTO | Response DTO | Mapping |
-|-------------|-------------|---------|
-| `CreateProductRequest` | `ProductResponse` | `ProductMapper.ToResponse()` |
-| `CreateOrderRequest` | `OrderResponse` | `OrderMapping.ToResponse()` |
-| `CreateUserRequest` | `UserResponse` | `UserMapping.ToResponse()` |
-| `BatchUpdateProductStatusRequest` | — | — |
-| `BatchUpdateOrderStatusRequest` | — | — |
-| `BatchDeleteProductsRequest` | — | — |
-
-### Client — Blazor WebAssembly
-
-**Ключевые особенности:**
-- DTO создаются локально в `Models/ApiModels.cs` (Client не ссылается на Contracts/Domain)
-- **Bootstrap 5.3.8 + Bootstrap Icons** — загружены локально через libman
-- **Никакого кастомного CSS и JS** — только Bootstrap utility classes + inline styles для свойств которых нет в Bootstrap
-- `HttpClient.BaseAddress`: `http://localhost:5000/`
-- Компоненты: `MetricCard`, `SearchBar` (debounce 300мс), `Pagination` (ellipsis для >7 страниц), `Spinner`, `EmptyState`
-- Изображения: загрузка через `InputFile`, управление (выбор главного, удаление) в модалках
-
----
-
-## API эндпоинты
-
-### Товары
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/Product/all` | Все товары |
-| `GET` | `api/Product/paged?page=0&pageSize=8&search=&status=` | С пагинацией, поиском и фильтром |
-| `GET` | `api/Product/by-id?id=X` | По ID |
-| `GET` | `api/Product/by-name?name=X` | По имени |
-| `GET` | `api/Product/by-price?price=X` | По цене |
-| `GET` | `api/Product/by-quantity?quantity=X` | По количеству |
-| `GET` | `api/Product/by-status?statusProduct=X` | По статусу |
-| `POST` | `api/Product/create-product` | Создать |
-| `PUT` | `api/Product/update-product?id=X` | Обновить (Name, Description, Price, Quantity, Status) |
-| `DELETE` | `api/Product/delete-product?id=X` | Удалить |
-| `POST` | `api/Product/batch-delete` | Массовое удаление (ProductIds) |
-| `POST` | `api/Product/batch-update-status` | Массовая смена статуса (ProductIds, NewStatus) |
-
-### Заказы
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/Order/all` | Все заказы |
-| `GET` | `api/Order/paged?page=0&pageSize=8&search=&status=&dateFrom=&dateTo=` | С пагинацией и фильтрами |
-| `GET` | `api/Order/by-id?id=X` | По ID |
-| `GET` | `api/Order/by-email?email=X` | По email покупателя |
-| `GET` | `api/Order/by-status?status=X` | По статусу |
-| `GET` | `api/Order/by-sum?sum=X` | По сумме |
-| `GET` | `api/Order/by-date?from=&to=` | По диапазону дат |
-| `POST` | `api/Order/create-order` | Создать (CustomerEmail, Items[{ProductId, Quantity}]) |
-| `PUT` | `api/Order/update-order?id=X` | Обновить статус |
-| `POST` | `api/Order/batch-update-status` | Массовая смена статуса (OrderIds, NewStatus) |
-| `DELETE` | `api/Order/delete-order?id=X` | Удалить |
-
-### Позиции заказов
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/OrderItem/by-id?id=X` | По ID |
-| `GET` | `api/OrderItem/by-orderid?id=X` | По ID заказа |
-| `POST` | `api/OrderItem/create-orderitem` | Создать |
-| `PUT` | `api/OrderItem/update-orderitem?id=X` | Обновить |
-| `DELETE` | `api/OrderItem/delete-order-item?id=X` | Удалить |
-
-### Пользователи
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/User/all` | Все пользователи |
-| `GET` | `api/User/paged?page=0&pageSize=8&search=&role=` | С пагинацией и фильтром по роли |
-| `GET` | `api/User/all-admins` | Только админы |
-| `GET` | `api/User/all-students` | Только студенты |
-| `GET` | `api/User/by-id?id=X` | По ID |
-| `GET` | `api/User/by-email?email=X` | По email |
-| `POST` | `api/User/create-admin` | Создать админа |
-| `POST` | `api/User/create-student` | Создать студента |
-| `PUT` | `api/User?id=X` | Обновить (email, пароль, баланс) |
-| `DELETE` | `api/User?id=X` | Удалить |
-
-### Филиалы и уведомления
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/NotificationSettings/all` | Все настройки |
-| `GET` | `api/NotificationSettings/by-id?id=X` | По ID |
-| `GET` | `api/NotificationSettings/by-branch?branch=X` | По филиалу |
-| `POST` | `api/NotificationSettings` | Создать |
-| `PUT` | `api/NotificationSettings?id=X` | Обновить |
-| `DELETE` | `api/NotificationSettings?id=X` | Удалить |
-
-### Фотографии товаров
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/ProductImage/by-product?productId=X` | Все фото товара |
-| `GET` | `api/ProductImage/file/{fileName}` | Получить файл изображения |
-| `POST` | `api/ProductImage/upload` | Загрузить фото (multipart: file, productId, isPrimary) |
-| `POST` | `api/ProductImage/set-primary?imageId=X` | Сделать главным |
-| `DELETE` | `api/ProductImage?id=X` | Удалить |
-
-### Фотографии заказов
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/OrderImage/by-order?orderId=X` | Все фото заказа |
-| `GET` | `api/OrderImage/file/{fileName}` | Получить файл изображения |
-| `POST` | `api/OrderImage/upload` | Загрузить фото (multipart: file, orderId, isPrimary) |
-| `POST` | `api/OrderImage/set-primary?imageId=X` | Сделать главным |
-| `DELETE` | `api/OrderImage?id=X` | Удалить |
-
-### История действий
-
-| Метод | Маршрут | Описание |
-|-------|---------|----------|
-| `GET` | `api/AdminAction/last?count=50&branch=X` | Последние N действий |
-| `POST` | `api/AdminAction` | Записать действие (ActionType, Details, Branch) |
 
 ---
 
 ## Админ-панель
 
-Страница `/admin` — полноценная панель управления магазином.
+Страница `/admin` — полноценная панель управления интернет-магазином.
 
-### Метрики (4 карточки)
+### Статус подключения (SignalR)
 
-| Метрика | Показывает | Источник данных |
-|---------|-----------|-----------------|
-| **Товаров** | Количество + предупреждение о низком остатке (≤5) + стоимость на складе | `api/Product/all` |
-| **Заказы** | Количество + общая выручка | `api/Order/all` |
-| **Пользователи** | Количество + сколько админов | `api/User/all` |
-| **Филиалы** | Количество филиалов + сколько с настроенными каналами | `api/NotificationSettings/all` |
+В шапке отображается бейдж состояния подключения к серверу:
 
-### Товары
+| Бейдж | Что означает | Что происходит |
+|-------|-------------|----------------|
+| <span style="color:green">● Online</span> | SignalR подключён | Все изменения отображаются мгновенно на всех вкладках |
+| <span style="color:red">● Offline</span> | SignalR отключён | Данные обновляются автоматически каждые 5 минут. Перезагрузите страницу для восстановления |
 
-- **Поиск** — debounce 300мс, по названию и описанию
-- **Подсветка поиска** — найденный текст выделяется `<strong>` с подчёркиванием
-- **Фильтр** — по статусу (В наличии / Нет в наличии / Скоро в продаже)
-- **Пагинация** — серверная, размер страницы: 5/8/16/32
-- **Ellipsis пагинация** — при >7 страниц: `1 ... 5 6 7 ... 10`
-- **Создание** — модалка (название, описание, цена, количество). После создания автоматически появляется секция загрузки изображений
-- **Редактирование** — модалка + управление фотографиями товара
-- **Загрузка фото** — Bootstrap-styled `InputFile` (клик для выбора)
-- **Количество** — инлайн-редактирование в таблице (сразу отправляет PUT-запрос)
-- **Статус** — клик по бейджу: цикл В наличии → Нет → Скоро
-- **Низкий остаток** — строки с ≤5 штук подсвечиваются жёлтым
-- **Batch-операции** — чекбоксы + batch-смена статуса (один запрос) / batch-удаление
-- **Счётчик выбранных** — badge рядом с чекбоксом «выбрать все»
+**Как это работает:** Когда один админ изменяет данные (например, меняет статус заказа), сервер отправляет уведомление через SignalR. Все остальные подключённые клиенты получают это уведомление и перезагружают нужный раздел данных. Если SignalR отключился — клиент переключается на опрос каждые 5 минут.
 
-### Заказы
+### Метрики (4 карточки вверху)
 
-- **Поиск** — debounce 300мс, по номеру и email
-- **Подсветка поиска** — найденный текст выделяется
+| Карточка | Что показывает | Откуда берутся данные |
+|----------|---------------|----------------------|
+| **Товаров** | Общее количество + предупреждение ("3 без наличия, 2 с низким остатком" или "Все в наличии") + стоимость всего склада | `api/Product/all` |
+| **Заказы** | Количество заказов + суммарная выручка | `api/Order/all` |
+| **Пользователи** | Количество пользователей + сколько из них админов | `api/User/all` |
+| **Филиалы** | Количество филиалов + сколько с настроенными каналами уведомлений | `api/NotificationSettings/all` |
+
+### Раздел "Товары"
+
+Таблица с полным управлением каталогом товаров.
+
+**Что умеет:**
+- **Поиск** — ввод текста → 300мс задержка → запрос на сервер. Найденный текст подсвечивается жирным
+- **Фильтр** — выпадающий список: Все статусы / В наличии / Нет в наличии / Скоро
+- **Пагинация** — серверная, настройка размера страницы: 5/8/16/32
+- **Сортировка** — клик по заголовку колонки: Товар / Цена / Склад
+- **Инлайн-редактирование** — клик по числу в колонке "Склад" → ввод нового значения → мгновенное сохранение
+- **Переключение статуса** — клик по бейджу статуса: В наличии → Нет в наличии → Скоро → В наличии
+- **Низкий остаток** — строки с ≤5 штук подсвечены жёлтым
+- **Batch-операции** — чекбоксы + массовая смена статуса / массовое удаление
+- **Создание товара** — кнопка "Добавить" → модалка (название, описание, цена, количество) → товар появляется в таблице
+- **Редактирование** — кнопка "Карандаш" → модалка с текущими данными + управление фотографиями
+- **Фотографии** — загрузка через InputFile (макс. 5 МБ), выбор главного фото, удаление
+
+### Раздел "Заказы"
+
+Таблица с управлением заказами.
+
+**Что умеет:**
+- **Поиск** — по номеру заказа и email покупателя
 - **Фильтр** — по статусу и диапазону дат
-- **Пагинация** — серверная, ellipsis
-- **Статус** — выпадающий список в таблице
-- **Детали** — клик по строке раскрывает состав с датой и статусом
-- **Batch-операции** — чекбоксы + batch-смена статуса (один запрос)
-- **Создание** — модалка (автокомплит email + выбор товаров с расчётом итого)
-- **Изображения** — клик по превью в таблице → модалка загрузки/удаления/выбора главного фото
-- **Счётчик выбранных** — badge рядом с чекбоксом «выбрать все»
+- **Пагинация** — серверная
+- **Сортировка** — по номеру, дате, сумме
+- **Статус** — выпадающий список прямо в таблице (изменение мгновенное)
+- **Детали** — клик по строке раскрывает состав заказа: список товаров с ценами, количеством и изображениями
+- **Batch-операции** — чекбоксы + массовая смена статуса
+- **Создание заказа** — автокомплит email (подсказки из базы), выбор товаров, расчёт итого
 
-### Пользователи
+### Раздел "Пользователи"
 
-- **Поиск** — debounce 300мс, по email
-- **Подсветка поиска** — найденный текст выделяется
+Таблица с управлением пользователями.
+
+**Что умеет:**
+- **Поиск** — по email
 - **Фильтр** — по роли (Студенты / Админы)
-- **Пагинация** — серверная, ellipsis
-- **Создание** — модалка (email, пароль, роль)
-- **Баланс** — клик по балансу → модалка редактирования
+- **Пагинация** — серверная
+- **Создание** — модалка (email, пароль ≥6 символов, роль)
+- **Баланс** — клик по числу баланса → модалка редактирования
+- **Удаление** — кнопка "Корзина" → подтверждение
 
-### Филиалы и уведомления
+### Раздел "Уведомления по филиалам"
 
-Настройки по каждому филиалу:
+Настройки уведомлений для каждого филиала.
+
+**Что показывает:**
+- Список филиалов с иконками (email, Telegram, типы уведомлений)
+- Количество настроенных филиалов
+- Кнопка "Шестерёнка" → модалка настроек
+
+**Настройки каждого филиала:**
 - Название филиала
 - Email для уведомлений
 - Telegram Bot Token + Chat ID
-- Email администраторов филиала (привязка админов к филиалу)
-- Типы уведомлений: новые заказы, смена статуса, низкий остаток
-- Порог уведомления о низком запасе
+- Email администраторов филиала (какие админы отвечают за этот филиал)
+- Типы уведомлений: Новые заказы / Смена статуса / Низкий остаток
+- Порог уведомления о низком запасе (например, ≤5 штук)
 
-### История действий
+### Раздел "История действий"
 
-Сворачиваемая панель с фильтрацией:
-- **По типу** — Создание / Изменение / Удаление
-- **По филиалу** — выпадающий список филиалов
-- **Временная шкала** — дата, время, цветовая полоса по типу действия
+Сворачиваемая панель внизу страницы.
 
-### Уведомления (Toast)
+**Что умеет:**
+- Показывает все действия администраторов (создание, изменение, удаление)
+- Фильтр по типу: Все / Создание / Изменение / Удаление
+- Фильтр по филиалу: выпадающий список филиалов
+- Временная шкала: дата, время, цветовая полоса по типу действия
+- Автоматически привязывает действие к текущему филиалу из шапки
 
-Всплывающие сообщения: зелёное (успех), красное (ошибка), жёлтое (предупреждение). Автоскрытие 4 сек. При новом уведомлении предыдущее отменяется.
+### URL-фильтры (сохранение состояния)
 
-### URL-фильтры
+Все поисковые запросы и фильтры автоматически сохраняются в URL:
 
-Все поисковые запросы и фильтры автоматически сохраняются в URL query-параметрах:
-- `ps` — поиск товаров
-- `pf` — фильтр товаров
-- `os` — поиск заказов
-- `of` — фильтр заказов
-- `odf` — дата начала
-- `odt` — дата окончания
-- `us` — поиск пользователей
-- `uf` — фильтр пользователей
+```
+http://localhost:5001/admin?ps=ноутбук&pf=0&os=ivan&of=2&us=admin&uf=1&odf=2024-01-01&odt=2024-12-31
+```
 
-При обновлении страницы фильтры восстанавливаются из URL. Можно поделиться ссылкой с результатами поиска.
+| Параметр | Что хранит |
+|----------|-----------|
+| `ps` | Поиск товаров |
+| `pf` | Фильтр товаров (статус) |
+| `os` | Поиск заказов |
+| `of` | Фильтр заказов (статус) |
+| `odf` | Дата начала (заказы) |
+| `odt` | Дата окончания (заказы) |
+| `us` | Поиск пользователей |
+| `uf` | Фильтр пользователей (роль) |
+
+При обновлении страницы фильтры восстанавливаются. Можно скопировать ссылку и отправить коллеге — он увидит те же результаты.
 
 ### Горячие клавиши
 
-- **Escape** — закрыть активное модальное окно / подтверждение
+| Клавиша | Действие |
+|---------|----------|
+| **Escape** | Закрыть активное модальное окно или подтверждение |
+
+### Toast-уведомления
+
+Вверху страницы появляются всплывающие сообщения:
+- **Зелёное** — операция выполнена успешно
+- **Красное** — ошибка
+- **Жёлтое** — предупреждение
+
+Автоскрытие через 4 секунды. При новом уведомлении предыдущее отменяется.
 
 ---
 
 ## Архитектура
 
-### Clean Architecture
+### Почему Clean Architecture?
+
+Чистая архитектура позволяет:
+- **Менять БД** (SQL Server → PostgreSQL) без изменения бизнес-логики
+- **Менять фронтенд** (Blazor → React) без изменения API
+- **Тестировать** каждый слой изолированно
+- **Работать командой** — каждый разрабатывает свой слой без конфликтов
+
+### Слои архитектуры
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Presentation                                        │
-│  ├── API Controllers (REST endpoints)               │
-│  └── Client Pages (Blazor WASM)                     │
+│  ПРЕДСТАВЛЕНИЕ (что видит пользователь)              │
+│  ├── API Контроллеры (обрабатывают HTTP-запросы)     │
+│  ├── SignalR Hub (реалтайм-уведомления)              │
+│  └── Blazor WASM клиент (веб-интерфейс)             │
 ├─────────────────────────────────────────────────────┤
-│  Application                                         │
-│  ├── Service Interfaces (IOrderService, ...)        │
-│  └── Service Implementations (validation, business) │
+│  ПРИЛОЖЕНИЕ (бизнес-правила)                         │
+│  ├── Интерфейсы сервисов (что можно делать)          │
+│  └── Реализации (КАК это делается: валидация, расчёты)│
 ├─────────────────────────────────────────────────────┤
-│  Contracts                                           │
-│  ├── Request DTOs                                    │
-│  ├── Response DTOs                                   │
-│  └── Mappings (extension methods)                    │
+│  КОНТРАКТЫ (формат данных)                           │
+│  ├── DTO запросов (что клиент отправляет)            │
+│  ├── DTO ответов (что сервер возвращает)             │
+│  └── Маппинг (конвертация Entity → DTO)             │
 ├─────────────────────────────────────────────────────┤
-│  Domain (no dependencies)                            │
-│  ├── Entities (User, Product, Order, ...)           │
-│  ├── Enums (UserRole, StatusOrder, ...)             │
-│  └── Repository Interfaces                           │
+│  ДОМЕН (ядро — чистая бизнес-модель)                 │
+│  ├── Сущности (User, Product, Order — данные)        │
+│  ├── Перечисления (StatusOrder, UserRole — варианты) │
+│  └── Интерфейсы репозиториев (контракты доступа к БД)│
 ├─────────────────────────────────────────────────────┤
-│  Infrastructure                                      │
-│  ├── EF Core DbContext                               │
-│  ├── Fluent API Configurations                       │
-│  └── Repository Implementations                      │
+│  ИНФРАСТРУКТУРА (как данные хранятся)                │
+│  ├── EF Core DbContext (связь C# ↔ SQL)             │
+│  ├── Конфигурации (связи между таблицами)            │
+│  └── Репозитории (SQL-запросы через EF Core)         │
 └─────────────────────────────────────────────────────┘
 ```
 
-### ExceptionHandlerMiddleware
+**Правило:** Стрелки зависимостей направлены только ВНИЗ. Домен не знает ни про API, ни про БД. Контроллеры не знают про SQL.
 
-Единая точка обработки необработанных исключений.
+### Интеграция SignalR (обновления в реальном времени)
 
-| Исключение | HTTP-код | Пример |
-|-----------|----------|--------|
-| `ArgumentException` | 400 Bad Request | Невалидные данные |
-| `KeyNotFoundException` | 404 Not Found | Ресурс не найден |
+| Компонент | Где находится | Что делает |
+|-----------|--------------|------------|
+| `AdminHub` | `API/Hubs/AdminHub.cs` | Пустой хаб — сервер шлёт уведомления, клиенты только слушают |
+| `IHubContext<AdminHub>` | В контроллерах (Product, Order, User, NotificationSettings) | После каждого POST/PUT/DELETE вызывает `SendAsync("Notify", entity, action)` |
+| `SignalRService` | `Client/Services/SignalRService.cs` | Подключается к хабу, слушает события, переподключается при обрыве |
+| `HandleSignalRNotify` | `Admin.razor` | Получает событие → вызывает нужный `Load*()` метод → UI обновляется |
+
+**События:**
+- `("product", "created/updated/deleted")` → перезагрузка товаров + метрик
+- `("order", "created/updated")` → перезагрузка заказов + метрик
+- `("user", "created/updated/deleted")` → перезагрузка пользователей + метрик
+- `("notification", "updated")` → перезагрузка настроек уведомлений
+
+**Fallback:** Если SignalR отключился, каждые 5 минут выполняется полная перезагрузка данных (`FallbackLoop`).
+
+### Обработка ошибок (ExceptionHandlerMiddleware)
+
+Единая точка обработки необработанных исключений на сервере. Не нужно писать `try-catch` в каждом контроллере.
+
+| Исключение | HTTP-код | Когда возникает |
+|------------|----------|-----------------|
+| `ArgumentException` | 400 Bad Request | Невалидные данные (пустое имя, отрицательная цена) |
+| `KeyNotFoundException` | 404 Not Found | Ресурс не найден (товар с таким ID не существует) |
 | `UnauthorizedAccessException` | 401 Unauthorized | Доступ запрещён |
-| `InvalidOperationException` | 409 Conflict | Недостаточно товара |
+| `InvalidOperationException` | 409 Conflict | Невозможно выполнить (недостаточно товара на складе) |
 | `OverflowException` | 400 Bad Request | Сумма заказа слишком велика |
-| Остальные | 500 Internal Server Error | Внутренняя ошибка |
+| Остальные | 500 Internal Server Error | Внутренняя ошибка сервера |
+
+### Парсинг ошибок на клиенте
+
+Клиент получает JSON-ошибки от сервера и парсит их в читаемые сообщения:
+
+```csharp
+// Метод ExtractErrorMessage парсит все три формата:
+// 1. {"error": "Текст"}           → "Текст"
+// 2. {"title": "Текст"}           → "Текст"
+// 3. {"errors": {"Email": ["..."]}} → "Email: сообщение ошибки"
+```
 
 ---
 
-## Ламчер
+## Лаунчер
 
 Консольный лаунчер (`CifraShop.Launcher`) автоматизирует запуск всего проекта.
 
 ### 6 фаз запуска
 
-| Фаза | Описание |
-|------|----------|
-| 1 | Проверка .NET SDK и Docker (авто-запуск Docker Desktop) |
-| 2 | Создание `docker-compose.yml` и строки подключения (если нет) |
-| 3 | Запуск SQL Server через Docker (с реалтайм-прогрессом скачивания) |
-| 4 | Применение EF Core миграций (с авто-синхронизацией модели) |
-| 5 | Запуск API (Docker или локально — автоматический выбор) |
-| 6 | Запуск Blazor-клиента |
+| Фаза | Что делает | Зачем нужно |
+|------|-----------|-------------|
+| **1. Зависимости** | Проверяет .NET SDK и Docker. Если Docker не запущен — пытается запустить автоматически | Без .NET SDK проект не соберётся. Без Docker нет SQL Server |
+| **2. Конфигурация** | Создаёт `docker-compose.yml` (если нет) и строку подключения в `appsettings.json` | Конфигурация нужна для подключения к БД |
+| **3. База данных** | Запуск SQL Server через Docker | БД нужна для хранения данных |
+| **4. Миграции** | Применение EF Core миграций (авто-синхронизация модели БД) | Таблицы создаются/обновляются автоматически |
+| **5. API** | Запуск сервера API (Docker или локально) | Обработка запросов от клиента |
+| **6. Клиент** | Запуск Blazor-клиента | Веб-интерфейс для работы |
 
 ### Интерактивное меню
 
 ```
-╭─ МЕНЮ УПРАВЛЕНИЯ ───────────────────────────────────────╮
-│  [1] Открыть админ-панель                                │
-│  [2] Открыть главную страницу                            │
-│  ─────────────────────────────────────────────────────── │
-│  [3] Перезапустить API                                   │
-│  [4] Перезапустить клиент                                │
-│  [5] Перезапустить всё                                   │
-│  ─────────────────────────────────────────────────────── │
-│  [6] Остановить всё                                      │
-│  ─────────────────────────────────────────────────────── │
-│  [7] Пересобрать API (Docker)                            │
-│  [8] Очистить Docker-образы                              │
-│  ─────────────────────────────────────────────────────── │
-│  [9] Показать логи                                       │
-│  [0] Выход                                               │
-╰─────────────────────────────────────────────────────────╯
+╔══════════════════════════════════════════════════════════╗
+║                    МЕНЮ УПРАВЛЕНИЯ                       ║
+║                                                          ║
+║  Навигация:                                              ║
+║    [1] Открыть админ-панель                              ║
+║    [2] Открыть главную страницу                          ║
+║                                                          ║
+║  Перезапуск:                                             ║
+║    [3] Перезапустить API                                 ║
+║    [4] Перезапустить клиент                              ║
+║    [5] Перезапустить всё                                 ║
+║                                                          ║
+║  Управление:                                             ║
+║    [6] Остановить всё                                    ║
+║                                                          ║
+║  Docker:                                                 ║
+║    [7] Пересобрать образ API                             ║
+║    [8] Очистить Docker-образы                            ║
+║                                                          ║
+║  Информация:                                             ║
+║    [9] Показать логи (API / Клиент / Статус)             ║
+║                                                          ║
+║    [0] Выход                                             ║
+╚══════════════════════════════════════════════════════════╝
 ```
 
 ### Мониторинг и авто-рестарт
 
-- Фоновый `MonitorProcessesAsync` проверяет процессы каждые 5 сек
-- При падении API или клиента — автоматический перезапуск (до 3 раз)
-- После 3 падений — отключение авто-рестарта с предупреждением
+- Фоновый поток проверяет процессы API и клиента каждые 5 секунд
+- Если процесс упал — автоматический перезапуск (до 3 раз)
+- После 3 падений — авто-рестарт отключается с предупреждением
 - Счётчики сбрасываются при ручном перезапуске через меню
-
-### Быстрый режим
-
-```bash
-dotnet run --project CifraShop.Launcher -- --quick
-```
-Пропускает фазы, которые уже выполнены (БД запущена, миграции применены).
+- Буфер логов (80 КБ) — можно посмотреть вывод процессов через меню [9]
 
 ### CLI-флаги
 
-| Флаг | Описание |
-|------|----------|
-| `--quick` | Быстрый режим — пропуск завершённых фаз |
-| `--skip-docker` | Принудительно локальный режим (без Docker) |
-| `--port-api N` | Переопределение порта API |
-| `--port-client N` | Переопределение порта клиента |
-| `--status` | Показать статус сервисов и выйти |
-| `--version` | Показать версию и выйти |
-| `--reset` | Полный сброс: остановка контейнеров, очистка образов, удаление маркеров |
-
-### Health-check
-
-Лаунчер проверяет доступность API через HTTP-запросы (порт 5000) перед запуском клиента.
-
----
-
-## Порты
-
-| Сервис | Протокол | Порт | URL |
-|--------|----------|------|-----|
-| API | HTTP | 5000 | `http://localhost:5000` |
-| Client | HTTP | 5001 | `http://localhost:5001` |
-| SQL Server | TCP | 1433 | `localhost:1433` |
-
-> **Примечание:** API работает на HTTP (порт 5000) — в Docker используется HTTP для совместимости с браузером (самоподписанный HTTPS-сертификат не доверяется браузером).
+| Флаг | Пример | Что делает |
+|------|--------|-----------|
+| `--quick` | `-- --quick` | Быстрый режим — пропуск уже выполненных фаз |
+| `--skip-docker` | `-- --skip-docker` | Принудительно локальный режим (без Docker) |
+| `--port-api N` | `-- --port-api 5050` | Изменить порт API |
+| `--port-client N` | `-- --port-client 5051` | Изменить порт клиента |
+| `--status` | `-- --status` | Показать статус сервисов и выйти |
+| `--version` | `-- --version` | Показать версию и выйти |
+| `--reset` | `-- --reset` | Полный сброс: остановка контейнеров, очистка, удаление маркеров |
 
 ---
 
 ## Конвенции
 
-| Правило | Описание |
-|---------|----------|
-| **Язык** | Имена классов/методов на английском, комментарии и UI на русском |
-| **Nullable reference types** | Включены во всех проектах |
-| **Implicit usings** | Включены |
-| **Типы данных** | `int` для Price/Quantity/Sum/Balance (не short — переполнение) |
-| **Стили** | **Запрещён кастомный CSS и JS.** Только Bootstrap utility classes. Inline `style=""` только для свойств которых нет в Bootstrap: `cursor:pointer`, `width/max-width` в `rem` для таблиц, `font-size` < `small`, `background-color` для модалок, `min-width`, `object-fit:cover` |
-| **Иконки** | Bootstrap Icons (локально через libman) |
-| **Коммиты** | Описание на русском языке |
-| **Формат решения** | `.slnx` (XML-based, .NET 10) |
-| **Пагинация** | Серверная, ellipsis при >7 страниц |
-| **Поиск** | Debounce 300мс через CancellationTokenSource |
-| **URL-фильтры** | Все фильтры сохраняются в URL query-параметрах |
-
----
-
-## Исправленные баги
-
-### Лаунчер
-- `RunCmdAsync` возвращал non-null при ошибке команды — Docker daemon down ломал проверки
-- Deadlock при последовательном чтении stdout/stderr — теперь параллельное
-- Двойная граница в `PrintStatusLine` — `PadLine` уже записывал `│\n`
-- Docker build проверка через строковый поиск — заменена на exit code
-- `KillPortAsync` не убивал дерево процессов и не ждал освобождения порта
-
-### Админ-панель
-- **XSS через MarkupString** — `HighlightText` не экранировал HTML-теги в пользовательских данных
-- Общий `_pageSize` для всех секций — заменён на `_productPageSize`, `_orderPageSize`, `_userPageSize`
-- Сортировка работала только на текущей странице — client-side sort
-- `_productTotalCount` отслеживался вручную — теперь перезагружается с сервера
-- `SaveProduct` не отправлял `ImageUrl` при создании
-- Race condition в `ShowNotification` — таймер без CancellationTokenSource
-- `Dispose` не отменял CTS перед удалением — pending delays продолжали работать
-- Batch-операции логировали даже при ошибке API
-- `CloseProductModal` не сбрасывал `_saving` — модалка блокировалась
-- `RefreshLoop` без try-catch — падал молча, автообновление прекращалось
-- Даты заказов не синхронизировались с URL
-- `_expandedOrderId` не сбрасывался при перезагрузке заказов
-- `ToggleProductStatus` / `ChangeOrderStatus` — нет feedback при ошибке API
-- Двойное добавление при создании товаров/пользователей — `Add` + `Load` → только `Load`
+| Правило | Описание | Почему |
+|---------|----------|--------|
+| **Язык** | Имена классов/методов на английском, комментарии и UI на русском | Единообразие + понятность для команды |
+| **Nullable reference types** | Включены во всех проектах | Защита от NullReferenceException |
+| **Implicit usings** | Включены | Меньше строк `using` в каждом файле |
+| **Типы данных** | `int` для Price/Quantity/Sum/Balance | `short` переполняется при суммах > 32767, `decimal` избыточен для целых чисел |
+| **Стили** | Только Bootstrap utility classes. Inline `style=""` только для `cursor:pointer`, `width` в `rem`, `font-size` < `small`, `background-color` для модалок | Единообразный внешний вид, нет кастомного CSS |
+| **Иконки** | Bootstrap Icons (локально через libman) | Не зависит от CDN, работает офлайн |
+| **Коммиты** | На русском языке | Понятная история изменений |
+| **Формат решения** | `.slnx` (XML-based, .NET 10) | Новый формат .NET 10 |
+| **Пагинация** | Серверная, ellipsis при >7 страниц | Экономия трафика, корректные данные |
+| **Поиск** | Debounce 300мс через CancellationTokenSource | Не перегружает сервер при быстром вводе |
+| **URL-фильтры** | Все фильтры сохраняются в query-параметрах | Можно поделиться ссылкой с результатами |
 
 ---
 
@@ -627,36 +706,33 @@ dotnet run --project CifraShop.Launcher -- --quick
 - [x] CRUD для товаров, заказов, пользователей
 - [x] Админ-панель с поиском, фильтрами, серверной пагинацией
 - [x] Batch-операции: смена статуса (товары + заказы), удаление (товары)
-- [x] Серверная пагинация с ellipsis
-- [x] Debounce поиска (300мс) через CancellationTokenSource
-- [x] Подсветка поиска (HTML-безопасная, через MarkupString + HtmlEncode)
-- [x] URL-фильтры (NavigationManager, восстановление при загрузке)
-- [x] Нативные тултипы (HTML title) на обрезанных текстах
-- [x] Загрузка фотографий (Bootstrap-styled InputFile)
+- [x] **SignalR — обновления в реальном времени**
+- [x] Загрузка и управление фотографиями товаров и заказов
 - [x] История действий с фильтрацией по типу и филиалу
+- [x] URL-фильтры (сохранение состояния в URL)
+- [x] Консольный лаунчер с мониторингом и авто-рестартом
+- [x] Интеграция с Docker
 - [x] ExceptionHandlerMiddleware (единая обработка ошибок)
 - [x] DateTime.UtcNow (все временные метки в UTC)
-- [x] Настройки филиалов (уведомления, привязка админов)
-- [x] Консольный лаунчер (автоматизация запуска + мониторинг)
+- [x] Подсветка поиска (HTML-безопасная)
 - [x] Bootstrap Icons локально (без CDN)
-- [x] Изображения заказов (аналогично товарам: загрузка, главное фото, галерея)
-- [x] Авто-миграция при старте API (без блокировки)
+- [x] Авто-миграция при старте API
 - [x] Реалтайм-стриминг Docker pull/build в лаунчере
 - [x] Корректная остановка Docker-контейнеров при выходе
-- [x] Авто-запуск Docker Desktop при отсутствии демона
-- [x] Исправлено 30+ багов (XSS, batch-логика, memory leaks, data consistency, UI alignment)
+- [x] Авто-запуск Docker Desktop
+- [x] Защита от двойного запуска лаунчера (Mutex)
+- [x] Исправлено 30+ багов
 
-### Осталось
+### Запланировано
 
-- [ ] Аутентификация (JWT)
-- [ ] Хеширование паролей
-- [ ] Валидация DTO (FluentValidation)
-- [ ] Unit-тесты (MSTest)
-- [ ] Страница каталога для студентов
-- [ ] Корзина и оформление заказа
-- [ ] Реальные уведомления (email/Telegram)
-- [ ] Серверная сортировка (sortBy/sortDir параметры в API)
-- [ ] Навигация клавиатурой (Tab между секциями, Enter для модалок)
+- [ ] Аутентификация (JWT) — защита API-эндпоинтов
+- [ ] Хеширование паролей — bcrypt вместо хранения в открытом виде
+- [ ] Валидация DTO (FluentValidation) — серверная валидация всех входных данных
+- [ ] Unit-тесты (MSTest) — покрытие сервисов и репозиториев
+- [ ] Страница каталога для студентов — публичный просмотр товаров
+- [ ] Корзина и оформление заказа — покупательский flow
+- [ ] Реальные уведомления (email/Telegram) — отправка по настройкам филиала
+- [ ] Серверная сортировка (sortBy/sortDir в API) — корректная глобальная сортировка
 
 ---
 

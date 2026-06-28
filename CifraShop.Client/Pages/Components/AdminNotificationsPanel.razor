@@ -1,0 +1,233 @@
+@using CifraShop.Client.Models
+@inject HttpClient Http
+
+<div class="col-lg-5">
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>Уведомления по филиалам</h6>
+            <div class="d-flex align-items-center gap-2">
+                @if (Settings.Any())
+                {
+                    <small class="text-secondary">@ConfiguredCount/@Settings.Count настроено</small>
+                }
+                <button class="btn btn-outline-primary btn-sm" @onclick="() => _showModal = true">
+                    <i class="bi bi-gear"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body pt-0">
+            @if (!Settings.Any())
+            {
+                <div class="text-center py-3">
+                    <small class="text-secondary"><i class="bi bi-bell-slash me-1"></i>Не настроено</small>
+                </div>
+            }
+            else
+            {
+                @foreach (var s in Settings)
+                {
+                    <div class="d-flex align-items-start gap-2 py-2 border-bottom">
+                        <i class="bi bi-geo-alt text-primary mt-1"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small">@s.Branch</div>
+                            @if (!string.IsNullOrEmpty(s.AdminEmails))
+                            {
+                                <div class="small text-secondary mt-1"><i class="bi bi-person me-1"></i>@s.AdminEmails</div>
+                            }
+                            <div class="d-flex gap-1 flex-wrap mt-1">
+                                @if (!string.IsNullOrEmpty(s.Email))
+                                {
+                                    <span class="badge bg-light text-dark border"><i class="bi bi-envelope me-1"></i>Email</span>
+                                }
+                                @if (!string.IsNullOrEmpty(s.TelegramChatId))
+                                {
+                                    <span class="badge bg-light text-dark border"><i class="bi bi-telegram me-1"></i>Telegram</span>
+                                }
+                                @if (s.NotifyOnNewOrder)
+                                {
+                                    <span class="badge bg-primary bg-opacity-10 text-primary">Заказы</span>
+                                }
+                                @if (s.NotifyOnStatusChange)
+                                {
+                                    <span class="badge bg-info bg-opacity-10 text-info">Статус</span>
+                                }
+                                @if (s.NotifyOnLowStock)
+                                {
+                                    <span class="badge bg-warning text-dark">Остаток ≤ @s.LowStockThreshold</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@if (_showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
+         @onmousedown="() => _showModal = false">
+        <div class="modal-dialog modal-lg modal-dialog-centered"
+             @onclick:stopPropagation="true"
+             @onmousedown:stopPropagation="true"
+             @onkeydown:stopPropagation="true">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-semibold"><i class="bi bi-bell me-1"></i>Настройки уведомлений</h6>
+                    <button type="button" class="btn-close" @onclick="() => _showModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!Settings.Any())
+                    {
+                        <p class="text-secondary small">Уведомления не настроены. Создайте первую настройку для филиала.</p>
+                    }
+                    @foreach (var s in Settings)
+                    {
+                        <div class="border rounded-3 p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-semibold mb-0"><i class="bi bi-geo-alt me-1"></i>@s.Branch</h6>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm @(s.Id == 0 ? "btn-success" : "btn-outline-primary")" @onclick="() => SaveSettings(s)">
+                                        <i class="bi bi-check-lg me-1"></i>@(s.Id == 0 ? "Создать" : "Сохранить")
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSettings(s)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="form-label small">Название филиала</label>
+                                    <input type="text" class="form-control form-control-sm" @bind="s.Branch" placeholder="Москва, Казань..." />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small">Email для уведомлений</label>
+                                    <input type="email" class="form-control form-control-sm" @bind="s.Email" placeholder="admin@example.com" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small">Telegram Bot Token</label>
+                                    <input type="text" class="form-control form-control-sm" @bind="s.TelegramBotToken" placeholder="123456:ABC..." />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small">Telegram Chat ID</label>
+                                    <input type="text" class="form-control form-control-sm" @bind="s.TelegramChatId" placeholder="-100123..." />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small">Email администраторов филиала</label>
+                                    <input type="text" class="form-control form-control-sm" @bind="s.AdminEmails" placeholder="admin1@example.com, admin2@example.com" />
+                                    <small class="text-secondary">Через запятую. Определяет, какие админы принадлежат этому филиалу.</small>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-medium">Уведомлять о:</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="s.NotifyOnNewOrder" />
+                                        <label class="form-check-label small">Новых заказах</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="s.NotifyOnStatusChange" />
+                                        <label class="form-check-label small">Смене статуса заказа</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="s.NotifyOnLowStock" />
+                                        <label class="form-check-label small">Малом остатке на складе</label>
+                                    </div>
+                                </div>
+                                @if (s.NotifyOnLowStock)
+                                {
+                                    <div class="col-6">
+                                        <label class="form-label small">Порог остатка</label>
+                                        <input type="number" class="form-control form-control-sm" @bind="s.LowStockThreshold" min="1" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    <button class="btn btn-sm btn-outline-success" @onclick="AddNew">
+                        <i class="bi bi-plus-lg me-1"></i>Добавить филиал
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public List<NotificationSettingsDto> Settings { get; set; } = new();
+    [Parameter] public EventCallback<string> OnNotification { get; set; }
+
+    private bool _showModal;
+
+    private int ConfiguredCount => Settings.Count(s => !string.IsNullOrEmpty(s.Email) || !string.IsNullOrEmpty(s.TelegramChatId));
+
+    private void AddNew()
+    {
+        Settings.Add(new NotificationSettingsDto { Branch = "Новый филиал", NotifyOnNewOrder = true, NotifyOnStatusChange = true, NotifyOnLowStock = true, LowStockThreshold = 5 });
+    }
+
+    private async Task SaveSettings(NotificationSettingsDto settings)
+    {
+        var body = new { settings.Email, settings.TelegramBotToken, settings.TelegramChatId, settings.Branch, settings.AdminEmails, settings.NotifyOnNewOrder, settings.NotifyOnStatusChange, settings.NotifyOnLowStock, settings.LowStockThreshold };
+        try
+        {
+            if (settings.Id == 0)
+            {
+                var r = await Http.PostAsJsonAsync("api/NotificationSettings", body);
+                if (r.IsSuccessStatusCode)
+                {
+                    var created = await r.Content.ReadFromJsonAsync<NotificationSettingsDto>();
+                    if (created != null) { settings.Id = created.Id; }
+                    await OnNotification.InvokeAsync($"Настройка «{settings.Branch}» создана");
+                    StateHasChanged();
+                }
+                else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+            }
+            else
+            {
+                var r = await Http.PutAsJsonAsync($"api/NotificationSettings?id={settings.Id}", body);
+                if (r.IsSuccessStatusCode)
+                {
+                    await OnNotification.InvokeAsync($"Настройка «{settings.Branch}» обновлена");
+                    StateHasChanged();
+                }
+                else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+            }
+        }
+        catch (Exception ex) { await OnNotification.InvokeAsync($"Ошибка: {ex.Message}"); }
+    }
+
+    private async Task DeleteSettings(NotificationSettingsDto settings)
+    {
+        if (settings.Id > 0)
+        {
+            var r = await Http.DeleteAsync($"api/NotificationSettings?id={settings.Id}");
+            if (r.IsSuccessStatusCode) await OnNotification.InvokeAsync($"Настройка «{settings.Branch}» удалена");
+        }
+        Settings.Remove(settings);
+    }
+
+    private static string ExtractErrorMessage(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "Неизвестная ошибка";
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("error", out var errProp) && errProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return errProp.GetString() ?? raw;
+            if (root.TryGetProperty("title", out var titleProp) && titleProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return titleProp.GetString() ?? raw;
+            if (root.TryGetProperty("errors", out var errorsProp) && errorsProp.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var messages = new List<string>();
+                foreach (var prop in errorsProp.EnumerateObject())
+                    if (prop.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        foreach (var item in prop.Value.EnumerateArray())
+                            messages.Add(item.GetString() ?? "");
+                if (messages.Any()) return string.Join("; ", messages);
+            }
+            return raw;
+        }
+        catch { return raw; }
+    }
+}

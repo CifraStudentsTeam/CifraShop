@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 using System.Text;
+=======
+using CifraShop.API;
+using CifraShop.API.Hubs;
+>>>>>>> 335e25be17000b709c97c1610d615b28dfc15e82
 using CifraShop.API.Middleware;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
@@ -14,6 +19,8 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.AddSignalR();
 
 builder.Services.AddOpenApi();
 
@@ -69,7 +76,8 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins("https://localhost:5001", "http://localhost:5001")
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         });
 });
 
@@ -82,29 +90,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-_ = Task.Run(async () =>
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-    for (int attempt = 1; attempt <= 15; attempt++)
-    {
-        try
-        {
-            db.Database.Migrate();
-            Console.WriteLine("[API] БД обновлена");
-            return;
-        }
-        catch (Exception ex) when (attempt < 15)
-        {
-            Console.WriteLine($"[API] БД недоступна (попытка {attempt}/15): {ex.Message}. Повтор через 2 сек...");
-            await Task.Delay(2000);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[API] Не удалось подключиться к БД после 15 попыток: {ex.Message}");
-        }
-    }
-});
+DatabaseInitializer.ApplyMigrationsAsync(app);
 
 app.UseStaticFiles();
 
@@ -114,5 +100,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<AdminHub>("/hubs/admin");
+
+app.MapHub<ShopHub>("/hubs/shop");
 
 app.Run();

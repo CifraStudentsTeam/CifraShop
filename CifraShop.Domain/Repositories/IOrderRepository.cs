@@ -19,6 +19,8 @@ namespace CifraShop.Domain.Repositories
         Task<Order> CreateOrderInTransaction(
             Order order,
             List<OrderItem> items,
-            List<(int ProductId, int Quantity)> stockUpdates);
+            List<(int ProductId, int Quantity)> stockUpdates,
+            int userId,
+            int totalSum);
     }
 }

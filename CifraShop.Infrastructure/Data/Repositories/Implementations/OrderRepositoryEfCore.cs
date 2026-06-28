@@ -85,7 +85,9 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
         public async Task<Order> CreateOrderInTransaction(
             Order order,
             List<OrderItem> items,
-            List<(int ProductId, int Quantity)> stockUpdates)
+            List<(int ProductId, int Quantity)> stockUpdates,
+            int userId,
+            int totalSum)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -107,6 +109,9 @@ namespace CifraShop.Infrastructure.Data.Repositories.Implementations
                         ? StatusProduct.OutOfStock
                         : StatusProduct.InStock;
                 }
+
+                var user = await _context.Users.SingleAsync(u => u.Id == userId);
+                user.Balance = (user.Balance ?? 0) - totalSum;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

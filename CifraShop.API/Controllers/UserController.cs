@@ -1,3 +1,4 @@
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Users;
@@ -5,6 +6,7 @@ using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 using CifraShop.Domain.Enums;
 
@@ -16,9 +18,13 @@ namespace CifraShop.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IHubContext<AdminHub> _hub;
 
-        public UserController(IUserService userService)
-            => _userService = userService;
+        public UserController(IUserService userService, IHubContext<AdminHub> hub)
+        {
+            _userService = userService;
+            _hub = hub;
+        }
 
         [HttpGet("all")]
         public async Task<ActionResult<List<UserResponse>>> GetAll()
@@ -78,6 +84,7 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<UserResponse>> CreateAdmin([FromBody] CreateUserRequest request)
         {
             var admin = await _userService.CreateAdmin(request.Email, request.Password);
+            await _hub.Clients.All.SendAsync("Notify", "user", "created");
             return Ok(admin.ToResponse());
         }
 
@@ -85,6 +92,7 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<UserResponse>> CreateStudent([FromBody] CreateUserRequest request)
         {
             var student = await _userService.CreateStudent(request.Email, request.Password);
+            await _hub.Clients.All.SendAsync("Notify", "user", "created");
             return Ok(student.ToResponse());
         }
 
@@ -99,6 +107,7 @@ namespace CifraShop.API.Controllers
             if (request.Balance.HasValue) user.Balance = request.Balance.Value;
 
             await _userService.UpdateUser(user);
+            await _hub.Clients.All.SendAsync("Notify", "user", "updated");
             return NoContent();
         }
 
@@ -108,6 +117,7 @@ namespace CifraShop.API.Controllers
             var user = await _userService.GetUserById(id);
             if (user == null) return NotFound($"Пользователь с id {id} не найден");
             await _userService.DeleteUser(user);
+            await _hub.Clients.All.SendAsync("Notify", "user", "deleted");
             return NoContent();
         }
     }

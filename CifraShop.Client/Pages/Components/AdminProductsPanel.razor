@@ -1,0 +1,572 @@
+@using CifraShop.Client.Models
+@inject HttpClient Http
+
+<div class="col-lg-6">
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0"><i class="bi bi-box me-1"></i>Товары</h6>
+            <button class="btn btn-primary btn-sm" @onclick="() => OpenProductModal()">
+                <i class="bi bi-plus-lg me-1"></i>Добавить
+            </button>
+        </div>
+        <div class="card-body pt-0">
+            <SearchBar Value="@Search" ValueChanged="OnSearchChanged"
+                       FilterValue="@Filter" FilterValueChanged="OnFilterChanged"
+                       Placeholder="Название, описание...">
+                <option value="">Все статусы</option>
+                <option value="0">В наличии</option>
+                <option value="1">Нет в наличии</option>
+                <option value="2">Скоро</option>
+            </SearchBar>
+
+            @if (Products.Any(p => p.IsSelected))
+            {
+                <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
+                    <span class="small text-secondary me-auto align-self-center">Выбрано: @Products.Count(p => p.IsSelected)</span>
+                    <button class="btn btn-outline-success btn-sm" @onclick="ShowSelected">
+                        <i class="bi bi-eye me-1"></i>Показать
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="HideSelected">
+                        <i class="bi bi-eye-slash me-1"></i>Скрыть
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" @onclick="DeleteSelected">
+                        <i class="bi bi-trash me-1"></i>Удалить
+                    </button>
+                </div>
+            }
+
+            @if (Loading)
+            {
+                <Spinner />
+            }
+            else if (!Products.Any())
+            {
+                <div class="text-center py-4 text-secondary small">
+                    <i class="bi bi-box fs-3 d-block mb-1"></i>
+                    @if (!string.IsNullOrEmpty(Search) || !string.IsNullOrEmpty(Filter))
+                    {
+                        <span>Товары не найдены по заданным критериям</span>
+                    }
+                    else
+                    {
+                        <span>Товаров пока нет. Добавьте первый товар</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:2.25rem">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <input type="checkbox" class="form-check-input"
+                                               checked="@(IsAllSelected)"
+                                               indeterminate="@(IsPartialSelected)"
+                                               @onchange="ToggleSelectAll" />
+                                        @if (Products.Any(p => p.IsSelected))
+                                        {
+                                            <span class="badge bg-primary" style="font-size:0.6rem;">@Products.Count(p => p.IsSelected)</span>
+                                        }
+                                    </div>
+                                </th>
+                                <th style="cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("name"))">
+                                    Товар <i class="bi @SortIcon("name") small"></i>
+                                </th>
+                                <th style="width:5.5rem;cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("price"))">
+                                    Цена <i class="bi @SortIcon("price") small"></i>
+                                </th>
+                                <th style="width:5rem;cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("quantity"))">
+                                    Склад <i class="bi @SortIcon("quantity") small"></i>
+                                </th>
+                                <th style="width:6rem;">Статус</th>
+                                <th style="width:4rem;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Products)
+                            {
+                                var isLowStock = p.Status == StatusProduct.InStock && p.Quantity <= 5;
+                                var isOutOfStock = p.Status == StatusProduct.OutOfStock;
+                                <tr class="@(isOutOfStock ? "opacity-50" : "") @(isLowStock ? "table-warning" : "")">
+                                    <td><input type="checkbox" class="form-check-input" @bind="p.IsSelected" /></td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (!string.IsNullOrEmpty(p.ImageUrl))
+                                            {
+                                                <img src="@p.ImageUrl" alt="@p.Name"
+                                                     class="rounded-1" style="width:2rem;height:2rem;object-fit:cover;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="bg-light rounded-1 d-flex align-items-center justify-content-center"
+                                                     style="width:2rem;height:2rem;">
+                                                    <i class="bi bi-image text-secondary small"></i>
+                                                </div>
+                                            }
+                                            <div>
+                                                <div class="fw-semibold text-truncate" style="max-width:10rem;" title="@p.Name">
+                                                    @((MarkupString)HighlightText(p.Name))
+                                                    @if (isLowStock)
+                                                    {
+                                                        <i class="bi bi-exclamation-triangle text-warning ms-1" title="Низкий остаток"></i>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(p.Description))
+                                                {
+                                                    <small class="text-secondary text-truncate d-block" style="max-width:10rem;">@((MarkupString)HighlightText(p.Description))</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@p.Price ЦФК</td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm @(isLowStock ? "border-warning" : "")"
+                                               style="width:3.75rem;" value="@p.Quantity"
+                                               @onchange="(ChangeEventArgs e) => OnQuantityChanged(p, e)" />
+                                    </td>
+                                    <td>
+                                        <span class="badge @(StatusBadge(p.Status))"
+                                              style="cursor:pointer"
+                                              @onclick="() => ToggleProductStatus(p)"
+                                              title="@(StatusTooltip(p.Status))">
+                                            @StatusText(p.Status)
+                                        </span>
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <button class="btn btn-sm btn-outline-primary me-1" title="Редактировать"
+                                                @onclick="() => OpenProductModal(p)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="Удалить"
+                                                @onclick="() => DeleteProduct(p)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-secondary">
+                            @TotalCount товар(ов)
+                            @if (TotalStockValue > 0)
+                            {
+                                <span class="ms-2 text-muted">· @TotalStockValue.ToString("N0") ЦФК на складе</span>
+                            }
+                        </small>
+                        <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
+                                value="@PageSize" @onchange="OnPageSizeChanged">
+                            <option value="5">5</option>
+                            <option value="8">8</option>
+                            <option value="16">16</option>
+                            <option value="32">32</option>
+                        </select>
+                    </div>
+                    <Pagination Page="Page" TotalPages="@TotalPages" Loading="@Loading"
+                                 PageChanged="OnPageChanged" />
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (_showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="CloseProductModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-semibold">
+                        <i class="bi bi-@(_editingProduct == null ? "plus-circle" : "pencil-square") me-1"></i>
+                        @(_editingProduct == null ? "Новый товар" : "Редактирование товара")
+                    </h6>
+                    <button type="button" class="btn-close" @onclick="CloseProductModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Название <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control @(_formName.Length > 0 ? "is-valid" : "")"
+                               @bind="_formName" placeholder="Введите название" disabled="@_saving" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Описание</label>
+                        <textarea class="form-control" rows="2" @bind="_formDescription" placeholder="Краткое описание товара" disabled="@_saving"></textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-medium">Цена (ЦФК)</label>
+                            <input type="number" class="form-control @(_formPrice is > 0 ? "is-valid" : "")" @bind="_formPrice" min="1" step="1" placeholder="Введите цену" disabled="@_saving" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-medium">Количество</label>
+                            <input type="number" class="form-control" @bind="_formQuantity" min="0" step="1" placeholder="0" disabled="@_saving" />
+                        </div>
+                    </div>
+                    @if (_editingProduct != null)
+                    {
+                        <div class="mt-3">
+                            <label class="form-label small fw-medium">Фотографии товара</label>
+                            <div class="d-flex gap-2 flex-wrap mb-2">
+                                @foreach (var img in _productImages)
+                                {
+                                    <div class="position-relative" style="width:5rem;height:5rem;">
+                                        <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
+                                             alt="Фото" />
+                                        <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
+                                                style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                                @onclick="() => DeleteProductImage(img)" title="Удалить">×</button>
+                                        @if (!img.IsPrimary)
+                                        {
+                                            <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
+                                                    style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                                    @onclick="() => SetPrimaryImage(img)" title="Сделать главной">★</button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
+                                   style="cursor:pointer;" for="imageFileInput">
+                                <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
+                                <small class="text-secondary">Нажмите для выбора изображения</small>
+                                <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
+                            </label>
+                            <InputFile id="imageFileInput" OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="CloseProductModal" disabled="@_saving">Отмена</button>
+                    <button type="button" class="btn btn-primary btn-sm"
+                            disabled="@(_formName.Length == 0 || _saving)"
+                            @onclick="SaveProduct">
+                        @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        else { <i class="bi bi-check-lg me-1"></i> }
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public List<ProductDto> Products { get; set; } = new();
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int Page { get; set; }
+    [Parameter] public int PageSize { get; set; } = 8;
+    [Parameter] public int TotalPages { get; set; } = 1;
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string Search { get; set; } = "";
+    [Parameter] public string Filter { get; set; } = "";
+    [Parameter] public string SortField { get; set; } = "";
+    [Parameter] public bool SortAsc { get; set; } = true;
+    [Parameter] public int TotalStockValue { get; set; }
+
+    [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter] public EventCallback<string> OnFilterChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> OnPageSizeChanged { get; set; }
+    [Parameter] public EventCallback<string> OnSortToggle { get; set; }
+    [Parameter] public EventCallback<string> OnNotification { get; set; }
+    [Parameter] public EventCallback<(string, Func<Task>)> OnConfirm { get; set; }
+    [Parameter] public EventCallback<(string, string)> OnLogAction { get; set; }
+    [Parameter] public EventCallback OnMetricsChanged { get; set; }
+
+    private bool _showModal, _saving;
+    private ProductDto? _editingProduct;
+    private string _formName = "", _formDescription = "";
+    private int? _formPrice, _formQuantity;
+    private List<ProductImageDto> _productImages = new();
+
+    private bool IsAllSelected => Products.Any() && Products.All(p => p.IsSelected);
+    private bool IsPartialSelected => Products.Any(p => p.IsSelected) && !IsAllSelected;
+
+    private string SortIcon(string field) =>
+        field == SortField ? (SortAsc ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up";
+
+    private string HighlightText(string text)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(Search))
+            return System.Net.WebUtility.HtmlEncode(text ?? "");
+        var encoded = System.Net.WebUtility.HtmlEncode(text);
+        var encodedSearch = System.Net.WebUtility.HtmlEncode(Search);
+        var idx = encoded.IndexOf(encodedSearch, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return encoded;
+        return encoded[..idx] + "<strong class=\"text-decoration-underline\">" + encoded[idx..(idx + encodedSearch.Length)] + "</strong>" + encoded[(idx + encodedSearch.Length)..];
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var v = (bool)e.Value!;
+        foreach (var p in Products) p.IsSelected = v;
+    }
+
+    private void OpenProductModal(ProductDto? product = null)
+    {
+        _editingProduct = product;
+        _formName = product?.Name ?? ""; _formDescription = product?.Description ?? "";
+        _formPrice = product?.Price; _formQuantity = product?.Quantity;
+        _productImages = new();
+        _showModal = true;
+        if (product != null) _ = LoadProductImages(product.Id);
+    }
+
+    private async Task LoadProductImages(int productId)
+    {
+        try { _productImages = await Http.GetFromJsonAsync<List<ProductImageDto>>($"api/ProductImage/by-product?productId={productId}") ?? new(); }
+        catch { _productImages = new(); }
+    }
+
+    private async Task CloseProductModal()
+    {
+        _showModal = false; _saving = false;
+        await OnPageChanged.InvokeAsync(Page);
+        await OnMetricsChanged.InvokeAsync();
+    }
+
+    private async Task SaveProduct()
+    {
+        _saving = true;
+        try
+        {
+            if (_formPrice is null || _formPrice < 1) { await OnNotification.InvokeAsync("Цена должна быть не менее 1 "); return; }
+            if (_formQuantity is null || _formQuantity < 0) { await OnNotification.InvokeAsync("Количество не может быть отрицательным"); return; }
+            var body = new { Name = _formName, Description = _formDescription, Price = _formPrice.Value, Quantity = _formQuantity.Value };
+            if (_editingProduct == null)
+            {
+                var r = await Http.PostAsJsonAsync("api/Product/create-product", body);
+                if (r.IsSuccessStatusCode)
+                {
+                    var created = await r.Content.ReadFromJsonAsync<ProductDto>();
+                    await OnLogAction.InvokeAsync(("Создание", $"Товар «{_formName}»"));
+                    await OnNotification.InvokeAsync("Товар создан");
+                    await CloseProductModal();
+                }
+                else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+            }
+            else
+            {
+                var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={_editingProduct.Id}", body);
+                if (r.IsSuccessStatusCode)
+                {
+                    (_editingProduct.Name, _editingProduct.Description, _editingProduct.Price, _editingProduct.Quantity)
+                        = (_formName, _formDescription, _formPrice!.Value, _formQuantity!.Value);
+                    await OnLogAction.InvokeAsync(("Изменение", $"Товар #{_editingProduct.Id} «{_formName}»"));
+                    await OnNotification.InvokeAsync("Товар обновлён");
+                    await CloseProductModal();
+                }
+                else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+            }
+        }
+        catch (Exception ex) { await OnNotification.InvokeAsync($"Ошибка: {ex.Message}"); }
+        finally { _saving = false; }
+    }
+
+    private async Task OnQuantityChanged(ProductDto product, ChangeEventArgs e)
+    {
+        var oldQuantity = product.Quantity;
+        if (int.TryParse(e.Value?.ToString(), out int q) && product.Quantity != q)
+        {
+            var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Quantity = q });
+            if (r.IsSuccessStatusCode)
+            {
+                product.Quantity = q;
+                await OnLogAction.InvokeAsync(("Изменение", $"«{product.Name}»: склад = {q}"));
+                await OnNotification.InvokeAsync($"«{product.Name}»: количество = {q}");
+                await OnMetricsChanged.InvokeAsync();
+            }
+            else
+            {
+                product.Quantity = oldQuantity;
+                await OnNotification.InvokeAsync($"Не удалось обновить количество «{product.Name}»");
+            }
+        }
+    }
+
+    private async Task ToggleProductStatus(ProductDto product)
+    {
+        var newStatus = product.Status switch
+        {
+            StatusProduct.InStock => StatusProduct.OutOfStock,
+            StatusProduct.OutOfStock => StatusProduct.ComingSoon,
+            _ => StatusProduct.InStock
+        };
+        var r = await Http.PutAsJsonAsync($"api/Product/update-product?id={product.Id}", new { Status = (int)newStatus });
+        if (r.IsSuccessStatusCode)
+        {
+            product.Status = newStatus;
+            await OnLogAction.InvokeAsync(("Изменение", $"«{product.Name}»: {StatusText(newStatus)}"));
+            await OnNotification.InvokeAsync($"«{product.Name}»: {StatusText(newStatus)}");
+            await OnMetricsChanged.InvokeAsync();
+        }
+        else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+    }
+
+    private void DeleteProduct(ProductDto product)
+    {
+        _ = OnConfirm.InvokeAsync(($"Удалить «{product.Name}»?", async () =>
+        {
+            var r = await Http.DeleteAsync($"api/Product/delete-product?id={product.Id}");
+            if (r.IsSuccessStatusCode)
+            {
+                Products.Remove(product);
+                await OnLogAction.InvokeAsync(("Удаление", $"Товар «{product.Name}»"));
+                await OnNotification.InvokeAsync("Товар удалён");
+                await OnPageChanged.InvokeAsync(Page);
+            }
+        }));
+    }
+
+    private void DeleteSelected()
+    {
+        var sel = Products.Where(p => p.IsSelected).ToList();
+        _ = OnConfirm.InvokeAsync(($"Удалить {sel.Count} товар(ов)?", async () =>
+        {
+            var ids = sel.Select(p => p.Id).ToList();
+            var r = await Http.PostAsJsonAsync("api/Product/batch-delete", new { ProductIds = ids });
+            if (r.IsSuccessStatusCode)
+            {
+                await OnLogAction.InvokeAsync(("Удаление", $"{sel.Count} товар(ов)"));
+                await OnNotification.InvokeAsync($"Удалено: {sel.Count} товар(ов)");
+                await OnPageChanged.InvokeAsync(Page);
+            }
+        }));
+    }
+
+    private async Task ShowSelected() => await SetSelectedStatus(StatusProduct.InStock);
+    private async Task HideSelected() => await SetSelectedStatus(StatusProduct.OutOfStock);
+
+    private async Task SetSelectedStatus(StatusProduct status)
+    {
+        var sel = Products.Where(p => p.IsSelected).ToList();
+        if (!sel.Any()) { await OnNotification.InvokeAsync("Выберите товары для изменения"); return; }
+        var ids = sel.Select(p => p.Id).ToList();
+        var r = await Http.PostAsJsonAsync("api/Product/batch-update-status", new { ProductIds = ids, NewStatus = (int)status });
+        if (r.IsSuccessStatusCode)
+        {
+            foreach (var p in sel) p.Status = status;
+            await OnLogAction.InvokeAsync(("Изменение", $"{sel.Count} товар(ов): {StatusText(status)}"));
+            await OnNotification.InvokeAsync($"Обновлено: {sel.Count} товар(ов)");
+            await OnMetricsChanged.InvokeAsync();
+        }
+        else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+        StateHasChanged();
+    }
+
+    private async Task OnImageUpload(InputFileChangeEventArgs e)
+    {
+        if (_editingProduct == null) return;
+        var file = e.File;
+        if (file == null) return;
+
+        using var content = new MultipartFormDataContent();
+        var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        var fileContent = new StreamContent(stream);
+        content.Add(fileContent, "file", file.Name);
+        content.Add(new StringContent(_editingProduct.Id.ToString()), "productId");
+        content.Add(new StringContent((_productImages.Count == 0).ToString()), "isPrimary");
+
+        var r = await Http.PostAsync("api/ProductImage/upload", content);
+        if (r.IsSuccessStatusCode)
+        {
+            var result = await r.Content.ReadFromJsonAsync<UploadResult>();
+            if (result != null)
+            {
+                _productImages.Add(new ProductImageDto
+                {
+                    Id = result.Id, Url = result.Url, FileName = result.FileName,
+                    IsPrimary = result.IsPrimary, SortOrder = result.SortOrder
+                });
+                if (result.IsPrimary) _editingProduct.ImageUrl = result.Url;
+            }
+            await OnNotification.InvokeAsync("Изображение загружено");
+            StateHasChanged();
+        }
+        else await OnNotification.InvokeAsync($"Ошибка загрузки: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+    }
+
+    private async Task SetPrimaryImage(ProductImageDto img)
+    {
+        var r = await Http.PostAsJsonAsync($"api/ProductImage/set-primary?imageId={img.Id}", new { });
+        if (r.IsSuccessStatusCode && _editingProduct != null)
+        {
+            foreach (var i in _productImages) i.IsPrimary = i.Id == img.Id;
+            _editingProduct.ImageUrl = img.Url;
+            await OnNotification.InvokeAsync("Главное изображение изменено");
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteProductImage(ProductImageDto img)
+    {
+        var r = await Http.DeleteAsync($"api/ProductImage?id={img.Id}");
+        if (r.IsSuccessStatusCode && _editingProduct != null)
+        {
+            _productImages.Remove(img);
+            if (img.IsPrimary && _productImages.Any())
+            {
+                var newPrimary = _productImages.First();
+                newPrimary.IsPrimary = true;
+                _editingProduct.ImageUrl = newPrimary.Url;
+            }
+            else if (!_productImages.Any())
+            {
+                _editingProduct.ImageUrl = null;
+            }
+            await OnNotification.InvokeAsync("Изображение удалено");
+            StateHasChanged();
+        }
+    }
+
+    private class UploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
+
+    private static string StatusBadge(StatusProduct s) => s switch
+    {
+        StatusProduct.InStock => "bg-success",
+        StatusProduct.OutOfStock => "bg-secondary",
+        _ => "bg-info"
+    };
+
+    private static string StatusText(StatusProduct s) => s switch
+    {
+        StatusProduct.InStock => "В наличии",
+        StatusProduct.OutOfStock => "Нет в наличии",
+        _ => "Скоро в продаже"
+    };
+
+    private static string StatusTooltip(StatusProduct s) => s switch
+    {
+        StatusProduct.InStock => "Товар в наличии. Нажмите, чтобы пометить «Нет в наличии»",
+        StatusProduct.OutOfStock => "Товар отсутствует. Нажмите, чтобы пометить «Скоро в продаже»",
+        _ => "Скоро в продаже. Нажмите, чтобы пометить «В наличии»"
+    };
+
+    private static string ExtractErrorMessage(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "Неизвестная ошибка";
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("error", out var errProp) && errProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return errProp.GetString() ?? raw;
+            if (root.TryGetProperty("title", out var titleProp) && titleProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return titleProp.GetString() ?? raw;
+            if (root.TryGetProperty("errors", out var errorsProp) && errorsProp.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var messages = new List<string>();
+                foreach (var prop in errorsProp.EnumerateObject())
+                    if (prop.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        foreach (var item in prop.Value.EnumerateArray())
+                            messages.Add(item.GetString() ?? "");
+                if (messages.Any()) return string.Join("; ", messages);
+            }
+            return raw;
+        }
+        catch { return raw; }
+    }
+}

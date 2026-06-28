@@ -1,0 +1,309 @@
+@using CifraShop.Client.Models
+@inject HttpClient Http
+
+<div class="col-12">
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0"><i class="bi bi-people me-1"></i>Пользователи</h6>
+            <button class="btn btn-primary btn-sm" @onclick="OpenUserModal">
+                <i class="bi bi-plus-lg me-1"></i>Добавить
+            </button>
+        </div>
+        <div class="card-body pt-0">
+            <SearchBar Value="@Search" ValueChanged="OnSearchChanged"
+                       FilterValue="@Filter" FilterValueChanged="OnFilterChanged"
+                       Placeholder="Email...">
+                <option value="">Все роли</option>
+                <option value="0">Студенты</option>
+                <option value="1">Админы</option>
+            </SearchBar>
+
+            @if (Loading)
+            {
+                <Spinner />
+            }
+            else if (!Users.Any())
+            {
+                <div class="text-center py-4 text-secondary small">
+                    <i class="bi bi-people fs-3 d-block mb-1"></i>
+                    @if (!string.IsNullOrEmpty(Search) || !string.IsNullOrEmpty(Filter))
+                    {
+                        <span>Пользователи не найдены по заданным критериям</span>
+                    }
+                    else
+                    {
+                        <span>Пользователей пока нет. Создайте первого пользователя</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:3rem;cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("id"))">
+                                    ID <i class="bi @SortIcon("id") small"></i>
+                                </th>
+                                <th style="cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("email"))">
+                                    Email <i class="bi @SortIcon("email") small"></i>
+                                </th>
+                                <th style="width:6rem;cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("balance"))">
+                                    Баланс <i class="bi @SortIcon("balance") small"></i>
+                                </th>
+                                <th>Роль</th>
+                                <th style="width:6rem;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var u in Users)
+                            {
+                                <tr>
+                                    <td class="text-secondary small">#@u.Id</td>
+                                    <td class="text-truncate" style="max-width:15rem;" title="@u.Email">@((MarkupString)HighlightText(u.Email))</td>
+                                    <td>
+                                        <span class="px-1 rounded border-bottom border-secondary" style="cursor:pointer" @onclick="() => OpenEditBalance(u)"
+                                              title="Нажмите для редактирования">
+                                            @(u.Balance?.ToString("N0") ?? "0") ЦФК
+                                            <i class="bi bi-pencil small text-primary ms-1"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(u.Role == UserRole.Admin ? "bg-warning text-dark" : "bg-info")">
+                                            @(u.Role == UserRole.Admin ? "Админ" : "Студент")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" title="Удалить"
+                                                @onclick="() => DeleteUser(u)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-secondary">@TotalCount пользовател(ей)</small>
+                        <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
+                                value="@PageSize" @onchange="OnPageSizeChanged">
+                            <option value="5">5</option>
+                            <option value="8">8</option>
+                            <option value="16">16</option>
+                            <option value="32">32</option>
+                        </select>
+                    </div>
+                    <Pagination Page="Page" TotalPages="@TotalPages" Loading="@Loading"
+                                 PageChanged="OnPageChanged" />
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (_showUserModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showUserModal = false">
+        <div class="modal-dialog modal-sm modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-semibold"><i class="bi bi-person-plus me-1"></i>Новый пользователь</h6>
+                    <button type="button" class="btn-close" @onclick="() => _showUserModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" @bind="_newUserEmail" placeholder="user@example.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Пароль <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" @bind="_newUserPassword" placeholder="Минимум 6 символов" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Роль</label>
+                        <select class="form-select form-select-sm" @bind="_newUserRole">
+                            <option value="Student">Студент</option>
+                            <option value="Admin">Админ</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showUserModal = false">Отмена</button>
+                    <button type="button" class="btn btn-primary btn-sm"
+                            disabled="@(_newUserEmail.Length == 0 || _newUserPassword.Length < 6 || _creatingUser)"
+                            @onclick="CreateUser">
+                        @if (_creatingUser) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        else { <i class="bi bi-check-lg me-1"></i> }
+                        Создать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showEditModal && _editingUser != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showEditModal = false">
+        <div class="modal-dialog modal-sm modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-semibold"><i class="bi bi-wallet2 me-1"></i>Баланс — @_editingUser.Email</h6>
+                    <button type="button" class="btn-close" @onclick="() => _showEditModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label small fw-medium">Баланс (ЦФК)</label>
+                    <input type="number" class="form-control" @bind="_editBalance" min="0" placeholder="0" />
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showEditModal = false">Отмена</button>
+                    <button type="button" class="btn btn-primary btn-sm" @onclick="SaveBalance" disabled="@_savingBalance">
+                        @if (_savingBalance) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        else { <i class="bi bi-check-lg me-1"></i> }
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public List<UserDto> Users { get; set; } = new();
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int Page { get; set; }
+    [Parameter] public int PageSize { get; set; } = 8;
+    [Parameter] public int TotalPages { get; set; } = 1;
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string Search { get; set; } = "";
+    [Parameter] public string Filter { get; set; } = "";
+    [Parameter] public string SortField { get; set; } = "";
+    [Parameter] public bool SortAsc { get; set; } = true;
+
+    [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter] public EventCallback<string> OnFilterChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> OnPageSizeChanged { get; set; }
+    [Parameter] public EventCallback<string> OnSortToggle { get; set; }
+    [Parameter] public EventCallback<string> OnNotification { get; set; }
+    [Parameter] public EventCallback<(string, Func<Task>)> OnConfirm { get; set; }
+    [Parameter] public EventCallback<(string, string)> OnLogAction { get; set; }
+
+    private bool _showUserModal, _showEditModal, _creatingUser, _savingBalance;
+    private UserDto? _editingUser;
+    private string _newUserEmail = "", _newUserPassword = "", _newUserRole = "Student";
+    private int _editBalance;
+
+    private string SortIcon(string field) =>
+        field == SortField ? (SortAsc ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up";
+
+    private void OpenUserModal()
+    {
+        _newUserEmail = "";
+        _newUserPassword = "";
+        _newUserRole = "Student";
+        _showUserModal = true;
+    }
+
+    private string HighlightText(string text)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(Search))
+            return System.Net.WebUtility.HtmlEncode(text ?? "");
+        var encoded = System.Net.WebUtility.HtmlEncode(text);
+        var encodedSearch = System.Net.WebUtility.HtmlEncode(Search);
+        var idx = encoded.IndexOf(encodedSearch, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return encoded;
+        return encoded[..idx] + "<strong class=\"text-decoration-underline\">" + encoded[idx..(idx + encodedSearch.Length)] + "</strong>" + encoded[(idx + encodedSearch.Length)..];
+    }
+
+    private async Task CreateUser()
+    {
+        _creatingUser = true;
+        try
+        {
+            var body = new { Email = _newUserEmail, Password = _newUserPassword };
+            var url = _newUserRole == "Admin" ? "api/User/create-admin" : "api/User/create-student";
+            var r = await Http.PostAsJsonAsync(url, body);
+            if (r.IsSuccessStatusCode)
+            {
+                await OnLogAction.InvokeAsync(("Создание", $"Пользователь «{_newUserEmail}» ({_newUserRole})"));
+                await OnNotification.InvokeAsync("Пользователь создан");
+                _showUserModal = false;
+                _newUserEmail = ""; _newUserPassword = ""; _newUserRole = "Student";
+                await OnPageChanged.InvokeAsync(0);
+            }
+            else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+        }
+        catch (Exception ex) { await OnNotification.InvokeAsync($"Ошибка: {ex.Message}"); }
+        finally { _creatingUser = false; }
+    }
+
+    private void OpenEditBalance(UserDto user)
+    {
+        _editingUser = user;
+        _editBalance = user.Balance ?? 0;
+        _showEditModal = true;
+    }
+
+    private async Task SaveBalance()
+    {
+        if (_editingUser == null) return;
+        _savingBalance = true;
+        try
+        {
+            var r = await Http.PutAsJsonAsync($"api/User?id={_editingUser.Id}", new { Balance = _editBalance });
+            if (r.IsSuccessStatusCode)
+            {
+                _editingUser.Balance = _editBalance;
+                await OnLogAction.InvokeAsync(("Изменение", $"Баланс «{_editingUser.Email}» = {_editBalance}"));
+                await OnNotification.InvokeAsync("Баланс обновлён");
+                _showEditModal = false;
+                StateHasChanged();
+            }
+            else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+        }
+        catch (Exception ex) { await OnNotification.InvokeAsync($"Ошибка: {ex.Message}"); }
+        finally { _savingBalance = false; }
+    }
+
+    private void DeleteUser(UserDto user)
+    {
+        _ = OnConfirm.InvokeAsync(($"Удалить «{user.Email}»?", async () =>
+        {
+            var r = await Http.DeleteAsync($"api/User?id={user.Id}");
+            if (r.IsSuccessStatusCode)
+            {
+                await OnLogAction.InvokeAsync(("Удаление", $"Пользователь «{user.Email}»"));
+                await OnNotification.InvokeAsync($"Пользователь «{user.Email}» удалён");
+                await OnPageChanged.InvokeAsync(Page);
+            }
+        }));
+    }
+
+    private static string ExtractErrorMessage(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "Неизвестная ошибка";
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("error", out var errProp) && errProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return errProp.GetString() ?? raw;
+            if (root.TryGetProperty("title", out var titleProp) && titleProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return titleProp.GetString() ?? raw;
+            if (root.TryGetProperty("errors", out var errorsProp) && errorsProp.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var messages = new List<string>();
+                foreach (var prop in errorsProp.EnumerateObject())
+                    if (prop.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        foreach (var item in prop.Value.EnumerateArray())
+                            messages.Add(item.GetString() ?? "");
+                if (messages.Any()) return string.Join("; ", messages);
+            }
+            return raw;
+        }
+        catch { return raw; }
+    }
+}

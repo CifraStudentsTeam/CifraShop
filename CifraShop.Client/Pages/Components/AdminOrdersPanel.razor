@@ -1,0 +1,571 @@
+@using CifraShop.Client.Models
+@inject HttpClient Http
+
+<div class="col-lg-6">
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0"><i class="bi bi-cart-check me-1"></i>Заказы</h6>
+            <button class="btn btn-primary btn-sm" @onclick="OpenOrderModal">
+                <i class="bi bi-plus-lg me-1"></i>Создать
+            </button>
+        </div>
+        <div class="card-body pt-0">
+            <div class="d-flex gap-2 mb-2 flex-wrap align-items-center">
+                <SearchBar Value="@Search" ValueChanged="OnSearchChanged"
+                           FilterValue="@Filter" FilterValueChanged="OnFilterChanged"
+                           Placeholder="Номер, email...">
+                    <option value="">Все статусы</option>
+                    @foreach (var s in OrderStatuses)
+                    {
+                        <option value="@s.Key">@s.Value</option>
+                    }
+                </SearchBar>
+                <div class="d-flex align-items-center gap-1">
+                    <small class="text-secondary">с</small>
+                    <input type="date" class="form-control form-control-sm w-auto"
+                           value="@DateFrom" @onchange="OnDateFromChanged" />
+                    <small class="text-secondary">по</small>
+                    <input type="date" class="form-control form-control-sm w-auto"
+                           value="@DateTo" @onchange="OnDateToChanged" />
+                </div>
+            </div>
+
+            @if (Orders.Any(o => o.IsSelected))
+            {
+                <div class="d-flex gap-2 mb-2 p-2 bg-light rounded flex-wrap">
+                    <span class="small text-secondary me-auto align-self-center">Выбрано: @Orders.Count(o => o.IsSelected)</span>
+                    <select class="form-select form-select-sm w-auto"
+                            @onchange="async e => { if (int.TryParse(e.Value?.ToString(), out int s)) await MassChangeStatus((StatusOrder)s); }">
+                        <option value="">Сменить статус на...</option>
+                        @foreach (var s in OrderStatuses)
+                        {
+                            <option value="@s.Key">@s.Value</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            @if (Loading)
+            {
+                <Spinner />
+            }
+            else if (!Orders.Any())
+            {
+                <div class="text-center py-4 text-secondary small">
+                    <i class="bi bi-cart fs-3 d-block mb-1"></i>
+                    @if (!string.IsNullOrEmpty(Search) || !string.IsNullOrEmpty(Filter) || !string.IsNullOrEmpty(DateFrom) || !string.IsNullOrEmpty(DateTo))
+                    {
+                        <span>Заказы не найдены по заданным критериям</span>
+                    }
+                    else
+                    {
+                        <span>Заказов пока нет</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:2.25rem">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <input type="checkbox" class="form-check-input"
+                                               checked="@(IsAllSelected)"
+                                               indeterminate="@(IsPartialSelected)"
+                                               @onchange="ToggleSelectAll" />
+                                        @if (Orders.Any(o => o.IsSelected))
+                                        {
+                                            <span class="badge bg-primary" style="font-size:0.6rem;">@Orders.Count(o => o.IsSelected)</span>
+                                        }
+                                    </div>
+                                </th>
+                                <th style="cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("id"))">
+                                    № <i class="bi @SortIcon("id") small"></i>
+                                </th>
+                                <th>Покупатель</th>
+                                <th>Состав</th>
+                                <th style="cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("date"))">
+                                    Дата <i class="bi @SortIcon("date") small"></i>
+                                </th>
+                                <th style="cursor:pointer" @onclick="@(() => OnSortToggle.InvokeAsync("sum"))">
+                                    Сумма <i class="bi @SortIcon("sum") small"></i>
+                                </th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Orders)
+                            {
+                                var items = string.Join(", ", o.Items.Select(i => $"{i.Quantity}\u00d7{i.ProductName}"));
+                                var isExpanded = ExpandedOrderId == o.Id;
+                                <tr style="cursor:pointer" @onclick="() => OnOrderExpand.InvokeAsync(o.Id)"
+                                    class="@(isExpanded ? "table-active" : "")">
+                                    <td @onclick:stopPropagation="true">
+                                        <input type="checkbox" class="form-check-input" @bind="o.IsSelected" />
+                                    </td>
+                                    <td class="fw-semibold">#@o.Id</td>
+                                    <td class="text-truncate" style="max-width:7.5rem;" title="@o.CustomerEmail">@((MarkupString)HighlightText(o.CustomerEmail))</td>
+                                    <td><small class="text-truncate d-block" style="max-width:9rem;" title="@items">@((MarkupString)HighlightText(items))</small></td>
+                                    <td><small>@o.DateOfPurchase.ToString("dd.MM.yy")</small></td>
+                                    <td>@o.Sum ЦФК</td>
+                                    <td @onclick:stopPropagation="true">
+                                        <select class="form-select form-select-sm py-0"
+                                                value="@((int)o.Status)"
+                                                @onchange="e => ChangeStatus(o, (StatusOrder)int.Parse(e.Value!.ToString()!))">
+                                            @foreach (var s in OrderStatuses)
+                                            {
+                                                <option value="@s.Key">@s.Value</option>
+                                            }
+                                        </select>
+                                    </td>
+                                </tr>
+                                @if (isExpanded)
+                                {
+                                    <tr>
+                                        <td colspan="7" class="bg-light p-3">
+                                            <div class="small">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <div class="fw-semibold">Состав заказа:</div>
+                                                    <div class="d-flex gap-2 align-items-center">
+                                                        <span class="text-secondary"><i class="bi bi-calendar me-1"></i>@o.DateOfPurchase.ToString("dd.MM.yyyy HH:mm")</span>
+                                                        <span class="badge @(OrderBadge(o.Status))">@OrderStatuses[((int)o.Status).ToString()]</span>
+                                                    </div>
+                                                </div>
+                                                @if (o.Items.Any())
+                                                {
+                                                    @foreach (var item in o.Items)
+                                                    {
+                                                        var productImg = AllProducts.FirstOrDefault(p => p.Id == item.ProductId);
+                                                        <div class="d-flex align-items-center gap-2 py-1 border-bottom">
+                                                            @if (productImg != null && !string.IsNullOrEmpty(productImg.ImageUrl))
+                                                            {
+                                                                <img src="@productImg.ImageUrl" alt="@item.ProductName"
+                                                                     class="rounded-1" style="width:2.5rem;height:2.5rem;object-fit:cover;" />
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="bg-light rounded-1 d-flex align-items-center justify-content-center"
+                                                                     style="width:2.5rem;height:2.5rem;">
+                                                                    <i class="bi bi-image text-secondary small"></i>
+                                                                </div>
+                                                            }
+                                                             <span class="flex-grow-1">@item.ProductName (@item.Quantity шт. × @item.Price ЦФК)</span>
+                                                             <span class="fw-semibold">@item.Total ЦФК</span>
+                                                        </div>
+                                                    }
+                                                    <div class="mt-1 pt-1 fw-bold d-flex justify-content-between">
+                                                        <span>Итого:</span>
+                                                        <span>@o.Items.Sum(i => i.Total) ЦФК</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-secondary">Нет позиций</span>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-secondary">
+                            @TotalCount заказ(ов)
+                            @if (TotalRevenue > 0)
+                            {
+                                <span class="ms-2 text-muted">· @TotalRevenue.ToString("N0") ЦФК</span>
+                            }
+                        </small>
+                        <select class="form-select form-select-sm w-auto" style="font-size:0.75rem;"
+                                value="@PageSize" @onchange="OnPageSizeChanged">
+                            <option value="5">5</option>
+                            <option value="8">8</option>
+                            <option value="16">16</option>
+                            <option value="32">32</option>
+                        </select>
+                    </div>
+                    <Pagination Page="Page" TotalPages="@TotalPages" Loading="@Loading"
+                                 PageChanged="OnPageChanged" />
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (_showOrderModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _showOrderModal = false">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-semibold"><i class="bi bi-cart-plus me-1"></i>Новый заказ</h6>
+                    <button type="button" class="btn-close" @onclick="() => _showOrderModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label small fw-medium">Email покупателя <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" value="@_newOrderEmail"
+                               @oninput="OnOrderEmailInput"
+                               placeholder="Начните вводить email..." autocomplete="off" />
+                        @if (_emailSuggestions.Any())
+                        {
+                            <div class="position-absolute top-100 start-0 end-0 bg-white border border-top-0 rounded-bottom shadow-sm overflow-y-auto" style="z-index:1050;max-height:12rem;">
+                                @foreach (var u in _emailSuggestions)
+                                {
+                                    <div class="autocomplete-item py-1 px-3 small" style="cursor:pointer" @onclick="() => SelectOrderEmail(u.Email)">
+                                        <strong>@u.Email</strong>
+                                        <small class="text-secondary ms-1">(@u.Role)</small>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Товары</label>
+                        @foreach (var item in _newOrderItems)
+                        {
+                            <div class="d-flex gap-2 mb-2 align-items-center">
+                                <select class="form-select form-select-sm flex-grow-1" @bind="item.ProductId">
+                                    <option value="0">Выберите товар</option>
+                                    @foreach (var p in AllProducts.Where(p => p.Status == StatusProduct.InStock))
+                                    {
+                                        <option value="@p.Id">@p.Name (@p.Price ЦФК)</option>
+                                    }
+                                </select>
+                                <input type="number" class="form-control form-control-sm" style="width:4rem;" @bind="item.Quantity" min="1" />
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => _newOrderItems.Remove(item)">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        }
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => _newOrderItems.Add(new OrderItemForm())">
+                            <i class="bi bi-plus me-1"></i>Добавить позицию
+                        </button>
+                    </div>
+                    @if (_newOrderItems.Any(i => i.ProductId > 0))
+                    {
+                        <div class="border-top pt-2 small">
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Итого:</span>
+                                <span>@_newOrderItems.Where(i => i.ProductId > 0).Sum(i => (AllProducts.FirstOrDefault(p => p.Id == i.ProductId)?.Price ?? 0) * i.Quantity) ЦФК</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _showOrderModal = false">Отмена</button>
+                    <button type="button" class="btn btn-primary btn-sm"
+                            disabled="@(_newOrderEmail.Length == 0 || !_newOrderItems.Any(i => i.ProductId > 0) || _creatingOrder)"
+                            @onclick="CreateOrder">
+                        @if (_creatingOrder) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        else { <i class="bi bi-check-lg me-1"></i> }
+                        Создать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showOrderImagesModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
+         @onmousedown="() => _showOrderImagesModal = false">
+        <div class="modal-dialog modal-lg modal-dialog-centered"
+             @onclick:stopPropagation="true"
+             @onmousedown:stopPropagation="true"
+             @onkeydown:stopPropagation="true">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-semibold"><i class="bi bi-image me-1"></i>Изображения заказа #@_orderImagesOrderId</h6>
+                    <button type="button" class="btn-close" @onclick="() => _showOrderImagesModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        @foreach (var img in _orderImages)
+                        {
+                            <div class="position-relative" style="width:6rem;height:6rem;">
+                                <img src="@img.Url" class="w-100 h-100 rounded-1" style="object-fit:cover;border:2px solid @(img.IsPrimary ? "#0d6efd" : "#dee2e6");"
+                                     alt="Фото заказа" />
+                                <button class="btn btn-sm position-absolute top-0 end-0 p-0 lh-1 rounded-circle"
+                                        style="background:rgba(0,0,0,.5);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                        @onclick="() => DeleteOrderImage(img)" title="Удалить">×</button>
+                                @if (!img.IsPrimary)
+                                {
+                                    <button class="btn btn-sm position-absolute bottom-0 start-0 p-0 lh-1 rounded-circle"
+                                            style="background:rgba(13,110,253,.8);color:#fff;width:1.25rem;height:1.25rem;font-size:.6rem;"
+                                            @onclick="() => SetPrimaryOrderImage(img)" title="Сделать главным">★</button>
+                                }
+                            </div>
+                        }
+                        @if (!_orderImages.Any())
+                        {
+                            <div class="text-center py-3 w-100 text-secondary small">
+                                <i class="bi bi-image fs-3 d-block mb-1"></i>
+                                Нет изображений
+                            </div>
+                        }
+                    </div>
+                    <label class="d-flex flex-column align-items-center justify-content-center border border-2 border-secondary rounded-3 p-4 text-center bg-light"
+                           style="cursor:pointer;" for="orderImageFileInput">
+                        <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-1"></i>
+                        <small class="text-secondary">Нажмите для выбора изображения</small>
+                        <small class="text-muted">JPG, PNG, WebP, GIF — до 5 МБ</small>
+                    </label>
+                    <InputFile id="orderImageFileInput" OnChange="OnOrderImageUpload" accept=".jpg,.jpeg,.png,.webp,.gif" class="visually-hidden" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public List<OrderDto> Orders { get; set; } = new();
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int Page { get; set; }
+    [Parameter] public int PageSize { get; set; } = 8;
+    [Parameter] public int TotalPages { get; set; } = 1;
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string Search { get; set; } = "";
+    [Parameter] public string Filter { get; set; } = "";
+    [Parameter] public string DateFrom { get; set; } = "";
+    [Parameter] public string DateTo { get; set; } = "";
+    [Parameter] public string SortField { get; set; } = "";
+    [Parameter] public bool SortAsc { get; set; } = true;
+    [Parameter] public int? ExpandedOrderId { get; set; }
+    [Parameter] public int TotalRevenue { get; set; }
+    [Parameter] public List<ProductDto> AllProducts { get; set; } = new();
+    [Parameter] public List<UserDto> AllUsersCache { get; set; } = new();
+
+    [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
+    [Parameter] public EventCallback<string> OnFilterChanged { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> OnDateFromChanged { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> OnDateToChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+    [Parameter] public EventCallback<ChangeEventArgs> OnPageSizeChanged { get; set; }
+    [Parameter] public EventCallback<string> OnSortToggle { get; set; }
+    [Parameter] public EventCallback<int?> OnOrderExpand { get; set; }
+    [Parameter] public EventCallback<string> OnNotification { get; set; }
+    [Parameter] public EventCallback<(string, Func<Task>)> OnConfirm { get; set; }
+    [Parameter] public EventCallback<(string, string)> OnLogAction { get; set; }
+    [Parameter] public EventCallback OnMetricsChanged { get; set; }
+
+    private static readonly Dictionary<string, string> OrderStatuses = new()
+    {
+        ["0"] = "Ожидание", ["1"] = "Ожидает оплаты", ["2"] = "Оплачен",
+        ["3"] = "В производстве", ["4"] = "Выполнен"
+    };
+
+    private bool _showOrderModal, _showOrderImagesModal, _creatingOrder;
+    private string _newOrderEmail = "";
+    private List<OrderItemForm> _newOrderItems = new();
+    private List<UserDto> _emailSuggestions = new();
+#pragma warning disable CS0649
+    private int _orderImagesOrderId;
+#pragma warning restore CS0649
+    private List<OrderImageDto> _orderImages = new();
+
+    private bool IsAllSelected => Orders.Any() && Orders.All(o => o.IsSelected);
+    private bool IsPartialSelected => Orders.Any(o => o.IsSelected) && !IsAllSelected;
+
+    private string SortIcon(string field) =>
+        field == SortField ? (SortAsc ? "bi-sort-up" : "bi-sort-down") : "bi-arrow-down-up";
+
+    private string HighlightText(string text)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(Search))
+            return System.Net.WebUtility.HtmlEncode(text ?? "");
+        var encoded = System.Net.WebUtility.HtmlEncode(text);
+        var encodedSearch = System.Net.WebUtility.HtmlEncode(Search);
+        var idx = encoded.IndexOf(encodedSearch, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return encoded;
+        return encoded[..idx] + "<strong class=\"text-decoration-underline\">" + encoded[idx..(idx + encodedSearch.Length)] + "</strong>" + encoded[(idx + encodedSearch.Length)..];
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var v = (bool)e.Value!;
+        foreach (var o in Orders) o.IsSelected = v;
+    }
+
+    private async Task OpenOrderModal()
+    {
+        _showOrderModal = true;
+        _newOrderEmail = "";
+        _newOrderItems = new List<OrderItemForm> { new() };
+        _emailSuggestions = new();
+    }
+
+    private void OnOrderEmailInput(ChangeEventArgs e)
+    {
+        _newOrderEmail = e.Value?.ToString() ?? "";
+        if (_newOrderEmail.Length < 2) { _emailSuggestions = new(); return; }
+        _emailSuggestions = AllUsersCache
+            .Where(u => u.Email.Contains(_newOrderEmail, StringComparison.OrdinalIgnoreCase))
+            .Take(5).ToList();
+    }
+
+    private void SelectOrderEmail(string email)
+    {
+        _newOrderEmail = email;
+        _emailSuggestions = new();
+    }
+
+    private async Task CreateOrder()
+    {
+        _creatingOrder = true;
+        try
+        {
+            var items = _newOrderItems.Where(i => i.ProductId > 0 && i.Quantity > 0)
+                .Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList();
+            if (!items.Any()) { await OnNotification.InvokeAsync("Добавьте хотя бы один товар с количеством > 0"); return; }
+            var body = new { CustomerEmail = _newOrderEmail, Items = items };
+            var r = await Http.PostAsJsonAsync("api/Order/create-order", body);
+            if (r.IsSuccessStatusCode)
+            {
+                await OnLogAction.InvokeAsync(("Создание", $"Заказ для «{_newOrderEmail}» ({items.Count} поз.)"));
+                await OnNotification.InvokeAsync("Заказ создан");
+                _showOrderModal = false;
+                _newOrderEmail = ""; _newOrderItems.Clear();
+                await OnPageChanged.InvokeAsync(0);
+            }
+            else
+            {
+                var error = await r.Content.ReadAsStringAsync();
+                await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(error)}");
+            }
+        }
+        catch (Exception ex) { await OnNotification.InvokeAsync($"Ошибка: {ex.Message}"); }
+        finally { _creatingOrder = false; }
+    }
+
+    private async Task ChangeStatus(OrderDto order, StatusOrder newStatus)
+    {
+        var r = await Http.PutAsJsonAsync($"api/Order/update-order?id={order.Id}", new { Status = (int)newStatus });
+        if (r.IsSuccessStatusCode)
+        {
+            order.Status = newStatus;
+            await OnLogAction.InvokeAsync(("Изменение", $"Заказ #{order.Id}: статус = {OrderStatuses[((int)newStatus).ToString()]}"));
+            await OnNotification.InvokeAsync($"Заказ #{order.Id}: статус изменён");
+            StateHasChanged();
+        }
+        else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+    }
+
+    private async Task MassChangeStatus(StatusOrder newStatus)
+    {
+        var sel = Orders.Where(o => o.IsSelected).ToList();
+        if (!sel.Any()) { await OnNotification.InvokeAsync("Выберите заказы для изменения"); return; }
+        var ids = sel.Select(o => o.Id).ToList();
+        var r = await Http.PostAsJsonAsync("api/Order/batch-update-status", new { OrderIds = ids, NewStatus = (int)newStatus });
+        if (r.IsSuccessStatusCode)
+        {
+            foreach (var o in sel) o.Status = newStatus;
+            await OnLogAction.InvokeAsync(("Изменение", $"{sel.Count} заказ(ов): {OrderStatuses[((int)newStatus).ToString()]}"));
+            await OnNotification.InvokeAsync($"Обновлено: {sel.Count} заказ(ов)");
+        }
+        else await OnNotification.InvokeAsync($"Ошибка: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+        StateHasChanged();
+    }
+
+    private async Task OnOrderImageUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+        using var content = new MultipartFormDataContent();
+        var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        var fileContent = new StreamContent(stream);
+        content.Add(fileContent, "file", file.Name);
+        content.Add(new StringContent(_orderImagesOrderId.ToString()), "orderId");
+        content.Add(new StringContent((_orderImages.Count == 0).ToString()), "isPrimary");
+        var r = await Http.PostAsync("api/OrderImage/upload", content);
+        if (r.IsSuccessStatusCode)
+        {
+            var result = await r.Content.ReadFromJsonAsync<OrderUploadResult>();
+            if (result != null)
+            {
+                _orderImages.Add(new OrderImageDto { Id = result.Id, Url = result.Url, FileName = result.FileName, IsPrimary = result.IsPrimary, SortOrder = result.SortOrder });
+                var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
+                if (order != null && result.IsPrimary) order.ImageUrl = result.Url;
+            }
+            await OnNotification.InvokeAsync("Изображение загружено");
+            StateHasChanged();
+        }
+        else await OnNotification.InvokeAsync($"Ошибка загрузки: {ExtractErrorMessage(await r.Content.ReadAsStringAsync())}");
+    }
+
+    private async Task SetPrimaryOrderImage(OrderImageDto img)
+    {
+        var r = await Http.PostAsJsonAsync($"api/OrderImage/set-primary?imageId={img.Id}", new { });
+        if (r.IsSuccessStatusCode)
+        {
+            foreach (var i in _orderImages) i.IsPrimary = i.Id == img.Id;
+            var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
+            if (order != null) order.ImageUrl = img.Url;
+            await OnNotification.InvokeAsync("Главное изображение изменено");
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteOrderImage(OrderImageDto img)
+    {
+        var r = await Http.DeleteAsync($"api/OrderImage?id={img.Id}");
+        if (r.IsSuccessStatusCode)
+        {
+            _orderImages.Remove(img);
+            var order = Orders.FirstOrDefault(o => o.Id == _orderImagesOrderId);
+            if (order != null)
+            {
+                if (img.IsPrimary && _orderImages.Any())
+                    order.ImageUrl = _orderImages.First().Url;
+                else if (!_orderImages.Any())
+                    order.ImageUrl = null;
+            }
+            await OnNotification.InvokeAsync("Изображение удалено");
+            StateHasChanged();
+        }
+    }
+
+    private class OrderItemForm { public int ProductId { get; set; } public int Quantity { get; set; } = 1; }
+    private class OrderUploadResult { public int Id { get; set; } public string Url { get; set; } = ""; public string FileName { get; set; } = ""; public bool IsPrimary { get; set; } public int SortOrder { get; set; } }
+
+    private static string OrderBadge(StatusOrder s) => s switch
+    {
+        StatusOrder.Pending => "bg-secondary",
+        StatusOrder.AwaitingPayment => "bg-warning text-dark",
+        StatusOrder.Paid => "bg-info",
+        StatusOrder.Manufactured => "bg-primary",
+        StatusOrder.Completed => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    private static string ExtractErrorMessage(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "Неизвестная ошибка";
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("error", out var errProp) && errProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return errProp.GetString() ?? raw;
+            if (root.TryGetProperty("title", out var titleProp) && titleProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                return titleProp.GetString() ?? raw;
+            if (root.TryGetProperty("errors", out var errorsProp) && errorsProp.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var messages = new List<string>();
+                foreach (var prop in errorsProp.EnumerateObject())
+                    if (prop.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        foreach (var item in prop.Value.EnumerateArray())
+                            messages.Add(item.GetString() ?? "");
+                if (messages.Any()) return string.Join("; ", messages);
+            }
+            return raw;
+        }
+        catch { return raw; }
+    }
+}

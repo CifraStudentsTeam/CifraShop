@@ -1,3 +1,4 @@
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Products;
@@ -6,6 +7,7 @@ using CifraShop.Contracts.Responses.Products;
 using CifraShop.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace CifraShop.API.Controllers
 {
@@ -15,10 +17,12 @@ namespace CifraShop.API.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
+        private readonly IHubContext<AdminHub> _hub;
 
-        public ProductController(IProductService productService)
+        public ProductController(IProductService productService, IHubContext<AdminHub> hub)
         {
             _productService = productService;
+            _hub = hub;
         }
 
         private ProductResponse ToResponseWithUrl(Domain.Entities.Product p)
@@ -95,6 +99,7 @@ namespace CifraShop.API.Controllers
         public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
         {
             var product = await _productService.CreateProduct(request.Name, request.Description, request.Price, request.Quantity, request.ImageUrl);
+            await _hub.Clients.All.SendAsync("Notify", "product", "created");
             return Ok(ToResponseWithUrl(product));
         }
 
@@ -111,6 +116,7 @@ namespace CifraShop.API.Controllers
             if (request.Status.HasValue) product.Status = request.Status.Value;
 
             await _productService.UpdateProduct(product);
+            await _hub.Clients.All.SendAsync("Notify", "product", "updated");
             return NoContent();
         }
 
@@ -120,6 +126,7 @@ namespace CifraShop.API.Controllers
             var product = await _productService.GetProductById(id);
             if (product == null) return NotFound($"Товар с id {id} не найден");
             await _productService.DeleteProduct(product);
+            await _hub.Clients.All.SendAsync("Notify", "product", "deleted");
             return NoContent();
         }
 
@@ -140,6 +147,7 @@ namespace CifraShop.API.Controllers
                 return NotFound("Ни один из указанных товаров не найден");
 
             await _productService.DeleteRange(existingIds);
+            await _hub.Clients.All.SendAsync("Notify", "product", "deleted");
             return Ok(new { deleted = existingIds.Count, notFound = request.ProductIds.Count - existingIds.Count });
         }
 
@@ -150,6 +158,7 @@ namespace CifraShop.API.Controllers
                 return BadRequest("Список id пуст");
 
             await _productService.UpdateStatusRange(request.ProductIds, request.NewStatus);
+            await _hub.Clients.All.SendAsync("Notify", "product", "updated");
             return Ok(new { updated = request.ProductIds.Count });
         }
     }
