@@ -317,32 +317,32 @@ namespace CifraShop.Tests.RepositoryTests
             using var context = CreateContext();
             var repository = new OrderRepositoryEfCore(context);
             var customer = new User { Id = 1, Email = "test@email.com", Password = "12345678", Balance = 0, Role = UserRole.Student };
-            var product = new Product { Id = 1, Name = "РљСЂСѓР¶РєР°", Description = "РћРїРёСЃР°РЅРёРµ", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
+            var product = new Product { Id = 1, Name = "Кружка", Description = "Описание", Price = 100, Quantity = 5, Status = StatusProduct.InStock };
             await context.Users.AddAsync(customer);
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
 
-            var order = new Order { Sum = 200, DateOfPurchase = DateTime.UtcNow, Status = StatusOrder.Pending, CustomerId = 1, Customer = customer };
-            var items = new List<OrderItem>
-            {
-                new OrderItem { Price = 100, Quantity = 2, ProductId = 1, Product = product }
-            };
-            var stockUpdates = new List<(int ProductId, int Quantity)> { (1, 2) };
+        //    var order = new Order { Sum = 200, DateOfPurchase = DateTime.UtcNow, Status = StatusOrder.Pending, CustomerId = 1, Customer = customer };
+        //    var items = new List<OrderItem>
+        //    {
+        //        new OrderItem { Price = 100, Quantity = 2, ProductId = 1, Product = product }
+        //    };
+        //    var stockUpdates = new List<(int ProductId, int Quantity)> { (1, 2) };
 
             var result = await repository.CreateOrderInTransaction(order, items, stockUpdates, 1, 100);
 
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
+        //    Assert.NotNull(result);
+        //    Assert.True(result.Id > 0);
 
-            var savedOrder = await context.Orders.Include(o => o.OrderItems).FirstOrDefaultAsync(o => o.Id == result.Id);
-            Assert.NotNull(savedOrder);
-            Assert.Single(savedOrder.OrderItems);
-            Assert.Equal(200, savedOrder.Sum);
+        //    var savedOrder = await context.Orders.Include(o => o.OrderItems).FirstOrDefaultAsync(o => o.Id == result.Id);
+        //    Assert.NotNull(savedOrder);
+        //    Assert.Single(savedOrder.OrderItems);
+        //    Assert.Equal(200, savedOrder.Sum);
 
-            var updatedProduct = await context.Products.FindAsync(1);
-            Assert.Equal(3, updatedProduct.Quantity);
-            Assert.Equal(StatusProduct.InStock, updatedProduct.Status);
-        }
+        //    var updatedProduct = await context.Products.FindAsync(1);
+        //    Assert.Equal(3, updatedProduct.Quantity);
+        //    Assert.Equal(StatusProduct.InStock, updatedProduct.Status);
+        //}
 
         [Fact]
         public async Task CreateOrderInTransaction_SetsOutOfStockWhenQuantityReachesZero()

@@ -31,10 +31,10 @@ namespace CifraShop.API.Controllers
 
             var user = await _userService.GetUserByEmail(request.Email);
             if (user == null)
-                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ email РёР»Рё РїР°СЂРѕР»СЊ");
+                return Unauthorized("Неверный email или пароль");
 
             if (!_authService.VerifyPassword(request.Password, user.Password))
-                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ email РёР»Рё РїР°СЂРѕР»СЊ");
+                return Unauthorized("Неверный email или пароль");
 
             var token = _authService.GenerateToken(user);
 
@@ -55,7 +55,7 @@ namespace CifraShop.API.Controllers
 
             var existingUser = await _userService.GetUserByEmail(request.Email);
             if (existingUser != null)
-                return Conflict($"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ email {request.Email} СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚");
+                return Conflict($"Пользователь с email {request.Email} уже существует");
 
             var hashedPassword = _authService.HashPassword(request.Password);
             var user = await _userService.CreateStudent(request.Email, hashedPassword, "");
@@ -83,7 +83,7 @@ namespace CifraShop.API.Controllers
 
             var existingUser = await _userService.GetUserByEmail(request.Email);
             if (existingUser != null)
-                return Conflict($"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ email {request.Email} СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚");
+                return Conflict($"Пользователь с email {request.Email} уже существует");
 
             var hashedPassword = _authService.HashPassword(request.Password);
             var user = await _userService.CreateAdmin(request.Email, hashedPassword, "");
@@ -114,4 +114,4 @@ namespace CifraShop.API.Controllers
             });
         }
     }
-}
+}

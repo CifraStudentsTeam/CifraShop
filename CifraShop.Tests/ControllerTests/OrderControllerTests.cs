@@ -15,7 +15,7 @@ namespace CifraShop.Tests.ControllerTests
         private readonly Mock<IOrderImageRepository> _imageRepositoryMock;
         private readonly OrderController _controller;
 
-        // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚ РјРѕРєРё IOrderService Рё IOrderImageRepository Рё СЃРѕР·РґР°С‘С‚ СЌРєР·РµРјРїР»СЏСЂ OrderController РїРµСЂРµРґ РєР°Р¶РґС‹Рј С‚РµСЃС‚РѕРј.
+        // Инициализирует моки IOrderService и IOrderImageRepository и создаёт экземпляр OrderController перед каждым тестом.
         public OrderControllerTests()
         {
             _orderServiceMock = new Mock<IOrderService>();
@@ -107,6 +107,7 @@ namespace CifraShop.Tests.ControllerTests
         }
 
         [Fact]
+        //
         public async Task GetBySum_ReturnsOk()
         {
             _orderServiceMock.Setup(s => s.GetOrdersBySum(100))

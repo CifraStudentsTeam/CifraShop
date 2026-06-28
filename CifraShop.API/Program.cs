@@ -1,6 +1,3 @@
-using System.Text;
-using CifraShop.API;
-using CifraShop.API.Hubs;
 using CifraShop.API.Middleware;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
@@ -14,6 +11,9 @@ using CifraShop.Infrastructure.Data.Repositories.Implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using CifraShop.API;
+using CifraShop.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 

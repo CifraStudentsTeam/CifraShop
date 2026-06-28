@@ -18,6 +18,7 @@ namespace CifraShop.Application.Services.Implementations
             return _repository.GetLastActions(count, branch);
         }
 
+        
         public async Task AddAction(string type, string details, string branch)
         {
             if (string.IsNullOrWhiteSpace(type))
