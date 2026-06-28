@@ -1,8 +1,10 @@
 using CifraShop.API.Controllers;
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.Notifications;
 using CifraShop.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Moq;
 
 namespace CifraShop.Tests.ControllerTests
@@ -10,13 +12,19 @@ namespace CifraShop.Tests.ControllerTests
     public class NotificationSettingsControllerTests
     {
         private readonly Mock<INotificationSettingsService> _serviceMock;
+        private readonly Mock<IHubContext<AdminHub>> _hubContextMock;
         private readonly NotificationSettingsController _controller;
 
-        // Р ВР Р…Р С‘РЎвЂ Р С‘Р В°Р В»Р С‘Р В·Р В°РЎвЂ Р С‘РЎРЏ Р СР С•Р С” INotificationSettingsService Р С‘ РЎРѓР С•Р В·Р Т‘Р В°Р Р…Р С‘Р Вµ РЎРЊР С”Р В·Р ВµР СР С—Р В»РЎРЏРЎР‚Р В° NotificationSettingsController Р С—Р ВµРЎР‚Р ВµР Т‘ Р С”Р В°Р В¶Р Т‘РЎвЂ№Р С РЎвЂљР ВµРЎРѓРЎвЂљР С•Р С.
         public NotificationSettingsControllerTests()
         {
             _serviceMock = new Mock<INotificationSettingsService>();
-            _controller = new NotificationSettingsController(_serviceMock.Object, null!);
+            _hubContextMock = new Mock<IHubContext<AdminHub>>();
+
+            var clientsMock = new Mock<IHubClients>();
+            clientsMock.Setup(c => c.All).Returns(new Mock<IClientProxy>().Object);
+            _hubContextMock.Setup(h => h.Clients).Returns(clientsMock.Object);
+
+            _controller = new NotificationSettingsController(_serviceMock.Object, _hubContextMock.Object);
         }
 
         private static NotificationSettings CreateSettings(int id = 1, string branch = "Р В¤Р С‘Р В»Р С‘Р В°Р В» 1")

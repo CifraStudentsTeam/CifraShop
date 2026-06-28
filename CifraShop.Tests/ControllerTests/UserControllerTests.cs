@@ -1,9 +1,11 @@
 using CifraShop.API.Controllers;
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.Users;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Moq;
 
 namespace CifraShop.Tests.ControllerTests
@@ -11,12 +13,19 @@ namespace CifraShop.Tests.ControllerTests
     public class UserControllerTests
     {
         private readonly Mock<IUserService> _userServiceMock;
+        private readonly Mock<IHubContext<AdminHub>> _hubContextMock;
         private readonly UserController _controller;
 
         public UserControllerTests()
         {
             _userServiceMock = new Mock<IUserService>();
-            _controller = new UserController(_userServiceMock.Object, null!);
+            _hubContextMock = new Mock<IHubContext<AdminHub>>();
+
+            var clientsMock = new Mock<IHubClients>();
+            clientsMock.Setup(c => c.All).Returns(new Mock<IClientProxy>().Object);
+            _hubContextMock.Setup(h => h.Clients).Returns(clientsMock.Object);
+
+            _controller = new UserController(_userServiceMock.Object, _hubContextMock.Object);
         }
 
         [Fact]

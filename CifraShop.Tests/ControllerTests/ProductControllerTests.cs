@@ -1,9 +1,11 @@
 using CifraShop.API.Controllers;
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.Products;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Moq;
 
 namespace CifraShop.Tests.ControllerTests
@@ -11,12 +13,19 @@ namespace CifraShop.Tests.ControllerTests
     public class ProductControllerTests
     {
         private readonly Mock<IProductService> _productServiceMock;
+        private readonly Mock<IHubContext<AdminHub>> _hubContextMock;
         private readonly ProductController _controller;
 
         public ProductControllerTests()
         {
             _productServiceMock = new Mock<IProductService>();
-            _controller = new ProductController(_productServiceMock.Object, null!, null!, null!);
+            _hubContextMock = new Mock<IHubContext<AdminHub>>();
+
+            var clientsMock = new Mock<IHubClients>();
+            clientsMock.Setup(c => c.All).Returns(new Mock<IClientProxy>().Object);
+            _hubContextMock.Setup(h => h.Clients).Returns(clientsMock.Object);
+
+            _controller = new ProductController(_productServiceMock.Object, _hubContextMock.Object);
         }
 
         private static Product CreateProduct(int id = 1, string name = "РљСЂСѓР¶РєР°", int price = 100, int quantity = 5, StatusProduct status = StatusProduct.InStock)

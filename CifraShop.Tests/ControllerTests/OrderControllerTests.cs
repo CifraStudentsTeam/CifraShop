@@ -1,10 +1,12 @@
 using CifraShop.API.Controllers;
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.Orders;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
 using CifraShop.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Moq;
 
 namespace CifraShop.Tests.ControllerTests
@@ -13,14 +15,22 @@ namespace CifraShop.Tests.ControllerTests
     {
         private readonly Mock<IOrderService> _orderServiceMock;
         private readonly Mock<IOrderImageRepository> _imageRepositoryMock;
+        private readonly Mock<IHubContext<AdminHub>> _hubContextMock;
         private readonly OrderController _controller;
+
 
         // Инициализирует моки IOrderService и IOrderImageRepository и создаёт экземпляр OrderController перед каждым тестом.
         public OrderControllerTests()
         {
             _orderServiceMock = new Mock<IOrderService>();
             _imageRepositoryMock = new Mock<IOrderImageRepository>();
-            _controller = new OrderController(_orderServiceMock.Object, _imageRepositoryMock.Object, null!, null!);
+            _hubContextMock = new Mock<IHubContext<AdminHub>>();
+
+            var clientsMock = new Mock<IHubClients>();
+            clientsMock.Setup(c => c.All).Returns(new Mock<IClientProxy>().Object);
+            _hubContextMock.Setup(h => h.Clients).Returns(clientsMock.Object);
+
+            _controller = new OrderController(_orderServiceMock.Object, _imageRepositoryMock.Object, _hubContextMock.Object);
         }
 
         private static Order CreateOrder(int id = 1, StatusOrder status = StatusOrder.Pending, int sum = 100)
