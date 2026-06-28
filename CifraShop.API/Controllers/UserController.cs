@@ -3,6 +3,7 @@ using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Users;
 using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 using CifraShop.Domain.Enums;
@@ -11,6 +12,7 @@ namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;

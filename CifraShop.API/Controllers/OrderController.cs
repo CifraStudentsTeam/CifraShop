@@ -5,12 +5,14 @@ using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.Orders;
 using CifraShop.Domain.Enums;
 using CifraShop.Domain.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;

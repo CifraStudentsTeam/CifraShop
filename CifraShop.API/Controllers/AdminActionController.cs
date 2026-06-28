@@ -1,12 +1,14 @@
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.AdminAction;
 using CifraShop.Contracts.Responses.AdminAction;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class AdminActionController : ControllerBase
     {
         private readonly IAdminActionService _service;

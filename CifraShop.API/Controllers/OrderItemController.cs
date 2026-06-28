@@ -2,12 +2,14 @@ using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.OrderItem;
 using CifraShop.Contracts.Responses.OrderItem;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class OrderItemController : ControllerBase
     {
         private readonly IOrderItemService _orderItemService;

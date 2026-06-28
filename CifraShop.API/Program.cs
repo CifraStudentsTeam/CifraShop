@@ -1,10 +1,15 @@
+using System.Text;
 using CifraShop.API.Middleware;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Application.Services.Interfaces;
+using CifraShop.Domain.Auth;
+using CifraShop.Infrastructure.Auth;
 using CifraShop.Infrastructure.Data;
 using CifraShop.Domain.Repositories;
 using CifraShop.Infrastructure.Data.Repositories.Implementations;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +36,31 @@ builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettings
 builder.Services.AddScoped<INotificationSettingsService, NotificationSettingsService>();
 builder.Services.AddScoped<IOrderImageRepository, OrderImageRepositoryEfCore>();
 builder.Services.AddScoped<IOrderImageService, OrderImageService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Jwt:Key не настроен в конфигурации");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "CifraShop",
+        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "CifraShop",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+});
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
@@ -80,6 +110,7 @@ app.UseStaticFiles();
 
 app.UseCors("ClientCORS");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

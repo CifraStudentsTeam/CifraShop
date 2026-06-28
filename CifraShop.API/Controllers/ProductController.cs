@@ -4,12 +4,14 @@ using CifraShop.Contracts.Requests.Products;
 using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.Products;
 using CifraShop.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;

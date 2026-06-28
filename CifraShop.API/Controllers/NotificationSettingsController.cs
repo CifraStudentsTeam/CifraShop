@@ -1,12 +1,14 @@
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Contracts.Requests.Notifications;
 using CifraShop.Contracts.Responses.Notifications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class NotificationSettingsController : ControllerBase
     {
         private readonly INotificationSettingsService _service;
