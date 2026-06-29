@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
+using System.Security.Claims;
 using CifraShop.Domain.Enums;
 
 namespace CifraShop.API.Controllers
@@ -24,6 +25,19 @@ namespace CifraShop.API.Controllers
         {
             _userService = userService;
             _hub = hub;
+        }
+
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<ActionResult<UserResponse>> GetProfile()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            var user = await _userService.GetUserById(userId);
+            if (user == null) return NotFound("Пользователь не найден");
+            return Ok(user.ToResponse());
         }
 
         [HttpGet("all")]

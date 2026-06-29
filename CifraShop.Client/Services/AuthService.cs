@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using CifraShop.Client.Models;
 
 namespace CifraShop.Client.Services;
 
@@ -11,11 +13,39 @@ public class AuthService
         _http = http;
     }
 
+    public string? Token { get; private set; }
     public string? CurrentUserEmail { get; private set; }
     public int? CurrentUserId { get; private set; }
     public int? CurrentBalance { get; private set; }
-    public bool IsAuthenticated => !string.IsNullOrEmpty(CurrentUserEmail);
+    public UserRole CurrentRole { get; private set; } = UserRole.Guest;
+    public bool IsAuthenticated => CurrentRole != UserRole.Guest;
+    public bool IsGuest => CurrentRole == UserRole.Guest;
     public event Action? OnAuthStateChanged;
+
+    public async Task InitializeAsync()
+    {
+        if (!string.IsNullOrEmpty(Token))
+            return;
+
+        await GetGuestTokenAsync();
+    }
+
+    public async Task GetGuestTokenAsync()
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/Auth/guest-token", new { });
+            if (response.IsSuccessStatusCode)
+            {
+                var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+                if (authResponse != null)
+                {
+                    ApplyAuth(authResponse);
+                }
+            }
+        }
+        catch { }
+    }
 
     public async Task<(bool success, string? error)> LoginAsync(string email, string password)
     {
@@ -26,13 +56,10 @@ public class AuthService
 
             if (response.IsSuccessStatusCode)
             {
-                var user = await response.Content.ReadFromJsonAsync<Models.UserDto>();
-                if (user != null)
+                var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+                if (authResponse != null)
                 {
-                    CurrentUserEmail = user.Email;
-                    CurrentUserId = user.Id;
-                    CurrentBalance = user.Balance;
-                    OnAuthStateChanged?.Invoke();
+                    ApplyAuth(authResponse);
                     return (true, null);
                 }
             }
@@ -51,11 +78,16 @@ public class AuthService
         try
         {
             var request = new { Email = email, Password = password };
-            var response = await _http.PostAsJsonAsync("api/User/create-student", request);
+            var response = await _http.PostAsJsonAsync("api/Auth/register-student", request);
 
             if (response.IsSuccessStatusCode)
             {
-                return await LoginAsync(email, password);
+                var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+                if (authResponse != null)
+                {
+                    ApplyAuth(authResponse);
+                    return (true, null);
+                }
             }
 
             var error = await response.Content.ReadAsStringAsync();
@@ -67,21 +99,27 @@ public class AuthService
         }
     }
 
-    public void Logout()
+    public async void Logout()
     {
+        Token = null;
         CurrentUserEmail = null;
         CurrentUserId = null;
         CurrentBalance = null;
+        CurrentRole = UserRole.Guest;
+
+        _http.DefaultRequestHeaders.Authorization = null;
+
         OnAuthStateChanged?.Invoke();
+        await GetGuestTokenAsync();
     }
 
     public async Task RefreshBalanceAsync()
     {
-        if (!IsAuthenticated || !CurrentUserId.HasValue) return;
+        if (!IsAuthenticated || IsGuest || !CurrentUserId.HasValue) return;
 
         try
         {
-            var user = await _http.GetFromJsonAsync<Models.UserDto>($"api/User/by-id?id={CurrentUserId.Value}");
+            var user = await _http.GetFromJsonAsync<UserDto>("api/User/profile");
             if (user != null)
             {
                 CurrentBalance = user.Balance;
@@ -89,5 +127,18 @@ public class AuthService
             }
         }
         catch { }
+    }
+
+    private void ApplyAuth(AuthResponseDto authResponse)
+    {
+        Token = authResponse.Token;
+        CurrentUserEmail = authResponse.Email;
+        CurrentUserId = authResponse.UserId;
+        CurrentRole = Enum.TryParse<UserRole>(authResponse.Role, out var role) ? role : UserRole.Guest;
+        CurrentBalance = null;
+
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResponse.Token);
+
+        OnAuthStateChanged?.Invoke();
     }
 }

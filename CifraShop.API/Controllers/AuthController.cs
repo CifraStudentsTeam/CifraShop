@@ -23,6 +23,28 @@ namespace CifraShop.API.Controllers
             _authService = authService;
         }
 
+        [HttpPost("guest-token")]
+        [AllowAnonymous]
+        public ActionResult<AuthResponse> GetGuestToken()
+        {
+            var guest = new User
+            {
+                Id = 0,
+                Email = "guest@local",
+                Role = UserRole.Guest
+            };
+
+            var token = _authService.GenerateToken(guest);
+
+            return Ok(new AuthResponse
+            {
+                Token = token,
+                Email = guest.Email,
+                Role = guest.Role.ToString(),
+                UserId = 0
+            });
+        }
+
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
         {

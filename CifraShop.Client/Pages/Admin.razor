@@ -7,6 +7,7 @@
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject SignalRService SignalR
+@inject AuthService Auth
 
 <PageTitle>Админ-панель — CifraShop</PageTitle>
 
@@ -192,6 +193,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await Auth.InitializeAsync();
+        if (Auth.CurrentRole != UserRole.Admin)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
         RestoreFiltersFromUrl();
         await LoadAllData();
         await LoadHistory();

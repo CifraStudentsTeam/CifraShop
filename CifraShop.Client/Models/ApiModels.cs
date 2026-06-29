@@ -80,6 +80,15 @@ public class OrderImageDto
     public int SortOrder { get; set; }
 }
 
+/// <summary>Ответ авторизации с JWT-токеном</summary>
+public class AuthResponseDto
+{
+    public string Token { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Role { get; set; } = "";
+    public int UserId { get; set; }
+}
+
 /// <summary>Модель настроек уведомлений для филиала</summary>
 public class NotificationSettingsDto
 {

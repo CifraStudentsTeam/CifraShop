@@ -254,14 +254,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Auth.OnAuthStateChanged += StateHasChanged;
+        Cart.OnCartChanged += StateHasChanged;
+
+        await Auth.InitializeAsync();
         await LoadProducts();
 
         SignalR.OnNotify += HandleSignalRNotify;
         try { await SignalR.StartAsync(); }
         catch (Exception ex) { ShowNotification($"SignalR: {ex.Message}", "warning"); }
-
-        Cart.OnCartChanged += StateHasChanged;
-        Auth.OnAuthStateChanged += StateHasChanged;
     }
 
     private void HandleSignalRNotify(string entity, string action)

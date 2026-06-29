@@ -15,7 +15,7 @@ namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
@@ -104,6 +104,7 @@ namespace CifraShop.API.Controllers
             return Ok(products.Select(p => ToResponseWithUrl(p)).ToList());
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("create-product")]
         public async Task<ActionResult<ProductResponse>> CreateProduct([FromBody] CreateProductRequest request)
         {
@@ -112,6 +113,7 @@ namespace CifraShop.API.Controllers
             return Ok(ToResponseWithUrl(product));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("update-product")]
         public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductRequest request, [FromQuery] int id)
         {
@@ -129,6 +131,7 @@ namespace CifraShop.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("delete-product")]
         public async Task<IActionResult> DeleteProduct([FromQuery] int id)
         {
@@ -146,6 +149,7 @@ namespace CifraShop.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("batch-delete")]
         public async Task<IActionResult> BatchDelete([FromBody] BatchDeleteProductsRequest request)
         {
@@ -174,6 +178,7 @@ namespace CifraShop.API.Controllers
             return Ok(new { deleted = existingIds.Count, notFound = request.ProductIds.Count - existingIds.Count });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("batch-update-status")]
         public async Task<IActionResult> BatchUpdateStatus([FromBody] BatchUpdateProductStatusRequest request)
         {

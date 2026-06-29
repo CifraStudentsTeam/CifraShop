@@ -18,6 +18,7 @@ public enum StatusOrder
 
 public enum UserRole
 {
+    Guest,
     Student,
     Admin
 }

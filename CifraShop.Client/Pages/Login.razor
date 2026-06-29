@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @using CifraShop.Client.Services
 @inject AuthService Auth
 @inject NavigationManager Nav
@@ -140,8 +140,9 @@
     private string? _error;
     private bool _showRegister = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        await Auth.InitializeAsync();
         if (Auth.IsAuthenticated)
         {
             Nav.NavigateTo("/");
