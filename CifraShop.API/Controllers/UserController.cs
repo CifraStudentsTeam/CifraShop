@@ -4,6 +4,7 @@ using CifraShop.Contracts.Mappings;
 using CifraShop.Contracts.Requests.Users;
 using CifraShop.Contracts.Responses.Common;
 using CifraShop.Contracts.Responses.User;
+using CifraShop.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -15,20 +16,21 @@ namespace CifraShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
         private readonly IHubContext<AdminHub> _hub;
+        private readonly IAuthService _authService;
 
-        public UserController(IUserService userService, IHubContext<AdminHub> hub)
+        public UserController(IUserService userService, IHubContext<AdminHub> hub, IAuthService authService)
         {
             _userService = userService;
             _hub = hub;
+            _authService = authService;
         }
 
         [HttpGet("profile")]
-        [Authorize]
+        [Authorize(Roles = "Student,Admin")]
         public async Task<ActionResult<UserResponse>> GetProfile()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -41,6 +43,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("all")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<UserResponse>>> GetAll()
         {
             var users = await _userService.GetAllUsers();
@@ -48,6 +51,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("paged")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<PagedResponse<UserResponse>>> GetPaged(
             [FromQuery] int page = 0,
             [FromQuery] int pageSize = 8,
@@ -66,6 +70,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("all-admins")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<UserResponse>>> GetAllAdmins()
         {
             var users = await _userService.GetAllAdmins();
@@ -73,6 +78,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("all-students")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<UserResponse>>> GetAllStudents()
         {
             var users = await _userService.GetAllStudents();
@@ -80,6 +86,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("by-id")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> GetUserById([FromQuery] int id)
         {
             var user = await _userService.GetUserById(id);
@@ -88,6 +95,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpGet("by-email")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> GetUserByEmail([FromQuery] string email)
         {
             var user = await _userService.GetUserByEmail(email);
@@ -96,6 +104,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpPost("create-admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> CreateAdmin([FromBody] CreateUserRequest request)
         {
             var admin = await _userService.CreateAdmin(request.Email, request.Password, request.Branch);
@@ -104,6 +113,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpPost("create-student")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> CreateStudent([FromBody] CreateUserRequest request)
         {
             var student = await _userService.CreateStudent(request.Email, request.Password, request.Branch);
@@ -112,13 +122,14 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser([FromQuery] int id, [FromBody] UpdateUserRequest request)
         {
             var user = await _userService.GetUserById(id);
             if (user == null) return NotFound($"Пользователь id {id} не найден");
 
             if (request.Email != null) user.Email = request.Email;
-            if (request.Password != null) user.Password = request.Password;
+            if (request.Password != null) user.Password = _authService.HashPassword(request.Password);
             if (request.Balance.HasValue) user.Balance = request.Balance.Value;
 
             await _userService.UpdateUser(user);
@@ -127,6 +138,7 @@ namespace CifraShop.API.Controllers
         }
 
         [HttpDelete]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser([FromQuery] int id)
         {
             var user = await _userService.GetUserById(id);

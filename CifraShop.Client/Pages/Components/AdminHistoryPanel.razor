@@ -30,7 +30,7 @@
                         </select>
                 }
                 <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary small"></i>
-            </div>
+                </div>
         </div>
         @if (_showHistory)
         {
@@ -74,7 +74,7 @@
     [Parameter] public EventCallback<string> HistoryTypeFilterChanged { get; set; }
     [Parameter] public EventCallback<string> HistoryBranchFilterChanged { get; set; }
 
-    private bool _showHistory;
+    private bool _showHistory = true;
 
     private IEnumerable<AdminActionDto> FilteredHistory
     {

@@ -1,6 +1,8 @@
+using CifraShop.API.Hubs;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace CifraShop.API.Controllers
 {
@@ -11,6 +13,8 @@ namespace CifraShop.API.Controllers
         private readonly IProductImageRepository _imageRepository;
         private readonly IProductRepository _productRepository;
         private readonly IWebHostEnvironment _env;
+        private readonly IHubContext<AdminHub> _hub;
+        private readonly IHubContext<ShopHub> _shopHub;
 
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -20,11 +24,15 @@ namespace CifraShop.API.Controllers
         public ProductImageController(
             IProductImageRepository imageRepository,
             IProductRepository productRepository,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IHubContext<AdminHub> hub,
+            IHubContext<ShopHub> shopHub)
         {
             _imageRepository = imageRepository;
             _productRepository = productRepository;
             _env = env;
+            _hub = hub;
+            _shopHub = shopHub;
         }
 
         [HttpGet("by-product")]
@@ -122,6 +130,8 @@ namespace CifraShop.API.Controllers
             }
 
             var fullUrl = $"{Request.Scheme}://{Request.Host}{Url.Action(nameof(GetFile), new { fileName })}";
+            await _hub.Clients.All.SendAsync("Notify", "product", "updated");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "updated");
             return Ok(new { image.Id, url = fullUrl, image.FileName, image.IsPrimary, image.SortOrder });
         }
 
@@ -154,6 +164,8 @@ namespace CifraShop.API.Controllers
                 await _productRepository.UpdateProduct(product);
             }
 
+            await _hub.Clients.All.SendAsync("Notify", "product", "updated");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "updated");
             return Ok();
         }
 
@@ -187,6 +199,8 @@ namespace CifraShop.API.Controllers
                 }
             }
 
+            await _hub.Clients.All.SendAsync("Notify", "product", "updated");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "updated");
             return Ok();
         }
     }

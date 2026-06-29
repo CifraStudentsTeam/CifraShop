@@ -1,4 +1,4 @@
-﻿using CifraShop.API.Hubs;
+using CifraShop.API.Hubs;
 using CifraShop.Application.Services.Interfaces;
 using CifraShop.Application.Services.Implementations;
 using CifraShop.Contracts.Mappings;
@@ -113,7 +113,7 @@ namespace CifraShop.API.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var items = request.Items.Select(i => (i.ProductId, i.Quantity)).ToList();
-            var order = await _orderService.CreateOrder(request.CustomerEmail, items, request.Branch);
+            var order = await _orderService.CreateOrder(request.CustomerEmail, items, request.Branch ?? "");
             await _hub.Clients.All.SendAsync("Notify", "order", "created");
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order.ToResponse());
         }

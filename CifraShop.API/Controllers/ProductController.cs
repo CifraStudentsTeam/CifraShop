@@ -20,15 +20,18 @@ namespace CifraShop.API.Controllers
     {
         private readonly IProductService _productService;
         private readonly IHubContext<AdminHub> _hub;
+        private readonly IHubContext<ShopHub> _shopHub;
         private readonly NotificationDispatcher _dispatcher;
         private readonly INotificationSettingsRepository _settingsRepository;
 
         public ProductController(IProductService productService, IHubContext<AdminHub> hub,
+            IHubContext<ShopHub> shopHub,
             NotificationDispatcher dispatcher,
             INotificationSettingsRepository settingsRepository)
         {
             _productService = productService;
             _hub = hub;
+            _shopHub = shopHub;
             _dispatcher = dispatcher;
             _settingsRepository = settingsRepository;
         }
@@ -110,6 +113,7 @@ namespace CifraShop.API.Controllers
         {
             var product = await _productService.CreateProduct(request.Name, request.Description, request.Price, request.Quantity, request.ImageUrl, request.Branch);
             await _hub.Clients.All.SendAsync("Notify", "product", "created");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "created");
             return Ok(ToResponseWithUrl(product));
         }
 
@@ -128,6 +132,7 @@ namespace CifraShop.API.Controllers
 
             await _productService.UpdateProduct(product);
             await _hub.Clients.All.SendAsync("Notify", "product", "updated");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "updated");
             return NoContent();
         }
 
@@ -146,6 +151,7 @@ namespace CifraShop.API.Controllers
                 return BadRequest(new { error = "Невозможно удалить товар, так как он используется в заказах. Сначала удалите связанные заказы." });
             }
             await _hub.Clients.All.SendAsync("Notify", "product", "deleted");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "deleted");
             return NoContent();
         }
 
@@ -175,6 +181,7 @@ namespace CifraShop.API.Controllers
                 return BadRequest(new { error = "Невозможно удалить некоторые товары, так как они используются в заказах." });
             }
             await _hub.Clients.All.SendAsync("Notify", "product", "deleted");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "deleted");
             return Ok(new { deleted = existingIds.Count, notFound = request.ProductIds.Count - existingIds.Count });
         }
 
@@ -187,6 +194,7 @@ namespace CifraShop.API.Controllers
 
             await _productService.UpdateStatusRange(request.ProductIds, request.NewStatus);
             await _hub.Clients.All.SendAsync("Notify", "product", "updated");
+            await _shopHub.Clients.All.SendAsync("Notify", "product", "updated");
             return Ok(new { updated = request.ProductIds.Count });
         }
     }

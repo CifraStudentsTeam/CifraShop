@@ -145,7 +145,10 @@
         await Auth.InitializeAsync();
         if (Auth.IsAuthenticated)
         {
-            Nav.NavigateTo("/");
+            if (Auth.CurrentRole == UserRole.Admin)
+                Nav.NavigateTo("/admin");
+            else
+                Nav.NavigateTo("/");
         }
     }
 
@@ -159,7 +162,10 @@
 
         if (success)
         {
-            Nav.NavigateTo("/");
+            if (Auth.CurrentRole == UserRole.Admin)
+                Nav.NavigateTo("/admin");
+            else
+                Nav.NavigateTo("/");
         }
         else
         {

@@ -1,4 +1,4 @@
-﻿@page "/cart"
+@page "/cart"
 @using CifraShop.Client.Models
 @using CifraShop.Client.Services
 @inject CartService Cartt
@@ -105,12 +105,18 @@
                                                 <i class="bi bi-dash"></i>
                                             </button>
                                             <input type="number" class="form-control text-center" value="@item.Quantity"
-                                                   min="1" @onchange="(ChangeEventArgs e) => OnQuantityChanged(item.ProductId, e)" />
+                                                   min="1" max="@item.MaxQuantity"
+                                                   @onchange="(ChangeEventArgs e) => OnQuantityChanged(item.ProductId, e)" />
                                             <button class="btn btn-outline-secondary" type="button"
+                                                    disabled="@(item.Quantity >= item.MaxQuantity)"
                                                     @onclick="() => UpdateQuantity(item.ProductId, item.Quantity + 1)">
                                                 <i class="bi bi-plus"></i>
                                             </button>
                                         </div>
+                                        @if (item.Quantity >= item.MaxQuantity)
+                                        {
+                                            <small class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Максимум на складе</small>
+                                        }
                                     </div>
                                     <div class="col-auto">
                                         <h5 class="mb-0 fw-bold text-primary">@item.Total ₽</h5>
@@ -203,10 +209,15 @@
     private string _notificationType = "success";
     private bool _checkingOut = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Cartt.OnCartChanged += StateHasChanged;
         Auth.OnAuthStateChanged += StateHasChanged;
+
+        if (Auth.IsAuthenticated && !Auth.CurrentBalance.HasValue)
+        {
+            await Auth.RefreshBalanceAsync();
+        }
     }
 
     private void UpdateQuantity(int productId, int quantity)

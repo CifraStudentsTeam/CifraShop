@@ -1,4 +1,4 @@
-﻿@page "/admin"
+@page "/admin"
 @using System.Net.Http.Json
 @using CifraShop.Client.Models
 @using CifraShop.Client.Pages.Components
@@ -584,7 +584,7 @@
         var branch = _selectedBranch;
         if (string.IsNullOrEmpty(branch) && _notificationSettings.Any())
             branch = _notificationSettings.First().Branch;
-        try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch }); }
+        try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch ?? "" }); }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
         _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, Branch = branch ?? "", CreatedAt = DateTime.Now });
         if (_actionHistory.Count > 100) _actionHistory.RemoveAt(_actionHistory.Count - 1);

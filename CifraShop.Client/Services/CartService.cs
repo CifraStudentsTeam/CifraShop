@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 
 namespace CifraShop.Client.Services;
 
@@ -23,7 +23,9 @@ public class CartService
         var existing = _items.FirstOrDefault(i => i.ProductId == product.Id);
         if (existing != null)
         {
-            existing.Quantity += quantity;
+            var maxQty = product.Quantity;
+            existing.Quantity = Math.Min(existing.Quantity + quantity, maxQty);
+            existing.MaxQuantity = maxQty;
         }
         else
         {
@@ -32,8 +34,9 @@ public class CartService
                 ProductId = product.Id,
                 Name = product.Name,
                 Price = product.Price,
-                Quantity = quantity,
-                ImageUrl = product.ImageUrl
+                Quantity = Math.Min(quantity, product.Quantity),
+                ImageUrl = product.ImageUrl,
+                MaxQuantity = product.Quantity
             });
         }
         OnCartChanged?.Invoke();
@@ -53,7 +56,7 @@ public class CartService
             if (quantity <= 0)
                 _items.Remove(item);
             else
-                item.Quantity = quantity;
+                item.Quantity = Math.Min(quantity, item.MaxQuantity);
             OnCartChanged?.Invoke();
         }
     }
@@ -102,5 +105,6 @@ public class CartItem
     public int Price { get; set; }
     public int Quantity { get; set; }
     public string? ImageUrl { get; set; }
+    public int MaxQuantity { get; set; } = int.MaxValue;
     public int Total => Price * Quantity;
 }
