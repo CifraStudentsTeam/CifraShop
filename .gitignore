@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 .mimocode/
 AGENTS.md
 IMPLEMENTATION_PLAN.md
+
+# Docker build cache
+.last-docker-build
