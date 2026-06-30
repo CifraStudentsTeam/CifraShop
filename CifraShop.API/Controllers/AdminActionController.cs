@@ -19,7 +19,7 @@ namespace CifraShop.API.Controllers
         [HttpGet("last")]
         public async Task<ActionResult<List<AdminActionResponse>>> GetLast([FromQuery] int count = 50, [FromQuery] string? branch = null)
         {
-            await _service.TrimOldActions(100_000);
+            await _service.TrimOldActions(1000);
             var actions = await _service.GetLastActions(count, branch);
             var result = actions.Select(a => new AdminActionResponse
             {

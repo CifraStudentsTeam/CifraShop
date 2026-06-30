@@ -98,10 +98,73 @@
 
     <div class="row g-3 mb-3">
         <AdminNotificationsPanel Settings="_notificationSettings" OnNotification="NotifyFromChild" />
-        <AdminHistoryPanel History="_actionHistory" AvailableBranches="_availableBranches"
-                           HistoryTypeFilter="_historyTypeFilter" HistoryBranchFilter="_historyBranchFilter"
-                           HistoryTypeFilterChanged="OnHistoryTypeFilterChanged"
-                           HistoryBranchFilterChanged="OnHistoryBranchFilterChanged" />
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white border-0 pt-3 px-3"
+                     style="cursor:pointer" @onclick="() => _showHistory = !_showHistory">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="fw-semibold mb-0">
+                            <i class="bi bi-clock-history me-1"></i>История действий
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1" style="font-size:0.7rem;">@_filteredHistory.Count</span>
+                        </h6>
+                        <div class="d-flex align-items-center gap-2">
+                            @if (_actionHistory.Count > 0)
+                            {
+                                <select class="form-select form-select-sm w-auto" style="font-size:0.8rem;"
+                                        value="@_historyTypeFilter"
+                                        @onchange="OnHistoryTypeFilterChangedUi" @onclick:stopPropagation="true">
+                                    <option value="">Все типы</option>
+                                    <option value="Создание">Создание</option>
+                                    <option value="Изменение">Изменение</option>
+                                    <option value="Удаление">Удаление</option>
+                                </select>
+                                <select class="form-select form-select-sm w-auto" style="font-size:0.8rem;"
+                                        value="@_historyBranchFilter"
+                                        @onchange="OnHistoryBranchFilterChangedUi" @onclick:stopPropagation="true">
+                                    <option value="">Все филиалы</option>
+                                    @foreach (var b in _availableBranches)
+                                    {
+                                        <option value="@b">@b</option>
+                                    }
+                                </select>
+                            }
+                            <i class="bi bi-chevron-@(_showHistory ? "up" : "down") text-secondary small"></i>
+                        </div>
+                    </div>
+                </div>
+                @if (_showHistory)
+                {
+                    <div class="card-body pt-0" style="max-height:18rem;overflow-y:auto;">
+                        @if (_filteredHistory.Count == 0)
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-clock-history fs-3 text-secondary d-block mb-1"></i>
+                                <small class="text-secondary">Нет записей</small>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var a in _filteredHistory)
+                            {
+                                <div class="d-flex align-items-start gap-2 py-2 border-bottom">
+                                    <div class="d-flex flex-column align-items-center" style="min-width:3.5rem;">
+                                        <small class="text-secondary">@a.CreatedAt.ToString("dd.MM")</small>
+                                        <small class="fw-semibold">@a.CreatedAt.ToString("HH:mm")</small>
+                                    </div>
+                                    <div class="mt-1" style="width:3px;min-height:2rem;background:@HistoryColor(a.ActionType);border-radius:2px;"></div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-1 mb-1">
+                                            <span class="badge @HistoryBadge(a.ActionType)" style="font-size:0.65rem;">@a.ActionType</span>
+                                        </div>
+                                        <small class="text-dark">@a.Details</small>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 
     @if (_showConfirmModal)
@@ -131,6 +194,8 @@
     private List<AdminActionDto> _actionHistory = new();
     private List<NotificationSettingsDto> _notificationSettings = new();
     private List<ProductDto> _allProductsForOrder = new();
+    private bool _showHistory = true;
+    private List<AdminActionDto> _filteredHistory = new();
 
     private string? _notification;
     private string _notificationType = "success";
@@ -235,6 +300,7 @@
                         await LoadNotificationSettings();
                         break;
                 }
+                await LoadHistory();
                 _lastUpdated = DateTime.Now;
                 StateHasChanged();
             }
@@ -253,6 +319,7 @@
             {
                 if (SignalR.IsConnected) continue;
                 await LoadAllData();
+                await LoadHistory();
                 await InvokeAsync(StateHasChanged);
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
@@ -366,12 +433,13 @@
     {
         try
         {
-            _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=100") ?? new();
+            _actionHistory = await Http.GetFromJsonAsync<List<AdminActionDto>>("api/AdminAction/last?count=1000") ?? new();
             var historyBranches = _actionHistory.Select(a => a.Branch).Where(b => !string.IsNullOrEmpty(b));
             var settingsBranches = _notificationSettings.Select(s => s.Branch).Where(b => !string.IsNullOrEmpty(b));
             _availableBranches = historyBranches.Concat(settingsBranches).Distinct().OrderBy(b => b).ToList();
+            RefreshFilteredHistory();
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
+        catch (Exception ex) { ShowNotification($"Ошибка загрузки истории: {ex.Message}", "danger"); }
     }
 
     private async Task LoadNotificationSettings()
@@ -414,13 +482,23 @@
     {
         _historyTypeFilter = value;
         UpdateUrlFilters();
+        RefreshFilteredHistory();
+        StateHasChanged();
     }
 
     private void OnHistoryBranchFilterChanged(string value)
     {
         _historyBranchFilter = value;
         UpdateUrlFilters();
+        RefreshFilteredHistory();
+        StateHasChanged();
     }
+
+    private void OnHistoryTypeFilterChangedUi(ChangeEventArgs e)
+        => OnHistoryTypeFilterChanged(e.Value?.ToString() ?? "");
+
+    private void OnHistoryBranchFilterChangedUi(ChangeEventArgs e)
+        => OnHistoryBranchFilterChanged(e.Value?.ToString() ?? "");
 
     private async Task OnOrderSearchChanged(string value)
     {
@@ -584,10 +662,19 @@
         var branch = _selectedBranch;
         if (string.IsNullOrEmpty(branch) && _notificationSettings.Any())
             branch = _notificationSettings.First().Branch;
-        try { await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch ?? "" }); }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"LoadHistory error: {ex.Message}"); }
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/AdminAction", new { ActionType = type, Details = details, Branch = branch ?? "" });
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                ShowNotification($"Ошибка сохранения действия ({(int)response.StatusCode}): {body}", "danger");
+            }
+        }
+        catch (Exception ex) { ShowNotification($"Ошибка сохранения действия: {ex.Message}", "danger"); }
         _actionHistory.Insert(0, new AdminActionDto { ActionType = type, Details = details, Branch = branch ?? "", CreatedAt = DateTime.Now });
-        if (_actionHistory.Count > 100) _actionHistory.RemoveAt(_actionHistory.Count - 1);
+        if (_actionHistory.Count > 1000) _actionHistory.RemoveAt(_actionHistory.Count - 1);
+        RefreshFilteredHistory();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -624,4 +711,21 @@
     private class PagedProductResponse { public List<ProductDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
     private class PagedOrderResponse { public List<OrderDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
     private class PagedUserResponse { public List<UserDto> Items { get; set; } = new(); public int Page { get; set; } public int PageSize { get; set; } public int TotalCount { get; set; } }
+
+    private void RefreshFilteredHistory()
+    {
+        _filteredHistory = _actionHistory.AsEnumerable()
+            .Where(a => string.IsNullOrEmpty(_historyTypeFilter) || a.ActionType == _historyTypeFilter)
+            .Where(a => string.IsNullOrEmpty(_historyBranchFilter) || a.Branch == _historyBranchFilter)
+            .ToList();
+    }
+
+    private static string HistoryBadge(string t) => t switch
+    {
+        "Создание" => "bg-success", "Удаление" => "bg-danger", "Изменение" => "bg-primary", _ => "bg-secondary"
+    };
+    private static string HistoryColor(string t) => t switch
+    {
+        "Создание" => "#198754", "Удаление" => "#dc3545", "Изменение" => "#0d6efd", _ => "#6c757d"
+    };
 }
