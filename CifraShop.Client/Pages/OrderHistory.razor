@@ -1,0 +1,230 @@
+@page "/order-history"
+@using System.Net.Http.Json
+@using CifraShop.Client.Models
+@using CifraShop.Client.Services
+@inject HttpClient Http
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>История заказов — CifraShop</PageTitle>
+
+<style>
+    .order-card {
+        transition: box-shadow 0.2s;
+    }
+
+        .order-card:hover {
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+        }
+
+    .order-product-row {
+        transition: background-color 0.15s;
+    }
+
+        .order-product-row:hover {
+            background-color: #f8f9fa;
+        }
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-shop me-2"></i>CifraShop
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            @if (Auth.IsAuthenticated)
+            {
+                <span class="text-light small">
+                    <i class="bi bi-person-circle me-1"></i>@Auth.CurrentUserEmail
+                </span>
+            }
+            <a href="/" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>К товарам
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="fw-bold mb-0">
+            <i class="bi bi-clock-history me-2"></i>История заказов
+        </h1>
+        @if (_orders.Any())
+        {
+            <span class="badge bg-secondary fs-6">@_orders.Count заказ(ов)</span>
+        }
+    </div>
+
+    @if (_loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="text-secondary mt-3">Загрузка истории заказов...</p>
+        </div>
+    }
+    else if (!_orders.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-cart-x display-1 text-secondary"></i>
+            <h3 class="mt-3 text-secondary">Заказов пока нет</h3>
+            <p class="text-secondary mb-4">Ваши заказы появятся здесь после оформления покупки</p>
+            <a href="/" class="btn btn-primary btn-lg">
+                <i class="bi bi-shop me-2"></i>Перейти к товарам
+            </a>
+        </div>
+    }
+    else
+    {
+        @foreach (var order in _orders)
+        {
+            <div class="card order-card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-2 py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <h5 class="mb-0 fw-bold">Заказ #@order.Id</h5>
+                        <span class="badge @GetBadgeClass(order.Status) py-2 px-3">
+                            @((MarkupString)GetStatusIcon(order.Status)) @GetStatusText(order.Status)
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 text-secondary small">
+                        <span>
+                            <i class="bi bi-calendar me-1"></i>@order.DateOfPurchase.ToString("dd.MM.yyyy")
+                        </span>
+                        <span>
+                            <i class="bi bi-clock me-1"></i>@order.DateOfPurchase.ToString("HH:mm")
+                        </span>
+                        <span class="fw-bold text-primary fs-5">@order.Sum ₽</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if (order.Items.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Товар</th>
+                                        <th class="text-center">Кол-во</th>
+                                        <th class="text-center">Цена</th>
+                                        <th class="text-end pe-3">Сумма</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in order.Items)
+                                    {
+                                        <tr class="order-product-row">
+                                            <td class="ps-3 fw-medium">@item.ProductName</td>
+                                            <td class="text-center">@item.Quantity шт.</td>
+                                            <td class="text-center">@item.Price ₽</td>
+                                            <td class="text-end pe-3 fw-semibold">@item.Total ₽</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <td colspan="3" class="ps-3 fw-bold">Итого</td>
+                                        <td class="text-end pe-3 fw-bold text-primary fs-5">@order.Items.Sum(i => i.Total) ₽</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-3 text-secondary small">
+                            Нет позиций в заказе
+                        </div>
+                    }
+                </div>
+                @if ((int)order.Status == 4)
+                {
+                    <div class="card-footer bg-success bg-opacity-10 border-0 py-2">
+                        <small class="text-success fw-medium">
+                            <i class="bi bi-check-circle-fill me-1"></i>Заказ доставлен @order.DateOfPurchase.ToString("dd.MM.yyyy в HH:mm")
+                        </small>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+<footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+        <p class="mb-0">&copy; 2026 CifraShop. Все права защищены.</p>
+    </div>
+</footer>
+
+@code {
+    private List<OrderDto> _orders = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+
+        if (!Auth.IsAuthenticated || Auth.IsGuest)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        try
+        {
+            _loading = true;
+            StateHasChanged();
+
+            var email = Uri.EscapeDataString(Auth.CurrentUserEmail!);
+            _orders = await Http.GetFromJsonAsync<List<OrderDto>>($"api/Order/by-email?email={email}") ?? new();
+
+            _orders = _orders.OrderByDescending(o => o.DateOfPurchase).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[OrderHistory] Ошибка загрузки: {ex.Message}");
+            _orders = new();
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string GetStatusText(StatusOrder status) => (int)status switch
+    {
+        0 => "Ожидание",
+        1 => "Ожидает оплаты",
+        2 => "Оплачен",
+        3 => "В производстве",
+        4 => "Доставлен",
+        _ => "Неизвестно"
+    };
+
+    private static string GetStatusIcon(StatusOrder status) => (int)status switch
+    {
+        0 => "<i class=\"bi bi-hourglass-split me-1\"></i>",
+        1 => "<i class=\"bi bi-credit-card me-1\"></i>",
+        2 => "<i class=\"bi bi-check-circle me-1\"></i>",
+        3 => "<i class=\"bi bi-gear me-1\"></i>",
+        4 => "<i class=\"bi bi-truck me-1\"></i>",
+        _ => ""
+    };
+
+    private static string GetBadgeClass(StatusOrder status) => (int)status switch
+    {
+        0 => "bg-secondary",
+        1 => "bg-warning text-dark",
+        2 => "bg-info",
+        3 => "bg-primary",
+        4 => "bg-success",
+        _ => "bg-secondary"
+    };
+}
