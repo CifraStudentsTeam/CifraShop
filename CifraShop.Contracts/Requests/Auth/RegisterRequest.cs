@@ -11,5 +11,7 @@ namespace CifraShop.Contracts.Requests.Auth
         [Required(ErrorMessage = "Пароль обязателен")]
         [MinLength(6, ErrorMessage = "Пароль должен содержать минимум 6 символов")]
         public string Password { get; set; } = string.Empty;
+
+        public string Branch { get; set; } = string.Empty;
     }
 }

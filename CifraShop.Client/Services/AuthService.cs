@@ -101,11 +101,11 @@ public class AuthService
         }
     }
 
-    public async Task<(bool success, string? error)> RegisterAsync(string email, string password)
+    public async Task<(bool success, string? error)> RegisterAsync(string email, string password, string branch = "")
     {
         try
         {
-            var request = new { Email = email, Password = password };
+            var request = new { Email = email, Password = password, Branch = branch };
             var response = await _http.PostAsJsonAsync("api/Auth/register-student", request);
 
             if (response.IsSuccessStatusCode)

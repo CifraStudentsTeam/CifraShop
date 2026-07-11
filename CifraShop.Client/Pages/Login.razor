@@ -2,6 +2,7 @@
 @using CifraShop.Client.Services
 @inject AuthService Auth
 @inject NavigationManager Nav
+@inject HttpClient Http
 
 <PageTitle>Вход — CifraShop</PageTitle>
 
@@ -108,6 +109,19 @@
                             <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" />
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">
+                                <i class="bi bi-geo-alt me-1"></i>Филиал
+                            </label>
+                            <InputSelect class="form-select" @bind-Value="_registerModel.Branch">
+                                <option value="">Выберите филиал</option>
+                                @foreach (var branch in _branches)
+                                {
+                                    <option value="@branch">@branch</option>
+                                }
+                            </InputSelect>
+                        </div>
+
                         <button type="submit" class="btn btn-success w-100" disabled="@_loading">
                             @if (_loading)
                             {
@@ -139,6 +153,7 @@
     private bool _loading = false;
     private string? _error;
     private bool _showRegister = false;
+    private List<string> _branches = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,6 +165,12 @@
             else
                 Nav.NavigateTo("/");
         }
+
+        try
+        {
+            _branches = await Http.GetFromJsonAsync<List<string>>("api/Auth/branches") ?? new();
+        }
+        catch { _branches = new(); }
     }
 
     private async Task HandleLogin()
@@ -188,7 +209,7 @@
         _error = null;
         StateHasChanged();
 
-        var (success, error) = await Auth.RegisterAsync(_registerModel.Email, _registerModel.Password);
+        var (success, error) = await Auth.RegisterAsync(_registerModel.Email, _registerModel.Password, _registerModel.Branch);
 
         if (success)
         {
@@ -220,5 +241,6 @@
         public string Email { get; set; } = "";
         public string Password { get; set; } = "";
         public string ConfirmPassword { get; set; } = "";
+        public string Branch { get; set; } = "";
     }
 }

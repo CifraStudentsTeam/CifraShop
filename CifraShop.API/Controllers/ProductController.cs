@@ -38,7 +38,8 @@ namespace CifraShop.API.Controllers
 
         private ProductResponse ToResponseWithUrl(Domain.Entities.Product p)
         {
-            var resp = p.ToResponse();
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var resp = p.ToResponse(baseUrl);
             if (!string.IsNullOrEmpty(resp.ImageUrl) && !resp.ImageUrl.StartsWith("http"))
             {
                 resp.ImageUrl = Url.Action("GetFile", "ProductImage", new { fileName = resp.ImageUrl })!;

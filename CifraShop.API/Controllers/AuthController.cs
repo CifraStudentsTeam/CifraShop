@@ -5,6 +5,7 @@ using CifraShop.Contracts.Responses.Auth;
 using CifraShop.Domain.Auth;
 using CifraShop.Domain.Entities;
 using CifraShop.Domain.Enums;
+using CifraShop.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,11 +17,13 @@ namespace CifraShop.API.Controllers
     {
         private readonly IUserService _userService;
         private readonly IAuthService _authService;
+        private readonly INotificationSettingsRepository _settingsRepository;
 
-        public AuthController(IUserService userService, IAuthService authService)
+        public AuthController(IUserService userService, IAuthService authService, INotificationSettingsRepository settingsRepository)
         {
             _userService = userService;
             _authService = authService;
+            _settingsRepository = settingsRepository;
         }
 
         [HttpPost("guest-token")]
@@ -80,7 +83,7 @@ namespace CifraShop.API.Controllers
                 return Conflict($"Пользователь с email {request.Email} уже существует");
 
             var hashedPassword = _authService.HashPassword(request.Password);
-            var user = await _userService.CreateStudent(request.Email, hashedPassword, "");
+            var user = await _userService.CreateStudent(request.Email, hashedPassword, request.Branch ?? "");
 
             user.Password = hashedPassword;
             await _userService.UpdateUser(user);
@@ -108,7 +111,7 @@ namespace CifraShop.API.Controllers
                 return Conflict($"Пользователь с email {request.Email} уже существует");
 
             var hashedPassword = _authService.HashPassword(request.Password);
-            var user = await _userService.CreateAdmin(request.Email, hashedPassword, "");
+            var user = await _userService.CreateAdmin(request.Email, hashedPassword, request.Branch ?? "");
 
             user.Password = hashedPassword;
             await _userService.UpdateUser(user);
@@ -134,6 +137,15 @@ namespace CifraShop.API.Controllers
                 Email = User.FindFirst(ClaimTypes.Email)?.Value,
                 Role = User.FindFirst(ClaimTypes.Role)?.Value
             });
+        }
+
+        [HttpGet("branches")]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<string>>> GetBranches()
+        {
+            var settings = await _settingsRepository.GetAll();
+            var branches = settings.Select(s => s.Branch).Where(b => !string.IsNullOrEmpty(b)).Distinct().OrderBy(b => b).ToList();
+            return Ok(branches);
         }
     }
 }

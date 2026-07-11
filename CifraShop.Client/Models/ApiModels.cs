@@ -12,6 +12,7 @@ public class ProductDto
     public string? ImageUrl { get; set; }
     public string Branch { get; set; } = "";
     public bool IsSelected { get; set; }
+    public List<ProductImageDto> Images { get; set; } = new();
 }
 
 /// <summary>Модель позиции заказа, соответствующая OrderItemResponse с API</summary>
